@@ -1,10 +1,12 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/lyric_model.dart';
-import '../utils/lrc_parser.dart';
+import 'providers/lrclib_service.dart';
+import 'providers/musixmatch_service.dart';
+import 'settings_service.dart';
 
 class LyricsService {
-  static const String _baseSearchUrl = 'https://lrclib.net/api/search';
+  final LrclibService _lrclibService = LrclibService();
+  final MusixmatchService _musixmatchService = MusixmatchService();
+  final SettingsService _settingsService = SettingsService();
 
   Future<List<Lyric>> fetchLyrics({
     required String title,
@@ -13,55 +15,32 @@ class LyricsService {
     required int durationSeconds,
     Function(String)? onStatusUpdate,
   }) async {
-    try {
-      final queryParams = {
-        'artist_name': artist,
-        'track_name': title,
-        'album_name': album,
-        'duration': durationSeconds.toString(),
-      };
+    final priority = await _settingsService.getPriority();
 
-      final uri = Uri.parse(
-        _baseSearchUrl,
-      ).replace(queryParameters: queryParams);
-
-      onStatusUpdate?.call("Searching lyrics on LRCLIB...");
-
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final List<dynamic> results = jsonDecode(response.body);
-
-        if (results.isEmpty) {
-          onStatusUpdate?.call("No lyrics found.");
-          return [];
-        }
-
-        // Use the first result
-        final data = results.first;
-
-        final String? syncedLyrics = data['syncedLyrics'];
-        final String? plainLyrics = data['plainLyrics'];
-
-        onStatusUpdate?.call("Processing lyrics...");
-        if (syncedLyrics != null && syncedLyrics.isNotEmpty) {
-          return LrcParser.parse(syncedLyrics);
-        } else if (plainLyrics != null && plainLyrics.isNotEmpty) {
-          // Fallback to plain lyrics as a single line or split by newline
-          return plainLyrics
-              .split('\n')
-              .map((line) => Lyric(startTime: Duration.zero, text: line.trim()))
-              .toList();
-        }
-      } else {
-        throw Exception(
-          'status code: ${response.statusCode}, URL: ${uri.toString()}, body: ${response.body}',
+    for (var provider in priority) {
+      List<Lyric> lyrics = [];
+      if (provider == LyricProviderType.lrclib) {
+        lyrics = await _lrclibService.fetchLyrics(
+          title: title,
+          artist: artist,
+          album: album,
+          durationSeconds: durationSeconds,
+          onStatusUpdate: onStatusUpdate,
+        );
+      } else if (provider == LyricProviderType.musixmatch) {
+        lyrics = await _musixmatchService.fetchLyrics(
+          title: title,
+          artist: artist,
+          durationSeconds: durationSeconds,
+          onStatusUpdate: onStatusUpdate,
         );
       }
-    } catch (e) {
-      print('Error fetching lyrics: $e');
-      onStatusUpdate?.call("Error fetching lyrics: $e");
+
+      if (lyrics.isNotEmpty) {
+        return lyrics;
+      }
     }
+
     return [];
   }
 }

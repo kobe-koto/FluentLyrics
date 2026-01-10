@@ -6,6 +6,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../providers/lyrics_provider.dart';
 import '../widgets/lyric_line.dart';
 import '../services/media_service.dart';
+import 'settings_screen.dart';
 
 class LyricsScreen extends StatefulWidget {
   const LyricsScreen({super.key});
@@ -134,6 +135,16 @@ class _LyricsScreenState extends State<LyricsScreen> {
             provider.isPlaying ? Icons.graphic_eq : Icons.pause,
             color: Colors.white.withOpacity(0.8),
             size: 24,
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
           ),
         ],
       ),
