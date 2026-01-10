@@ -13,6 +13,7 @@ class LyricsService {
     required String album,
     required int durationSeconds,
     required bool cached,
+    Function(String)? onStatusUpdate,
   }) async {
     try {
       final queryParams = {
@@ -26,7 +27,12 @@ class LyricsService {
         cached ? _baseCachedUrl : _baseRawUrl,
       ).replace(queryParameters: queryParams);
 
-      print("fetching lyrics for $title by $artist (cached: $cached)");
+      onStatusUpdate?.call(
+        cached
+            ? "Fetching cached lyrics from LRCLIB..."
+            : "Fetching lyrics from LRCLIB...",
+      );
+
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -35,6 +41,7 @@ class LyricsService {
         final String? syncedLyrics = data['syncedLyrics'];
         final String? plainLyrics = data['plainLyrics'];
 
+        onStatusUpdate?.call("Processing lyrics...");
         if (syncedLyrics != null && syncedLyrics.isNotEmpty) {
           return LrcParser.parse(syncedLyrics);
         } else if (plainLyrics != null && plainLyrics.isNotEmpty) {
@@ -45,6 +52,7 @@ class LyricsService {
               .toList();
         }
       } else if (response.statusCode == 404 && cached) {
+        onStatusUpdate?.call("Cached lyrics not found, searching live...");
         print('no cached lyrics found, trying raw URL');
         return fetchLyrics(
           title: title,
@@ -52,6 +60,7 @@ class LyricsService {
           album: album,
           durationSeconds: durationSeconds,
           cached: false,
+          onStatusUpdate: onStatusUpdate,
         );
       } else {
         throw Exception(

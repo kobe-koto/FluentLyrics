@@ -15,6 +15,7 @@ class LyricsProvider with ChangeNotifier {
   int _currentIndex = 0;
   bool _isPlaying = false;
   bool _isLoading = false;
+  String _loadingStatus = "";
 
   LyricsProvider() {
     _startPolling();
@@ -26,6 +27,7 @@ class LyricsProvider with ChangeNotifier {
   int get currentIndex => _currentIndex;
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
+  String get loadingStatus => _loadingStatus;
 
   void _startPolling() {
     _pollTimer = Timer.periodic(const Duration(milliseconds: 250), (
@@ -76,6 +78,7 @@ class LyricsProvider with ChangeNotifier {
     bool cached = true,
   ]) async {
     _isLoading = true;
+    _loadingStatus = "Starting search...";
     _lyrics = [];
     notifyListeners();
 
@@ -85,6 +88,10 @@ class LyricsProvider with ChangeNotifier {
       album: metadata.album,
       durationSeconds: metadata.duration.inSeconds,
       cached: cached,
+      onStatusUpdate: (status) {
+        _loadingStatus = status;
+        notifyListeners();
+      },
     );
 
     _lyrics = fetchedLyrics;

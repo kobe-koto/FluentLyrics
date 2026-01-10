@@ -171,8 +171,30 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
   Widget _buildLyricsList(LyricsProvider provider) {
     if (provider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              provider.loadingStatus.toUpperCase(),
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 2.0,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
