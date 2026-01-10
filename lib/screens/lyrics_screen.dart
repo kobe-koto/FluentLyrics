@@ -302,6 +302,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
           distance: distance,
         );
       },
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height / 3),
     );
   }
 
