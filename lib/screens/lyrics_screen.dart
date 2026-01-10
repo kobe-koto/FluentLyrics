@@ -119,7 +119,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
       ),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-        child: Container(color: Colors.black.withOpacity(0.6)),
+        child: Container(color: Colors.black.withAlpha(136)),
       ),
     );
   }
@@ -193,7 +193,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                 Text(
                   metadata?.artist ?? "Wait for music...",
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withAlpha(136),
                     fontSize: 14,
                   ),
                   maxLines: 1,
@@ -204,7 +204,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
           ),
           Icon(
             provider.isPlaying ? Icons.graphic_eq : Icons.pause,
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withAlpha(200),
             size: 24,
           ),
           const SizedBox(width: 8),
@@ -230,7 +230,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withAlpha(100),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -258,7 +258,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             Text(
               provider.loadingStatus.toUpperCase(),
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 2.0,
@@ -279,7 +279,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                 : "No lyrics found for this track",
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withValues(alpha: 0.4),
               fontSize: 16,
             ),
           ),
@@ -320,7 +320,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: Colors.white.withOpacity(0.1),
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
               minHeight: 4,
             ),
@@ -332,7 +332,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               Text(
                 _formatDuration(provider.currentPosition),
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 12,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
@@ -340,7 +340,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               Text(
                 _formatDuration(metadata?.duration ?? Duration.zero),
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 12,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),

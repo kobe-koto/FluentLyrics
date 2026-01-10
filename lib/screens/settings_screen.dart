@@ -224,9 +224,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +281,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : const Icon(Icons.refresh, size: 18),
                       label: const Text('Get New Token'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange.withOpacity(0.2),
+                        backgroundColor: Colors.orange.withValues(alpha: 0.2),
                         foregroundColor: Colors.orange,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -304,9 +304,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       key: ValueKey(type),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
