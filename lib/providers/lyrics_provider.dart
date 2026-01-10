@@ -53,7 +53,7 @@ class LyricsProvider with ChangeNotifier {
 
       if (_currentMetadata != null) {
         if (_currentMetadata!.duration.inSeconds > 0) {
-          _fetchLyrics(_currentMetadata!, true);
+          _fetchLyrics(_currentMetadata!);
         } else {
           _lyrics = [];
           notifyListeners();
@@ -73,10 +73,7 @@ class LyricsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _fetchLyrics(
-    MediaMetadata metadata, [
-    bool cached = true,
-  ]) async {
+  Future<void> _fetchLyrics(MediaMetadata metadata) async {
     _isLoading = true;
     _loadingStatus = "Starting search...";
     _lyrics = [];
@@ -87,7 +84,6 @@ class LyricsProvider with ChangeNotifier {
       artist: metadata.artist,
       album: metadata.album,
       durationSeconds: metadata.duration.inSeconds,
-      cached: cached,
       onStatusUpdate: (status) {
         _loadingStatus = status;
         notifyListeners();
