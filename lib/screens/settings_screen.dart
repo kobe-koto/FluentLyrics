@@ -181,6 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ReorderableListView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
+          buildDefaultDragHandles: false,
           onReorder: (oldIndex, newIndex) {
             setState(() {
               if (oldIndex < newIndex) {
@@ -308,44 +309,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: type == LyricProviderType.lrclib
-                ? Colors.blue.withOpacity(0.2)
-                : Colors.orange.withOpacity(0.2),
-            shape: BoxShape.circle,
+      child: ReorderableDragStartListener(
+        index: index,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 8,
           ),
-          child: Center(
-            child: Text(
-              (index + 1).toString(),
-              style: TextStyle(
-                color: type == LyricProviderType.lrclib
-                    ? Colors.blue
-                    : Colors.orange,
-                fontWeight: FontWeight.bold,
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: type == LyricProviderType.lrclib
+                  ? Colors.blue.withValues(alpha: 0.2)
+                  : Colors.orange.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                (index + 1).toString(),
+                style: TextStyle(
+                  color: type == LyricProviderType.lrclib
+                      ? Colors.blue
+                      : Colors.orange,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
-        ),
-        title: Text(
-          type == LyricProviderType.lrclib ? 'LRCLIB' : 'Musixmatch',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
+          title: Text(
+            type == LyricProviderType.lrclib ? 'LRCLIB' : 'Musixmatch',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+            ),
           ),
+          subtitle: Text(
+            type == LyricProviderType.lrclib
+                ? 'Open-source lyrics database'
+                : 'World\'s largest lyrics catalog',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.4),
+              fontSize: 12,
+            ),
+          ),
+          trailing: const Icon(Icons.drag_indicator, color: Colors.white24),
         ),
-        subtitle: Text(
-          type == LyricProviderType.lrclib
-              ? 'Open-source lyrics database'
-              : 'World\'s largest lyrics catalog',
-          style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
-        ),
-        trailing: const Icon(Icons.drag_indicator, color: Colors.white24),
       ),
     );
   }
