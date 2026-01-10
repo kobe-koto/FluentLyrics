@@ -7,9 +7,7 @@ import 'screens/lyrics_screen.dart';
 void main() {
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => LyricsProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => LyricsProvider())],
       child: const MyApp(),
     ),
   );
@@ -26,9 +24,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,
-        textTheme: GoogleFonts.outfitTextTheme(
-          ThemeData.dark().textTheme,
-        ),
+        textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
+        fontFamilyFallback: const ['sans-serif'],
       ),
       home: const LyricsScreen(),
     );
