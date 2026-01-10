@@ -312,10 +312,66 @@ class _LyricsScreenState extends State<LyricsScreen> {
     final currentMs = provider.currentPosition.inMilliseconds;
     final progress = (currentMs / totalMs).clamp(0.0, 1.0);
 
+    final offsetSeconds = provider.lyricsOffset.inMilliseconds / 1000.0;
+    final offsetText =
+        "${offsetSeconds >= 0 ? '+' : ''}${offsetSeconds.toStringAsFixed(1)}s";
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
       child: Column(
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _OffsetButton(
+                icon: Icons.remove_circle_outline,
+                onPressed: () => provider.adjustLyricsOffset(
+                  const Duration(milliseconds: -500),
+                ),
+              ),
+              const SizedBox(width: 16),
+              GestureDetector(
+                onLongPress: () => provider.setLyricsOffset(Duration.zero),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(25),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.sync,
+                        size: 14,
+                        color: Colors.white.withAlpha(150),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "OFFSET: $offsetText",
+                        style: TextStyle(
+                          color: Colors.white.withAlpha(150),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              _OffsetButton(
+                icon: Icons.add_circle_outline,
+                onPressed: () => provider.adjustLyricsOffset(
+                  const Duration(milliseconds: 500),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
@@ -357,5 +413,23 @@ class _LyricsScreenState extends State<LyricsScreen> {
     String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
     return "$twoDigitMinutes:$twoDigitSeconds";
+  }
+}
+
+class _OffsetButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _OffsetButton({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, color: Colors.white.withAlpha(100), size: 20),
+      onPressed: onPressed,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+    );
   }
 }

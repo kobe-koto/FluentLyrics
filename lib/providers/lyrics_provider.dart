@@ -12,6 +12,7 @@ class LyricsProvider with ChangeNotifier {
   MediaMetadata? _currentMetadata;
   List<Lyric> _lyrics = [];
   Duration _currentPosition = Duration.zero;
+  Duration _lyricsOffset = Duration.zero;
   int _currentIndex = 0;
   bool _isPlaying = false;
   bool _isLoading = false;
@@ -24,10 +25,23 @@ class LyricsProvider with ChangeNotifier {
   MediaMetadata? get currentMetadata => _currentMetadata;
   List<Lyric> get lyrics => _lyrics;
   Duration get currentPosition => _currentPosition;
+  Duration get lyricsOffset => _lyricsOffset;
   int get currentIndex => _currentIndex;
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
   String get loadingStatus => _loadingStatus;
+
+  void setLyricsOffset(Duration offset) {
+    _lyricsOffset = offset;
+    _updateCurrentIndex();
+    notifyListeners();
+  }
+
+  void adjustLyricsOffset(Duration delta) {
+    _lyricsOffset += delta;
+    _updateCurrentIndex();
+    notifyListeners();
+  }
 
   void _startPolling() {
     _pollTimer = Timer.periodic(const Duration(milliseconds: 250), (
@@ -50,6 +64,7 @@ class LyricsProvider with ChangeNotifier {
             metadata.duration.inSeconds > 0)) {
       _currentMetadata = metadata;
       metadataChanged = true;
+      _lyricsOffset = Duration.zero; // Reset offset for new song
 
       if (_currentMetadata != null) {
         if (_currentMetadata!.duration.inSeconds > 0) {
@@ -102,10 +117,12 @@ class LyricsProvider with ChangeNotifier {
       return;
     }
 
+    final adjustedPosition = _currentPosition + _lyricsOffset;
+
     for (int i = 0; i < _lyrics.length; i++) {
-      if (_currentPosition >= _lyrics[i].startTime &&
+      if (adjustedPosition >= _lyrics[i].startTime &&
           (i == _lyrics.length - 1 ||
-              _currentPosition < _lyrics[i + 1].startTime)) {
+              adjustedPosition < _lyrics[i + 1].startTime)) {
         if (_currentIndex != i) {
           _currentIndex = i;
           notifyListeners();
