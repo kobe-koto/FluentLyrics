@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -22,6 +23,44 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
   static const int _linesBefore = 2;
   int _previousIndex = 0;
+  String? _lastArtUrl;
+  ImageProvider? _cachedArtProvider;
+
+  ImageProvider _updateArtProvider(MediaMetadata? metadata) {
+    final artUrl = metadata?.artUrl.trim();
+    final title = metadata?.title;
+    final artist = metadata?.artist;
+
+    if (artUrl != null && artUrl.isNotEmpty) {
+      if (artUrl == _lastArtUrl && _cachedArtProvider != null) {
+        return _cachedArtProvider!;
+      }
+      _lastArtUrl = artUrl;
+      _cachedArtProvider = _getArtProvider(artUrl);
+      _lastTitle = title;
+      _lastArtist = artist;
+    } else {
+      // If artUrl is empty, check if we still have the same song.
+      // If it's the same song, keep the last cached art (prevent flicker).
+      if (title != null &&
+          title == _lastTitle &&
+          artist == _lastArtist &&
+          _cachedArtProvider != null) {
+        return _cachedArtProvider!;
+      }
+
+      // If it's a new song (or no song) and has no art, reset to default.
+      _lastArtUrl = artUrl;
+      _cachedArtProvider = const AssetImage('assets/album_art.png');
+      _lastTitle = title;
+      _lastArtist = artist;
+    }
+
+    return _cachedArtProvider!;
+  }
+
+  String? _lastTitle;
+  String? _lastArtist;
 
   void _scrollToCurrentIndex(int index) {
     if (_itemScrollController.isAttached) {
@@ -48,18 +87,19 @@ class _LyricsScreenState extends State<LyricsScreen> {
         });
 
         final metadata = provider.currentMetadata;
+        final artProvider = _updateArtProvider(metadata);
 
         return Scaffold(
           body: Stack(
             children: [
               // Background Layer
-              _buildBackground(metadata),
+              _buildBackground(artProvider),
 
               // Content Layer
               SafeArea(
                 child: Column(
                   children: [
-                    _buildHeader(provider),
+                    _buildHeader(provider, artProvider),
                     Expanded(child: _buildLyricsList(provider)),
                     _buildProgressBar(provider),
                   ],
@@ -72,23 +112,10 @@ class _LyricsScreenState extends State<LyricsScreen> {
     );
   }
 
-  Widget _buildBackground(MediaMetadata? metadata) {
-    ImageProvider backgroundImage;
-    if (metadata != null && metadata.artUrl.isNotEmpty) {
-      if (metadata.artUrl.startsWith('file://')) {
-        backgroundImage = FileImage(
-          File(Uri.parse(metadata.artUrl).toFilePath()),
-        );
-      } else {
-        backgroundImage = NetworkImage(metadata.artUrl);
-      }
-    } else {
-      backgroundImage = const AssetImage('assets/album_art.png');
-    }
-
+  Widget _buildBackground(ImageProvider artProvider) {
     return Container(
       decoration: BoxDecoration(
-        image: DecorationImage(image: backgroundImage, fit: BoxFit.cover),
+        image: DecorationImage(image: artProvider, fit: BoxFit.cover),
       ),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
@@ -97,13 +124,57 @@ class _LyricsScreenState extends State<LyricsScreen> {
     );
   }
 
-  Widget _buildHeader(LyricsProvider provider) {
+  ImageProvider _getArtProvider(String? artUrl) {
+    if (artUrl == null || artUrl.isEmpty) {
+      return const AssetImage('assets/album_art.png');
+    }
+
+    // Handle data URIs
+    if (artUrl.startsWith('data:')) {
+      final commaIndex = artUrl.indexOf(',');
+      if (commaIndex != -1) {
+        try {
+          final base64String = artUrl
+              .substring(commaIndex + 1)
+              .replaceAll('\n', '')
+              .replaceAll('\r', '')
+              .trim();
+          return MemoryImage(base64Decode(base64String));
+        } catch (e) {
+          return const AssetImage('assets/album_art.png');
+        }
+      }
+    }
+
+    // Handle file URIs
+    if (artUrl.startsWith('file://')) {
+      try {
+        return FileImage(File(Uri.parse(artUrl).toFilePath()));
+      } catch (e) {
+        return const AssetImage('assets/album_art.png');
+      }
+    }
+
+    // Handle local paths without file://
+    if (artUrl.startsWith('/')) {
+      try {
+        return FileImage(File(artUrl));
+      } catch (e) {
+        return const AssetImage('assets/album_art.png');
+      }
+    }
+
+    // Fallback to NetworkImage for everything else (http, etc.)
+    return NetworkImage(artUrl);
+  }
+
+  Widget _buildHeader(LyricsProvider provider, ImageProvider artProvider) {
     final metadata = provider.currentMetadata;
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Row(
         children: [
-          _buildArtThumb(metadata),
+          _buildArtThumb(artProvider),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -151,18 +222,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
     );
   }
 
-  Widget _buildArtThumb(MediaMetadata? metadata) {
-    ImageProvider artImage;
-    if (metadata != null && metadata.artUrl.isNotEmpty) {
-      if (metadata.artUrl.startsWith('file://')) {
-        artImage = FileImage(File(Uri.parse(metadata.artUrl).toFilePath()));
-      } else {
-        artImage = NetworkImage(metadata.artUrl);
-      }
-    } else {
-      artImage = const AssetImage('assets/album_art.png');
-    }
-
+  Widget _buildArtThumb(ImageProvider artImage) {
     return Container(
       width: 64,
       height: 64,

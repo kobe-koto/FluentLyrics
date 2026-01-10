@@ -22,10 +22,12 @@ class MediaMetadata {
           runtimeType == other.runtimeType &&
           title == other.title &&
           artist == other.artist &&
-          album == other.album;
+          album == other.album &&
+          artUrl == other.artUrl;
 
   @override
-  int get hashCode => title.hashCode ^ artist.hashCode ^ album.hashCode;
+  int get hashCode =>
+      title.hashCode ^ artist.hashCode ^ album.hashCode ^ artUrl.hashCode;
 }
 
 abstract class MediaService {
