@@ -28,7 +28,7 @@ class LyricsProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   void _startPolling() {
-    _pollTimer = Timer.periodic(const Duration(milliseconds: 500), (
+    _pollTimer = Timer.periodic(const Duration(milliseconds: 250), (
       timer,
     ) async {
       await _updateStatus();
