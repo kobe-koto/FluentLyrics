@@ -19,6 +19,7 @@ class LyricsProvider with ChangeNotifier {
   int _currentIndex = 0;
   int _linesBefore = 2;
   int _scrollAutoResumeDelay = 5;
+  bool _blurEnabled = true;
   bool _isPlaying = false;
   bool _isLoading = false;
   String _loadingStatus = "";
@@ -36,6 +37,7 @@ class LyricsProvider with ChangeNotifier {
   int get currentIndex => _currentIndex;
   int get linesBefore => _linesBefore;
   int get scrollAutoResumeDelay => _scrollAutoResumeDelay;
+  bool get blurEnabled => _blurEnabled;
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
   String get loadingStatus => _loadingStatus;
@@ -45,6 +47,7 @@ class LyricsProvider with ChangeNotifier {
     final globalOffsetMs = await _settingsService.getGlobalOffset();
     _globalOffset = Duration(milliseconds: globalOffsetMs);
     _scrollAutoResumeDelay = await _settingsService.getScrollAutoResumeDelay();
+    _blurEnabled = await _settingsService.getBlurEnabled();
     notifyListeners();
   }
 
@@ -57,6 +60,12 @@ class LyricsProvider with ChangeNotifier {
   void setScrollAutoResumeDelay(int seconds) {
     _scrollAutoResumeDelay = seconds;
     _settingsService.setScrollAutoResumeDelay(seconds);
+    notifyListeners();
+  }
+
+  void setBlurEnabled(bool enabled) {
+    _blurEnabled = enabled;
+    _settingsService.setBlurEnabled(enabled);
     notifyListeners();
   }
 

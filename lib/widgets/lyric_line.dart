@@ -7,6 +7,7 @@ class LyricLine extends StatelessWidget {
   final bool isHighlighted;
   final double distance; // 0 is current, 1 is adjacent, etc.
   final bool isManualScrolling;
+  final bool blurEnabled;
 
   const LyricLine({
     super.key,
@@ -14,6 +15,7 @@ class LyricLine extends StatelessWidget {
     required this.isHighlighted,
     this.distance = 0,
     this.isManualScrolling = false,
+    this.blurEnabled = true,
   });
 
   @override
@@ -24,7 +26,7 @@ class LyricLine extends StatelessWidget {
     final double opacity = (isHighlighted || isManualScrolling)
         ? 1.0
         : (0.4 / (distance.abs() * 0.5 + 1)).clamp(0.05, 0.4);
-    final double blur = (isHighlighted || isManualScrolling)
+    final double blur = (isHighlighted || isManualScrolling || !blurEnabled)
         ? 0.0
         : (distance.abs() * 1.5).clamp(0.0, 4.0);
 

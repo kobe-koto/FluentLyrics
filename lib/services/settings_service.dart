@@ -8,6 +8,7 @@ class SettingsService {
   static const String _linesBeforeKey = 'lines_before';
   static const String _globalOffsetKey = 'global_offset_ms';
   static const String _scrollAutoResumeDelayKey = 'scroll_auto_resume_delay';
+  static const String _blurEnabledKey = 'blur_enabled';
 
   Future<List<LyricProviderType>> getPriority() async {
     final prefs = await SharedPreferences.getInstance();
@@ -66,5 +67,15 @@ class SettingsService {
   Future<void> setScrollAutoResumeDelay(int seconds) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_scrollAutoResumeDelayKey, seconds);
+  }
+
+  Future<bool> getBlurEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_blurEnabledKey) ?? true;
+  }
+
+  Future<void> setBlurEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_blurEnabledKey, enabled);
   }
 }

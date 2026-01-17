@@ -375,6 +375,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Blur Effect',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Blur non-active lyric lines for focus.',
+                        style: TextStyle(color: Colors.white38, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: provider.blurEnabled,
+                    activeColor: Colors.blue,
+                    activeTrackColor: Colors.blue.withValues(alpha: 0.3),
+                    onChanged: (value) => provider.setBlurEnabled(value),
+                  ),
+                ],
+              ),
+            ),
           ],
         );
       },

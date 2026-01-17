@@ -317,6 +317,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             isHighlighted: isHighlighted,
             distance: distance,
             isManualScrolling: _isManualScrolling,
+            blurEnabled: provider.blurEnabled,
           );
         },
         padding: EdgeInsets.only(
