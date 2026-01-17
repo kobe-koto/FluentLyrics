@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum LyricProviderType { lrclib, musixmatch }
+enum LyricProviderType { lrclib, musixmatch, netease }
 
 class SettingsService {
   static const String _priorityKey = 'lyric_provider_priority';
@@ -12,13 +12,33 @@ class SettingsService {
 
   Future<List<LyricProviderType>> getPriority() async {
     final prefs = await SharedPreferences.getInstance();
-    final priority = prefs.getStringList(_priorityKey);
-    if (priority == null) {
-      return [LyricProviderType.lrclib, LyricProviderType.musixmatch];
+    final savedPriority = prefs.getStringList(_priorityKey);
+
+    final List<LyricProviderType> defaultPriority = [
+      LyricProviderType.lrclib,
+      LyricProviderType.musixmatch,
+      LyricProviderType.netease,
+    ];
+
+    if (savedPriority == null) {
+      return defaultPriority;
     }
-    return priority
-        .map((e) => LyricProviderType.values.firstWhere((v) => v.name == e))
+
+    final savedList = savedPriority
+        .map((e) => LyricProviderType.values.where((v) => v.name == e))
+        .where((matches) => matches.isNotEmpty)
+        .map((matches) => matches.first)
         .toList();
+
+    // Find missing providers and append them
+    final Set<LyricProviderType> savedSet = savedList.toSet();
+    for (var provider in LyricProviderType.values) {
+      if (!savedSet.contains(provider)) {
+        savedList.add(provider);
+      }
+    }
+
+    return savedList;
   }
 
   Future<void> setPriority(List<LyricProviderType> priority) async {

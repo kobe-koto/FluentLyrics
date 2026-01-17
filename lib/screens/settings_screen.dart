@@ -589,6 +589,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildProviderCard(LyricProviderType type, int index) {
+    Color color;
+    String name;
+    String description;
+
+    switch (type) {
+      case LyricProviderType.lrclib:
+        color = Colors.blue;
+        name = 'LRCLIB';
+        description = 'Open-source lyrics database';
+        break;
+      case LyricProviderType.musixmatch:
+        color = Colors.orange;
+        name = 'Musixmatch';
+        description = 'World\'s largest lyrics catalog';
+        break;
+      case LyricProviderType.netease:
+        color = Colors.red;
+        name = 'Netease Music';
+        description = 'Chinese music service, community driven lyrics catalog';
+        break;
+    }
+
     return Container(
       key: ValueKey(type),
       margin: const EdgeInsets.only(bottom: 12),
@@ -608,25 +630,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: type == LyricProviderType.lrclib
-                  ? Colors.blue.withValues(alpha: 0.2)
-                  : Colors.orange.withValues(alpha: 0.2),
+              color: color.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 (index + 1).toString(),
-                style: TextStyle(
-                  color: type == LyricProviderType.lrclib
-                      ? Colors.blue
-                      : Colors.orange,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: color, fontWeight: FontWeight.bold),
               ),
             ),
           ),
           title: Text(
-            type == LyricProviderType.lrclib ? 'LRCLIB' : 'Musixmatch',
+            name,
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w600,
@@ -634,9 +649,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           subtitle: Text(
-            type == LyricProviderType.lrclib
-                ? 'Open-source lyrics database'
-                : 'World\'s largest lyrics catalog',
+            description,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.4),
               fontSize: 12,

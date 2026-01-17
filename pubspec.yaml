@@ -40,6 +40,8 @@ dependencies:
   http: ^1.6.0
   shared_preferences: ^2.5.1
   dbus: ^0.7.11
+  crypto: ^3.0.7
+  encrypt: ^5.0.3
 
 dev_dependencies:
   flutter_test:

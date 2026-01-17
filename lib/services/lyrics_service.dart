@@ -1,11 +1,13 @@
 import '../models/lyric_model.dart';
 import 'providers/lrclib_service.dart';
 import 'providers/musixmatch_service.dart';
+import 'providers/netease_service.dart';
 import 'settings_service.dart';
 
 class LyricsService {
   final LrclibService _lrclibService = LrclibService();
   final MusixmatchService _musixmatchService = MusixmatchService();
+  final NeteaseService _neteaseService = NeteaseService();
   final SettingsService _settingsService = SettingsService();
 
   Future<List<Lyric>> fetchLyrics({
@@ -31,6 +33,14 @@ class LyricsService {
         lyrics = await _musixmatchService.fetchLyrics(
           title: title,
           artist: artist,
+          durationSeconds: durationSeconds,
+          onStatusUpdate: onStatusUpdate,
+        );
+      } else if (provider == LyricProviderType.netease) {
+        lyrics = await _neteaseService.fetchLyrics(
+          title: title,
+          artist: artist,
+          album: album,
           durationSeconds: durationSeconds,
           onStatusUpdate: onStatusUpdate,
         );
