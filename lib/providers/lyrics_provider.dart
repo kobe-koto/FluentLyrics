@@ -3,10 +3,12 @@ import 'package:flutter/foundation.dart';
 import '../models/lyric_model.dart';
 import '../services/media_service.dart';
 import '../services/lyrics_service.dart';
+import '../services/settings_service.dart';
 
 class LyricsProvider with ChangeNotifier {
   final MediaService _mediaService = LinuxMediaService();
   final LyricsService _lyricsService = LyricsService();
+  final SettingsService _settingsService = SettingsService();
 
   Timer? _pollTimer;
   MediaMetadata? _currentMetadata;
@@ -14,11 +16,13 @@ class LyricsProvider with ChangeNotifier {
   Duration _currentPosition = Duration.zero;
   Duration _lyricsOffset = Duration.zero;
   int _currentIndex = 0;
+  int _linesBefore = 2;
   bool _isPlaying = false;
   bool _isLoading = false;
   String _loadingStatus = "";
 
   LyricsProvider() {
+    _loadSettings();
     _startPolling();
   }
 
@@ -27,9 +31,21 @@ class LyricsProvider with ChangeNotifier {
   Duration get currentPosition => _currentPosition;
   Duration get lyricsOffset => _lyricsOffset;
   int get currentIndex => _currentIndex;
+  int get linesBefore => _linesBefore;
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
   String get loadingStatus => _loadingStatus;
+
+  Future<void> _loadSettings() async {
+    _linesBefore = await _settingsService.getLinesBefore();
+    notifyListeners();
+  }
+
+  void setLinesBefore(int lines) {
+    _linesBefore = lines;
+    _settingsService.setLinesBefore(lines);
+    notifyListeners();
+  }
 
   void setLyricsOffset(Duration offset) {
     _lyricsOffset = offset;

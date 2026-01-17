@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
 import '../services/providers/musixmatch_service.dart';
+import '../providers/lyrics_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -117,6 +119,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               _buildPrioritySection(),
                               const SizedBox(height: 48),
+                              _buildDisplaySection(),
+                              const SizedBox(height: 48),
                               _buildMusixmatchSection(),
                               const SizedBox(height: 48),
                             ],
@@ -128,6 +132,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDisplaySection() {
+    return Consumer<LyricsProvider>(
+      builder: (context, provider, child) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'DISPLAY CONFIGURATION',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Adjust how lyrics are displayed and scrolled.',
+              style: TextStyle(color: Colors.white38, fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Lines Before Active',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${provider.linesBefore}',
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Number of preceding lines to show when auto-scrolling.',
+                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: Colors.blue,
+                      inactiveTrackColor: Colors.white10,
+                      thumbColor: Colors.blue,
+                      overlayColor: Colors.blue.withValues(alpha: 0.2),
+                      showValueIndicator: ShowValueIndicator.always,
+                    ),
+                    child: Slider(
+                      year2023: false,
+                      value: provider.linesBefore.toDouble(),
+                      min: 0,
+                      max: 5,
+                      divisions: 5,
+                      label: provider.linesBefore.toString(),
+                      onChanged: (value) {
+                        provider.setLinesBefore(value.toInt());
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

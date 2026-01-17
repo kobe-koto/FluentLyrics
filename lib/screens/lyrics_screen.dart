@@ -21,7 +21,6 @@ class _LyricsScreenState extends State<LyricsScreen> {
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
 
-  static const int _linesBefore = 2;
   int _previousIndex = 0;
   String? _lastArtUrl;
   ImageProvider? _cachedArtProvider;
@@ -62,9 +61,9 @@ class _LyricsScreenState extends State<LyricsScreen> {
   String? _lastTitle;
   String? _lastArtist;
 
-  void _scrollToCurrentIndex(int index) {
+  void _scrollToCurrentIndex(int index, int linesBefore) {
     if (_itemScrollController.isAttached) {
-      final targetIndex = (index - _linesBefore).clamp(0, index);
+      final targetIndex = (index - linesBefore).clamp(0, index);
       _itemScrollController.scrollTo(
         index: targetIndex,
         duration: const Duration(milliseconds: 250),
@@ -81,7 +80,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
         // Auto-scroll logic
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (provider.currentIndex != _previousIndex) {
-            _scrollToCurrentIndex(provider.currentIndex);
+            _scrollToCurrentIndex(provider.currentIndex, provider.linesBefore);
             _previousIndex = provider.currentIndex;
           }
         });
