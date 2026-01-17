@@ -9,6 +9,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../models/lyric_model.dart';
 import '../providers/lyrics_provider.dart';
 import '../widgets/lyric_line.dart';
+import '../widgets/interlude_indicator.dart';
 import '../services/media_service.dart';
 import 'settings_screen.dart';
 
@@ -68,7 +69,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
   void _scrollToCurrentIndex(int index, int linesBefore) {
     if (_itemScrollController.isAttached) {
-      final targetIndex = (index - linesBefore).clamp(0, index);
+      final safeIndex = index < 0 ? 0 : index;
+      final targetIndex = (safeIndex - linesBefore).clamp(0, safeIndex);
       _itemScrollController.scrollTo(
         index: targetIndex,
         duration: const Duration(milliseconds: 250),
@@ -284,7 +286,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 40.0),
           child: Text(
             provider.currentMetadata == null
-                ? "Start playing music on your Linux system"
+                ? "Start playing music"
                 : "No lyrics found for this track",
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -309,20 +311,32 @@ class _LyricsScreenState extends State<LyricsScreen> {
         itemScrollController: _itemScrollController,
         itemPositionsListener: _itemPositionsListener,
         itemBuilder: (context, index) {
+          // Metadata Line
           if (index == provider.lyrics.length) {
             return _buildLyricsInfoLine(provider.lyricsResult);
           }
+
+          // Lyric Lines
           final lyric = provider.lyrics[index];
           final isHighlighted = index == provider.currentIndex;
           final distance = (index - provider.currentIndex).toDouble();
 
-          return LyricLine(
+          final lyricLine = LyricLine(
             text: lyric.text,
             isHighlighted: isHighlighted,
             distance: distance,
             isManualScrolling: _isManualScrolling,
             blurEnabled: provider.blurEnabled,
           );
+
+          // Handle Interludes (empty lines, now including injected prelude)
+          if (isHighlighted &&
+              provider.isInterlude &&
+              lyric.text.trim().isEmpty) {
+            return InterludeIndicator(progress: provider.interludeProgress);
+          }
+
+          return lyricLine;
         },
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).size.height / 3,

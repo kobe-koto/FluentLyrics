@@ -16,7 +16,7 @@ class LyricsProvider with ChangeNotifier {
   Duration _currentPosition = Duration.zero;
   Duration _globalOffset = Duration.zero;
   Duration _trackOffset = Duration.zero;
-  int _currentIndex = 0;
+  int _currentIndex = -1;
   int _linesBefore = 2;
   int _scrollAutoResumeDelay = 5;
   bool _blurEnabled = true;
@@ -42,6 +42,39 @@ class LyricsProvider with ChangeNotifier {
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
   String get loadingStatus => _loadingStatus;
+  bool get isInterlude {
+    if (lyrics.isEmpty) return false;
+
+    // Mid-song pause indicator (includes injected prelude)
+    if (_currentIndex >= 0 && _currentIndex < lyrics.length) {
+      if (lyrics[_currentIndex].text.trim().isEmpty) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  double get interludeProgress {
+    if (!isInterlude || lyrics.isEmpty) return 0.0;
+    final adjustedPosition = _currentPosition + _globalOffset + _trackOffset;
+
+    // Empty line progress (works for prelude too)
+    if (_currentIndex >= 0 && _currentIndex < lyrics.length - 1) {
+      final currentStartTime = lyrics[_currentIndex].startTime;
+      final nextStartTime = lyrics[_currentIndex + 1].startTime;
+      final duration =
+          nextStartTime.inMilliseconds - currentStartTime.inMilliseconds;
+      if (duration > 0) {
+        return ((adjustedPosition.inMilliseconds -
+                    currentStartTime.inMilliseconds) /
+                duration)
+            .clamp(0.0, 1.0);
+      }
+    }
+
+    return 0.0;
+  }
 
   Future<void> _loadSettings() async {
     _linesBefore = await _settingsService.getLinesBefore();
@@ -151,6 +184,11 @@ class LyricsProvider with ChangeNotifier {
       },
     );
 
+    if (result.lyrics.isNotEmpty &&
+        result.lyrics[0].startTime > const Duration(seconds: 3)) {
+      result.lyrics.insert(0, Lyric(text: '', startTime: Duration.zero));
+    }
+
     _lyricsResult = result;
     _isLoading = false;
     _updateCurrentIndex();
@@ -159,11 +197,19 @@ class LyricsProvider with ChangeNotifier {
 
   void _updateCurrentIndex() {
     if (_lyricsResult.lyrics.isEmpty) {
-      _currentIndex = 0;
+      _currentIndex = -1;
       return;
     }
 
     final adjustedPosition = _currentPosition + _globalOffset + _trackOffset;
+
+    if (adjustedPosition < _lyricsResult.lyrics[0].startTime) {
+      if (_currentIndex != -1) {
+        _currentIndex = -1;
+        notifyListeners();
+      }
+      return;
+    }
 
     for (int i = 0; i < _lyricsResult.lyrics.length; i++) {
       if (adjustedPosition >= _lyricsResult.lyrics[i].startTime &&
