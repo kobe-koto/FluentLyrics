@@ -75,7 +75,11 @@ class LrclibService {
         }
 
         if (lyrics.isNotEmpty) {
-          return LyricsResult(lyrics: lyrics, source: 'LRCLIB');
+          return LyricsResult(
+            lyrics: lyrics,
+            source: 'LRCLIB',
+            isSynced: syncedLyrics != null && syncedLyrics.isNotEmpty,
+          );
         }
       }
     } catch (e) {

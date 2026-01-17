@@ -20,6 +20,7 @@ class LyricsService {
   }) async {
     final priority = await _settingsService.getPriority();
 
+    LyricsResult? unsyncedFallback;
     for (var provider in priority) {
       if (isCancelled?.call() == true) {
         return LyricsResult.empty();
@@ -51,10 +52,14 @@ class LyricsService {
       }
 
       if (result.lyrics.isNotEmpty) {
-        return result;
+        if (result.isSynced) {
+          return result;
+        } else {
+          unsyncedFallback ??= result;
+        }
       }
     }
 
-    return LyricsResult.empty();
+    return unsyncedFallback ?? LyricsResult.empty();
   }
 }
