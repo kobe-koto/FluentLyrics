@@ -311,7 +311,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
     final currentMs = provider.currentPosition.inMilliseconds;
     final progress = (currentMs / totalMs).clamp(0.0, 1.0);
 
-    final offsetSeconds = provider.lyricsOffset.inMilliseconds / 1000.0;
+    final offsetSeconds = provider.trackOffset.inMilliseconds / 1000.0;
     final offsetText =
         "${offsetSeconds >= 0 ? '+' : ''}${offsetSeconds.toStringAsFixed(1)}s";
 
@@ -324,13 +324,13 @@ class _LyricsScreenState extends State<LyricsScreen> {
             children: [
               _OffsetButton(
                 icon: Icons.remove_circle_outline,
-                onPressed: () => provider.adjustLyricsOffset(
+                onPressed: () => provider.adjustTrackOffset(
                   const Duration(milliseconds: -500),
                 ),
               ),
               const SizedBox(width: 16),
               GestureDetector(
-                onLongPress: () => provider.setLyricsOffset(Duration.zero),
+                onLongPress: () => provider.setTrackOffset(Duration.zero),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -364,7 +364,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               const SizedBox(width: 16),
               _OffsetButton(
                 icon: Icons.add_circle_outline,
-                onPressed: () => provider.adjustLyricsOffset(
+                onPressed: () => provider.adjustTrackOffset(
                   const Duration(milliseconds: 500),
                 ),
               ),

@@ -6,6 +6,7 @@ class SettingsService {
   static const String _priorityKey = 'lyric_provider_priority';
   static const String _musixmatchTokenKey = 'musixmatch_token';
   static const String _linesBeforeKey = 'lines_before';
+  static const String _globalOffsetKey = 'global_offset_ms';
 
   Future<List<LyricProviderType>> getPriority() async {
     final prefs = await SharedPreferences.getInstance();
@@ -44,5 +45,15 @@ class SettingsService {
   Future<void> setLinesBefore(int lines) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_linesBeforeKey, lines);
+  }
+
+  Future<int> getGlobalOffset() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_globalOffsetKey) ?? 0;
+  }
+
+  Future<void> setGlobalOffset(int offsetMs) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_globalOffsetKey, offsetMs);
   }
 }

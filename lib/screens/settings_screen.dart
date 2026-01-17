@@ -202,7 +202,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       showValueIndicator: ShowValueIndicator.always,
                     ),
                     child: Slider(
-                      year2023: false,
                       value: provider.linesBefore.toDouble(),
                       min: 0,
                       max: 5,
@@ -210,6 +209,88 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       label: provider.linesBefore.toString(),
                       onChanged: (value) {
                         provider.setLinesBefore(value.toInt());
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Global Lyrics Offset',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          if (provider.globalOffset != Duration.zero)
+                            IconButton(
+                              icon: const Icon(
+                                Icons.refresh,
+                                size: 18,
+                                color: Colors.blue,
+                              ),
+                              onPressed: () =>
+                                  provider.setGlobalOffset(Duration.zero),
+                              tooltip: 'Reset to 0s',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${(provider.globalOffset.inMilliseconds / 1000.0).toStringAsFixed(1)}s',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Set a default offset for all lyrics (e.g. if your device has audio latency).',
+                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: Colors.blue,
+                      inactiveTrackColor: Colors.white10,
+                      thumbColor: Colors.blue,
+                      overlayColor: Colors.blue.withValues(alpha: 0.2),
+                      showValueIndicator: ShowValueIndicator.always,
+                    ),
+                    child: Slider(
+                      value: (provider.globalOffset.inMilliseconds / 100)
+                          .toDouble(),
+                      min: -50,
+                      max: 50,
+                      divisions: 100,
+                      label: (provider.globalOffset.inMilliseconds / 1000.0)
+                          .toStringAsFixed(1),
+                      onChanged: (value) {
+                        provider.setGlobalOffset(
+                          Duration(milliseconds: (value * 100).toInt()),
+                        );
                       },
                     ),
                   ),

@@ -14,7 +14,8 @@ class LyricsProvider with ChangeNotifier {
   MediaMetadata? _currentMetadata;
   List<Lyric> _lyrics = [];
   Duration _currentPosition = Duration.zero;
-  Duration _lyricsOffset = Duration.zero;
+  Duration _globalOffset = Duration.zero;
+  Duration _trackOffset = Duration.zero;
   int _currentIndex = 0;
   int _linesBefore = 2;
   bool _isPlaying = false;
@@ -29,7 +30,8 @@ class LyricsProvider with ChangeNotifier {
   MediaMetadata? get currentMetadata => _currentMetadata;
   List<Lyric> get lyrics => _lyrics;
   Duration get currentPosition => _currentPosition;
-  Duration get lyricsOffset => _lyricsOffset;
+  Duration get globalOffset => _globalOffset;
+  Duration get trackOffset => _trackOffset;
   int get currentIndex => _currentIndex;
   int get linesBefore => _linesBefore;
   bool get isPlaying => _isPlaying;
@@ -38,6 +40,8 @@ class LyricsProvider with ChangeNotifier {
 
   Future<void> _loadSettings() async {
     _linesBefore = await _settingsService.getLinesBefore();
+    final globalOffsetMs = await _settingsService.getGlobalOffset();
+    _globalOffset = Duration(milliseconds: globalOffsetMs);
     notifyListeners();
   }
 
@@ -47,14 +51,21 @@ class LyricsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void setLyricsOffset(Duration offset) {
-    _lyricsOffset = offset;
+  void setGlobalOffset(Duration offset) {
+    _globalOffset = offset;
+    _settingsService.setGlobalOffset(offset.inMilliseconds);
     _updateCurrentIndex();
     notifyListeners();
   }
 
-  void adjustLyricsOffset(Duration delta) {
-    _lyricsOffset += delta;
+  void setTrackOffset(Duration offset) {
+    _trackOffset = offset;
+    _updateCurrentIndex();
+    notifyListeners();
+  }
+
+  void adjustTrackOffset(Duration delta) {
+    _trackOffset += delta;
     _updateCurrentIndex();
     notifyListeners();
   }
@@ -80,7 +91,7 @@ class LyricsProvider with ChangeNotifier {
             metadata.duration.inSeconds > 0)) {
       _currentMetadata = metadata;
       metadataChanged = true;
-      _lyricsOffset = Duration.zero; // Reset offset for new song
+      _trackOffset = Duration.zero; // Reset offset for new song
 
       if (_currentMetadata != null) {
         if (_currentMetadata!.duration.inSeconds > 0) {
@@ -133,7 +144,7 @@ class LyricsProvider with ChangeNotifier {
       return;
     }
 
-    final adjustedPosition = _currentPosition + _lyricsOffset;
+    final adjustedPosition = _currentPosition + _globalOffset + _trackOffset;
 
     for (int i = 0; i < _lyrics.length; i++) {
       if (adjustedPosition >= _lyrics[i].startTime &&
