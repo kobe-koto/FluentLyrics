@@ -149,10 +149,12 @@ class LyricsProvider with ChangeNotifier {
         if (_currentMetadata!.duration.inSeconds > 0) {
           _fetchLyrics(_currentMetadata!);
         } else {
+          _isLoading = false;
           _lyricsResult = LyricsResult.empty();
           notifyListeners();
         }
       } else {
+        _isLoading = false;
         _lyricsResult = LyricsResult.empty();
         notifyListeners();
       }
@@ -173,26 +175,36 @@ class LyricsProvider with ChangeNotifier {
     _lyricsResult = LyricsResult.empty();
     notifyListeners();
 
-    final result = await _lyricsService.fetchLyrics(
-      title: metadata.title,
-      artist: metadata.artist,
-      album: metadata.album,
-      durationSeconds: metadata.duration.inSeconds,
-      onStatusUpdate: (status) {
-        _loadingStatus = status;
-        notifyListeners();
-      },
-    );
+    try {
+      final result = await _lyricsService.fetchLyrics(
+        title: metadata.title,
+        artist: metadata.artist,
+        album: metadata.album,
+        durationSeconds: metadata.duration.inSeconds,
+        onStatusUpdate: (status) {
+          _loadingStatus = status;
+          notifyListeners();
+        },
+        isCancelled: () => metadata != _currentMetadata,
+      );
 
-    if (result.lyrics.isNotEmpty &&
-        result.lyrics[0].startTime > const Duration(seconds: 3)) {
-      result.lyrics.insert(0, Lyric(text: '', startTime: Duration.zero));
+      if (metadata != _currentMetadata) return;
+
+      if (result.lyrics.isNotEmpty &&
+          result.lyrics[0].startTime > const Duration(seconds: 3)) {
+        result.lyrics.insert(0, Lyric(text: '', startTime: Duration.zero));
+      }
+
+      _lyricsResult = result;
+      _isLoading = false;
+      _updateCurrentIndex();
+      notifyListeners();
+    } catch (e) {
+      if (metadata != _currentMetadata) return;
+      _isLoading = false;
+      _loadingStatus = "Error: $e";
+      notifyListeners();
     }
-
-    _lyricsResult = result;
-    _isLoading = false;
-    _updateCurrentIndex();
-    notifyListeners();
   }
 
   void _updateCurrentIndex() {

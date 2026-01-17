@@ -16,10 +16,14 @@ class LyricsService {
     required String album,
     required int durationSeconds,
     Function(String)? onStatusUpdate,
+    bool Function()? isCancelled,
   }) async {
     final priority = await _settingsService.getPriority();
 
     for (var provider in priority) {
+      if (isCancelled?.call() == true) {
+        return LyricsResult.empty();
+      }
       LyricsResult result = LyricsResult.empty();
       if (provider == LyricProviderType.lrclib) {
         result = await _lrclibService.fetchLyrics(
