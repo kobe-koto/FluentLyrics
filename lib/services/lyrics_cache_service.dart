@@ -1,10 +1,25 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/lyric_model.dart';
+import '../models/lyric_cache.dart';
 
 class LyricsCacheService {
-  static const String _cachePrefix = 'lyrics_cache_';
+  static Isar? _isar;
+
+  Future<Isar> get _db async {
+    if (_isar != null) return _isar!;
+    final dir = await getApplicationSupportDirectory();
+    _isar ??=
+        Isar.getInstance() ??
+        await Isar.open(
+          [LyricCacheSchema],
+          directory: dir.path,
+          name: "lyrics_cache",
+        );
+    return _isar!;
+  }
 
   String generateCacheId(
     String title,
@@ -19,55 +34,47 @@ class LyricsCacheService {
   }
 
   Future<LyricsResult?> getCachedLyrics(String cacheId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_cachePrefix + cacheId);
-    if (jsonString == null) return null;
+    final isar = await _db;
+    final cached = await isar.lyricCaches
+        .filter()
+        .cacheIdEqualTo(cacheId)
+        .findFirst();
+    if (cached == null) return null;
 
     try {
-      final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
-      return LyricsResult.fromJson(jsonMap);
+      return cached.toLyricsResult();
     } catch (e) {
-      // If there's an error parsing, clear the corrupted cache
       await clearCache(cacheId);
       return null;
     }
   }
 
   Future<void> cacheLyrics(String cacheId, LyricsResult result) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = json.encode(result.toJson());
-    await prefs.setString(_cachePrefix + cacheId, jsonString);
+    final isar = await _db;
+    final cache = LyricCache.fromLyricsResult(cacheId, result);
+    await isar.writeTxn(() async {
+      await isar.lyricCaches.put(cache);
+    });
   }
 
   Future<void> clearCache(String cacheId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_cachePrefix + cacheId);
+    final isar = await _db;
+    await isar.writeTxn(() async {
+      await isar.lyricCaches.filter().cacheIdEqualTo(cacheId).deleteAll();
+    });
   }
 
   Future<void> clearAllCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    final keys = prefs
-        .getKeys()
-        .where((key) => key.startsWith(_cachePrefix))
-        .toList();
-    for (final key in keys) {
-      await prefs.remove(key);
-    }
+    final isar = await _db;
+    await isar.writeTxn(() async {
+      await isar.lyricCaches.clear();
+    });
   }
 
   Future<Map<String, dynamic>> getCacheStats() async {
-    final prefs = await SharedPreferences.getInstance();
-    final keys = prefs
-        .getKeys()
-        .where((key) => key.startsWith(_cachePrefix))
-        .toList();
-    int totalSize = 0;
-    for (final key in keys) {
-      final value = prefs.getString(key);
-      if (value != null) {
-        totalSize += value.length; // Approximate size in bytes (UTF-16 chars)
-      }
-    }
-    return {'count': keys.length, 'size': totalSize};
+    final isar = await _db;
+    final count = await isar.lyricCaches.count();
+    final size = await isar.getSize();
+    return {'count': count, 'size': size};
   }
 }
