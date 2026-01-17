@@ -164,42 +164,50 @@ class LyricsProvider with ChangeNotifier {
     return await _cacheService.getCacheStats();
   }
 
+  bool _isUpdatingStatus = false;
+
   Future<void> _updateStatus() async {
-    final metadata = await _mediaService.getMetadata();
-    final isPlaying = await _mediaService.isPlaying();
-    final position = await _mediaService.getPosition();
+    if (_isUpdatingStatus) return;
+    _isUpdatingStatus = true;
+    try {
+      final metadata = await _mediaService.getMetadata();
+      final isPlaying = await _mediaService.isPlaying();
+      final position = await _mediaService.getPosition();
 
-    bool metadataChanged = false;
-    if (metadata != _currentMetadata ||
-        (metadata != null &&
-            _currentMetadata != null &&
-            _currentMetadata!.duration.inSeconds == 0 &&
-            metadata.duration.inSeconds > 0)) {
-      _currentMetadata = metadata;
-      metadataChanged = true;
-      _trackOffset = Duration.zero; // Reset offset for new song
+      bool metadataChanged = false;
+      if (metadata != _currentMetadata ||
+          (metadata != null &&
+              _currentMetadata != null &&
+              _currentMetadata!.duration.inSeconds == 0 &&
+              metadata.duration.inSeconds > 0)) {
+        _currentMetadata = metadata;
+        metadataChanged = true;
+        _trackOffset = Duration.zero; // Reset offset for new song
 
-      if (_currentMetadata != null) {
-        if (_currentMetadata!.duration.inSeconds > 0) {
-          _fetchLyrics(_currentMetadata!);
+        if (_currentMetadata != null) {
+          if (_currentMetadata!.duration.inSeconds > 0) {
+            _fetchLyrics(_currentMetadata!);
+          } else {
+            _isLoading = false;
+            _lyricsResult = LyricsResult.empty();
+            notifyListeners();
+          }
         } else {
           _isLoading = false;
           _lyricsResult = LyricsResult.empty();
           notifyListeners();
         }
-      } else {
-        _isLoading = false;
-        _lyricsResult = LyricsResult.empty();
+      }
+
+      _isPlaying = isPlaying;
+      _currentPosition = position;
+      _updateCurrentIndex();
+
+      if (metadataChanged || isPlaying) {
         notifyListeners();
       }
-    }
-
-    _isPlaying = isPlaying;
-    _currentPosition = position;
-    _updateCurrentIndex();
-
-    if (metadataChanged || isPlaying) {
-      notifyListeners();
+    } finally {
+      _isUpdatingStatus = false;
     }
   }
 
@@ -292,6 +300,7 @@ class LyricsProvider with ChangeNotifier {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _mediaService.dispose();
     super.dispose();
   }
 }

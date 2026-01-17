@@ -34,19 +34,34 @@ abstract class MediaService {
   Future<MediaMetadata?> getMetadata();
   Future<Duration> getPosition();
   Future<bool> isPlaying();
+  void dispose();
 }
 
 class LinuxMediaService implements MediaService {
   final DBusClient _client = DBusClient.session();
+  String? _cachedPlayerBusName;
+  DateTime? _lastDiscoveryTime;
+  static const _discoveryInterval = Duration(seconds: 2);
+  static const _dbusTimeout = Duration(milliseconds: 500);
 
   Future<String?> _getBestPlayer() async {
+    final now = DateTime.now();
+    if (_cachedPlayerBusName != null &&
+        _lastDiscoveryTime != null &&
+        now.difference(_lastDiscoveryTime!) < _discoveryInterval) {
+      return _cachedPlayerBusName;
+    }
+
     try {
       // List all available players
-      final names = await _client.listNames();
+      final names = await _client.listNames().timeout(_dbusTimeout);
       final players = names
           .where((n) => n.startsWith('org.mpris.MediaPlayer2.'))
           .toList();
-      if (players.isEmpty) return null;
+      if (players.isEmpty) {
+        _cachedPlayerBusName = null;
+        return null;
+      }
 
       // filter out players that dont have any metadata
       final List<String> validPlayers = [];
@@ -57,15 +72,13 @@ class LinuxMediaService implements MediaService {
             name: player,
             path: DBusObjectPath('/org/mpris/MediaPlayer2'),
           );
-          final metadataValue = await object.getProperty(
-            'org.mpris.MediaPlayer2.Player',
-            'Metadata',
-          );
+          final metadataValue = await object
+              .getProperty('org.mpris.MediaPlayer2.Player', 'Metadata')
+              .timeout(_dbusTimeout);
+
           if (metadataValue is DBusDict) {
-            // if trackid == /org/mpris/MediaPlayer2/TrackList/NoTrack, skip this player
-            final trackId = metadataValue
-                .asStringVariantDict()['mpris:trackid']
-                ?.asString();
+            final dict = metadataValue.asStringVariantDict();
+            final trackId = dict['mpris:trackid']?.asString();
             if (trackId != '/org/mpris/MediaPlayer2/TrackList/NoTrack' &&
                 trackId != null &&
                 trackId.isNotEmpty) {
@@ -73,21 +86,30 @@ class LinuxMediaService implements MediaService {
             }
           }
         } catch (e) {
-          // If we can't get metadata, skip this player
+          // Skip unresponsive or invalid players
         }
       }
 
-      if (validPlayers.isEmpty) return null;
-
-      // Prefer the player that is currently playing
-      for (final player in validPlayers) {
-        final status = await _getPlaybackStatus(player);
-        if (status == 'Playing') return player;
+      if (validPlayers.isEmpty) {
+        _cachedPlayerBusName = null;
+        return null;
       }
 
-      return validPlayers.first;
+      // Prefer the player that is currently playing
+      String? bestFound;
+      for (final player in validPlayers) {
+        final status = await _getPlaybackStatus(player);
+        if (status == 'Playing') {
+          bestFound = player;
+          break;
+        }
+      }
+
+      _cachedPlayerBusName = bestFound ?? validPlayers.first;
+      _lastDiscoveryTime = now;
+      return _cachedPlayerBusName;
     } catch (e) {
-      return null;
+      return _cachedPlayerBusName; // Return old one on failure if we have it
     }
   }
 
@@ -98,10 +120,9 @@ class LinuxMediaService implements MediaService {
         name: busName,
         path: DBusObjectPath('/org/mpris/MediaPlayer2'),
       );
-      final value = await object.getProperty(
-        'org.mpris.MediaPlayer2.Player',
-        'PlaybackStatus',
-      );
+      final value = await object
+          .getProperty('org.mpris.MediaPlayer2.Player', 'PlaybackStatus')
+          .timeout(_dbusTimeout);
       return value.asString();
     } catch (e) {
       return 'Stopped';
@@ -119,17 +140,15 @@ class LinuxMediaService implements MediaService {
         name: playerBusName,
         path: DBusObjectPath('/org/mpris/MediaPlayer2'),
       );
-      final metadataValue = await object.getProperty(
-        'org.mpris.MediaPlayer2.Player',
-        'Metadata',
-      );
+      final metadataValue = await object
+          .getProperty('org.mpris.MediaPlayer2.Player', 'Metadata')
+          .timeout(_dbusTimeout);
 
       if (metadataValue is! DBusDict) return null;
       final metadata = metadataValue.children.map(
         (key, value) => MapEntry(key.asString(), value),
       );
 
-      // Metadata values are wrapped in Variants (a{sv})
       DBusValue? unwrap(DBusValue? v) {
         if (v is DBusVariant) return v.value;
         return v;
@@ -149,8 +168,13 @@ class LinuxMediaService implements MediaService {
           unwrap(metadata['xesam:album'])?.asString() ?? 'Unknown Album';
       final artUrl = unwrap(metadata['mpris:artUrl'])?.asString() ?? '';
 
-      // length is in microseconds (Int64)
-      final length = unwrap(metadata['mpris:length'])?.asUint64() ?? 0;
+      final lengthValue = unwrap(metadata['mpris:length']);
+      int length = 0;
+      if (lengthValue is DBusUint64) {
+        length = lengthValue.value;
+      } else if (lengthValue is DBusInt64) {
+        length = lengthValue.value;
+      }
       final duration = Duration(microseconds: length);
 
       return MediaMetadata(
@@ -161,6 +185,8 @@ class LinuxMediaService implements MediaService {
         artUrl: artUrl,
       );
     } catch (e) {
+      // If the cached player fails, invalidate it
+      _cachedPlayerBusName = null;
       return null;
     }
   }
@@ -176,22 +202,22 @@ class LinuxMediaService implements MediaService {
         name: playerBusName,
         path: DBusObjectPath('/org/mpris/MediaPlayer2'),
       );
-      final positionValue = await object.getProperty(
-        'org.mpris.MediaPlayer2.Player',
-        'Position',
-      );
-
-      // Position is directly an Int64 property, but getProperty might wrap it?
-      // Actually getProperty returns the value directly as the type it is.
-      // But if the property itself is a variant... no, Position is 'x'.
-      // However, some implementations might be weird.
+      final positionValue = await object
+          .getProperty('org.mpris.MediaPlayer2.Player', 'Position')
+          .timeout(_dbusTimeout);
 
       DBusValue? unwrap(DBusValue? v) {
         if (v is DBusVariant) return v.value;
         return v;
       }
 
-      return Duration(microseconds: unwrap(positionValue)?.asInt64() ?? 0);
+      final pos = unwrap(positionValue);
+      if (pos is DBusInt64) {
+        return Duration(microseconds: pos.value);
+      } else if (pos is DBusUint64) {
+        return Duration(microseconds: pos.value);
+      }
+      return Duration.zero;
     } catch (e) {
       return Duration.zero;
     }
@@ -199,11 +225,16 @@ class LinuxMediaService implements MediaService {
 
   @override
   Future<bool> isPlaying() async {
-    final playerBusName = await _getBestPlayer();
-    if (playerBusName == null) return false;
-    return (await _getPlaybackStatus(playerBusName)) == 'Playing';
+    try {
+      final playerBusName = await _getBestPlayer();
+      if (playerBusName == null) return false;
+      return (await _getPlaybackStatus(playerBusName)) == 'Playing';
+    } catch (e) {
+      return false;
+    }
   }
 
+  @override
   void dispose() {
     _client.close();
   }
