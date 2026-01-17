@@ -23,9 +23,11 @@ class LyricLine extends StatelessWidget {
     // Calculate opacity and blur based on distance
     // Current line (distance 0) has full opacity and no blur.
     // Further lines fade and blur out.
-    final double opacity = (isHighlighted || isManualScrolling)
+    final double opacity = isHighlighted
         ? 1.0
-        : (0.4 / (distance.abs() * 0.5 + 1)).clamp(0.05, 0.4);
+        : (isManualScrolling
+              ? 0.55
+              : (0.4 / (distance.abs() * 0.5 + 1)).clamp(0.05, 0.4));
     final double blur = (isHighlighted || isManualScrolling || !blurEnabled)
         ? 0.0
         : (distance.abs() * 1.5).clamp(0.0, 4.0);
