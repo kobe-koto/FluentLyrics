@@ -4,11 +4,13 @@ import '../models/lyric_model.dart';
 import '../services/media_service.dart';
 import '../services/lyrics_service.dart';
 import '../services/settings_service.dart';
+import '../services/lyrics_cache_service.dart';
 
 class LyricsProvider with ChangeNotifier {
   final MediaService _mediaService = LinuxMediaService();
   final LyricsService _lyricsService = LyricsService();
   final SettingsService _settingsService = SettingsService();
+  final LyricsCacheService _cacheService = LyricsCacheService();
 
   Timer? _pollTimer;
   MediaMetadata? _currentMetadata;
@@ -42,6 +44,17 @@ class LyricsProvider with ChangeNotifier {
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
   String get loadingStatus => _loadingStatus;
+
+  String? get currentCacheId {
+    if (_currentMetadata == null) return null;
+    return _cacheService.generateCacheId(
+      _currentMetadata!.title,
+      _currentMetadata!.artist,
+      _currentMetadata!.album,
+      _currentMetadata!.duration.inSeconds,
+    );
+  }
+
   bool get isInterlude {
     if (lyrics.isEmpty) return false;
 
@@ -130,6 +143,27 @@ class LyricsProvider with ChangeNotifier {
     });
   }
 
+  Future<void> clearCurrentTrackCache() async {
+    final cacheId = currentCacheId;
+    if (cacheId != null) {
+      await _cacheService.clearCache(cacheId);
+      if (_currentMetadata != null) {
+        await _fetchLyrics(_currentMetadata!);
+      }
+    }
+  }
+
+  Future<void> clearAllCache() async {
+    await _cacheService.clearAllCache();
+    if (_currentMetadata != null) {
+      await _fetchLyrics(_currentMetadata!);
+    }
+  }
+
+  Future<Map<String, dynamic>> getCacheStats() async {
+    return await _cacheService.getCacheStats();
+  }
+
   Future<void> _updateStatus() async {
     final metadata = await _mediaService.getMetadata();
     final isPlaying = await _mediaService.isPlaying();
@@ -175,6 +209,22 @@ class LyricsProvider with ChangeNotifier {
     _lyricsResult = LyricsResult.empty();
     notifyListeners();
 
+    final cacheId = _cacheService.generateCacheId(
+      metadata.title,
+      metadata.artist,
+      metadata.album,
+      metadata.duration.inSeconds,
+    );
+
+    final cached = await _cacheService.getCachedLyrics(cacheId);
+    if (cached != null) {
+      _lyricsResult = cached;
+      _isLoading = false;
+      _updateCurrentIndex();
+      notifyListeners();
+      return;
+    }
+
     try {
       final result = await _lyricsService.fetchLyrics(
         title: metadata.title,
@@ -196,6 +246,9 @@ class LyricsProvider with ChangeNotifier {
       }
 
       _lyricsResult = result;
+      if (result.lyrics.isNotEmpty) {
+        await _cacheService.cacheLyrics(cacheId, result);
+      }
       _isLoading = false;
       _updateCurrentIndex();
       notifyListeners();

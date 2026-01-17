@@ -220,6 +220,11 @@ class _LyricsScreenState extends State<LyricsScreen> {
           ),
           const SizedBox(width: 8),
           IconButton(
+            icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
+            onPressed: () => provider.clearCurrentTrackCache(),
+            tooltip: 'Clear cache & reload',
+          ),
+          IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {
               Navigator.push(
@@ -227,6 +232,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
+            tooltip: 'Settings',
           ),
         ],
       ),
