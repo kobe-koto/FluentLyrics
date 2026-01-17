@@ -6,7 +6,7 @@ import '../../utils/lrc_parser.dart';
 class LrclibService {
   static const String _baseSearchUrl = 'https://lrclib.net/api/search';
 
-  Future<List<Lyric>> fetchLyrics({
+  Future<LyricsResult> fetchLyrics({
     required String title,
     required String artist,
     required String album,
@@ -24,7 +24,6 @@ class LrclibService {
       final uri = Uri.parse(
         _baseSearchUrl,
       ).replace(queryParameters: queryParams);
-      print(uri);
 
       onStatusUpdate?.call("Searching lyrics on LRCLIB...");
 
@@ -34,7 +33,7 @@ class LrclibService {
         final List<dynamic> results = jsonDecode(response.body);
 
         if (results.isEmpty) {
-          return [];
+          return LyricsResult.empty();
         }
 
         // Look for the first result that has synced lyrics
@@ -65,18 +64,23 @@ class LrclibService {
         final String? plainLyrics = selectedResult['plainLyrics'];
 
         onStatusUpdate?.call("Processing lyrics...");
+        List<Lyric> lyrics = [];
         if (syncedLyrics != null && syncedLyrics.isNotEmpty) {
-          return LrcParser.parse(syncedLyrics);
+          lyrics = LrcParser.parse(syncedLyrics);
         } else if (plainLyrics != null && plainLyrics.isNotEmpty) {
-          return plainLyrics
+          lyrics = plainLyrics
               .split('\n')
               .map((line) => Lyric(startTime: Duration.zero, text: line.trim()))
               .toList();
+        }
+
+        if (lyrics.isNotEmpty) {
+          return LyricsResult(lyrics: lyrics, source: 'LRCLIB');
         }
       }
     } catch (e) {
       print('Error fetching lyrics from LRCLIB: $e');
     }
-    return [];
+    return LyricsResult.empty();
   }
 }

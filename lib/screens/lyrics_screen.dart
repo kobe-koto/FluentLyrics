@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import '../models/lyric_model.dart';
 import '../providers/lyrics_provider.dart';
 import '../widgets/lyric_line.dart';
 import '../services/media_service.dart';
@@ -304,10 +305,13 @@ class _LyricsScreenState extends State<LyricsScreen> {
         return false;
       },
       child: ScrollablePositionedList.builder(
-        itemCount: provider.lyrics.length,
+        itemCount: provider.lyrics.length + 1,
         itemScrollController: _itemScrollController,
         itemPositionsListener: _itemPositionsListener,
         itemBuilder: (context, index) {
+          if (index == provider.lyrics.length) {
+            return _buildLyricsInfoLine(provider.lyricsResult);
+          }
           final lyric = provider.lyrics[index];
           final isHighlighted = index == provider.currentIndex;
           final distance = (index - provider.currentIndex).toDouble();
@@ -323,6 +327,47 @@ class _LyricsScreenState extends State<LyricsScreen> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).size.height / 3,
         ),
+      ),
+    );
+  }
+
+  Widget _buildLyricsInfoLine(LyricsResult result) {
+    final List<String> infoParts = [];
+    if (result.source.isNotEmpty) {
+      infoParts.add("Source: ${result.source}");
+    }
+    if (result.writtenBy != null && result.writtenBy!.isNotEmpty) {
+      infoParts.add("Written by: ${result.writtenBy}");
+    }
+    if (result.contributor != null && result.contributor!.isNotEmpty) {
+      infoParts.add("Contributor: ${result.contributor}");
+    }
+    if (result.copyright != null && result.copyright!.isNotEmpty) {
+      infoParts.add("Copyright: ${result.copyright}");
+    }
+
+    if (infoParts.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 48, left: 24, right: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: infoParts
+            .map(
+              (info) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Text(
+                  info,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }

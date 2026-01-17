@@ -12,7 +12,7 @@ class LyricsProvider with ChangeNotifier {
 
   Timer? _pollTimer;
   MediaMetadata? _currentMetadata;
-  List<Lyric> _lyrics = [];
+  LyricsResult _lyricsResult = LyricsResult.empty();
   Duration _currentPosition = Duration.zero;
   Duration _globalOffset = Duration.zero;
   Duration _trackOffset = Duration.zero;
@@ -30,7 +30,8 @@ class LyricsProvider with ChangeNotifier {
   }
 
   MediaMetadata? get currentMetadata => _currentMetadata;
-  List<Lyric> get lyrics => _lyrics;
+  List<Lyric> get lyrics => _lyricsResult.lyrics;
+  LyricsResult get lyricsResult => _lyricsResult;
   Duration get currentPosition => _currentPosition;
   Duration get globalOffset => _globalOffset;
   Duration get trackOffset => _trackOffset;
@@ -115,11 +116,11 @@ class LyricsProvider with ChangeNotifier {
         if (_currentMetadata!.duration.inSeconds > 0) {
           _fetchLyrics(_currentMetadata!);
         } else {
-          _lyrics = [];
+          _lyricsResult = LyricsResult.empty();
           notifyListeners();
         }
       } else {
-        _lyrics = [];
+        _lyricsResult = LyricsResult.empty();
         notifyListeners();
       }
     }
@@ -136,10 +137,10 @@ class LyricsProvider with ChangeNotifier {
   Future<void> _fetchLyrics(MediaMetadata metadata) async {
     _isLoading = true;
     _loadingStatus = "Starting search...";
-    _lyrics = [];
+    _lyricsResult = LyricsResult.empty();
     notifyListeners();
 
-    final fetchedLyrics = await _lyricsService.fetchLyrics(
+    final result = await _lyricsService.fetchLyrics(
       title: metadata.title,
       artist: metadata.artist,
       album: metadata.album,
@@ -150,24 +151,24 @@ class LyricsProvider with ChangeNotifier {
       },
     );
 
-    _lyrics = fetchedLyrics;
+    _lyricsResult = result;
     _isLoading = false;
     _updateCurrentIndex();
     notifyListeners();
   }
 
   void _updateCurrentIndex() {
-    if (_lyrics.isEmpty) {
+    if (_lyricsResult.lyrics.isEmpty) {
       _currentIndex = 0;
       return;
     }
 
     final adjustedPosition = _currentPosition + _globalOffset + _trackOffset;
 
-    for (int i = 0; i < _lyrics.length; i++) {
-      if (adjustedPosition >= _lyrics[i].startTime &&
-          (i == _lyrics.length - 1 ||
-              adjustedPosition < _lyrics[i + 1].startTime)) {
+    for (int i = 0; i < _lyricsResult.lyrics.length; i++) {
+      if (adjustedPosition >= _lyricsResult.lyrics[i].startTime &&
+          (i == _lyricsResult.lyrics.length - 1 ||
+              adjustedPosition < _lyricsResult.lyrics[i + 1].startTime)) {
         if (_currentIndex != i) {
           _currentIndex = i;
           notifyListeners();

@@ -16,7 +16,7 @@ class MusixmatchService {
         'AWSELB=unknown; x-mxm-user-id=; x-mxm-token-guid=; mxm-encrypted-token=;',
   };
 
-  Future<List<Lyric>> fetchLyrics({
+  Future<LyricsResult> fetchLyrics({
     required String title,
     required String artist,
     required int durationSeconds,
@@ -35,21 +35,20 @@ class MusixmatchService {
       }
 
       onStatusUpdate?.call("Searching lyrics on Musixmatch...");
-      final lyricsLrc = await _getLyricsLrc(
+      final result = await _getLyricsResult(
         title,
         artist,
         durationSeconds,
         token,
       );
 
-      if (lyricsLrc != null && lyricsLrc.isNotEmpty) {
-        onStatusUpdate?.call("Processing lyrics...");
-        return LrcParser.parse(lyricsLrc);
+      if (result != null) {
+        return result;
       }
     } catch (e) {
       print('Error fetching Musixmatch lyrics: $e');
     }
-    return [];
+    return LyricsResult.empty();
   }
 
   Future<String?> fetchNewToken() async {
@@ -70,7 +69,7 @@ class MusixmatchService {
     return null;
   }
 
-  Future<String?> _getLyricsLrc(
+  Future<LyricsResult?> _getLyricsResult(
     String track,
     String artist,
     int duration,
@@ -114,7 +113,30 @@ class MusixmatchService {
           final subtitleBody = trackSubtitles['message']['body'];
           final subtitleList = subtitleBody['subtitle_list'];
           if (subtitleList != null && subtitleList.isNotEmpty) {
-            return subtitleList[0]['subtitle']['subtitle_body'];
+            final subtitle = subtitleList[0]['subtitle'];
+            final lrc = subtitle['subtitle_body'];
+            final copyrightText = subtitle['lyrics_copyright'] as String?;
+            String? writtenBy;
+            String? copyright;
+
+            if (copyrightText != null && copyrightText.isNotEmpty) {
+              final lines = copyrightText.split('\n');
+              for (var line in lines) {
+                final trimmedLine = line.trim();
+                if (trimmedLine.startsWith('Writer(s):')) {
+                  writtenBy = trimmedLine.substring('Writer(s):'.length).trim();
+                } else if (trimmedLine.startsWith('Copyright:')) {
+                  copyright = trimmedLine.substring('Copyright:'.length).trim();
+                }
+              }
+            }
+
+            return LyricsResult(
+              lyrics: LrcParser.parse(lrc),
+              source: 'Musixmatch',
+              writtenBy: writtenBy,
+              copyright: copyright,
+            );
           }
         }
       } else if (statusCode == 401) {

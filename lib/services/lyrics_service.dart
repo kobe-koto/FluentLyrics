@@ -10,7 +10,7 @@ class LyricsService {
   final NeteaseService _neteaseService = NeteaseService();
   final SettingsService _settingsService = SettingsService();
 
-  Future<List<Lyric>> fetchLyrics({
+  Future<LyricsResult> fetchLyrics({
     required String title,
     required String artist,
     required String album,
@@ -20,9 +20,9 @@ class LyricsService {
     final priority = await _settingsService.getPriority();
 
     for (var provider in priority) {
-      List<Lyric> lyrics = [];
+      LyricsResult result = LyricsResult.empty();
       if (provider == LyricProviderType.lrclib) {
-        lyrics = await _lrclibService.fetchLyrics(
+        result = await _lrclibService.fetchLyrics(
           title: title,
           artist: artist,
           album: album,
@@ -30,14 +30,14 @@ class LyricsService {
           onStatusUpdate: onStatusUpdate,
         );
       } else if (provider == LyricProviderType.musixmatch) {
-        lyrics = await _musixmatchService.fetchLyrics(
+        result = await _musixmatchService.fetchLyrics(
           title: title,
           artist: artist,
           durationSeconds: durationSeconds,
           onStatusUpdate: onStatusUpdate,
         );
       } else if (provider == LyricProviderType.netease) {
-        lyrics = await _neteaseService.fetchLyrics(
+        result = await _neteaseService.fetchLyrics(
           title: title,
           artist: artist,
           album: album,
@@ -46,11 +46,11 @@ class LyricsService {
         );
       }
 
-      if (lyrics.isNotEmpty) {
-        return lyrics;
+      if (result.lyrics.isNotEmpty) {
+        return result;
       }
     }
 
-    return [];
+    return LyricsResult.empty();
   }
 }

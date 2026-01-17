@@ -12,7 +12,7 @@ class NeteaseService {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
   };
 
-  Future<List<Lyric>> fetchLyrics({
+  Future<LyricsResult> fetchLyrics({
     required String title,
     required String artist,
     required String album,
@@ -35,25 +35,25 @@ class NeteaseService {
       final searchResponse = await http.get(searchUri, headers: _headers);
       if (searchResponse.statusCode != 200) {
         print('Netease search failed: ${searchResponse.statusCode}');
-        return [];
+        return LyricsResult.empty();
       }
 
       final searchData = jsonDecode(searchResponse.body);
       if (searchData['code'] != 200) {
         print('Netease search returned code: ${searchData['code']}');
-        return [];
+        return LyricsResult.empty();
       }
 
       final result = searchData['result'];
       if (result == null || result['songs'] == null) {
         print('Netease search returned no results');
-        return [];
+        return LyricsResult.empty();
       }
 
       final songs = result['songs'] as List;
       if (songs.isEmpty) {
         print('Netease search returned empty songs list');
-        return [];
+        return LyricsResult.empty();
       }
 
       // Find the best match based on duration
@@ -89,21 +89,40 @@ class NeteaseService {
       final lyricResponse = await http.get(lyricUri, headers: _headers);
       if (lyricResponse.statusCode != 200) {
         print('Netease lyric fetch failed: ${lyricResponse.statusCode}');
-        return [];
+        return LyricsResult.empty();
       }
 
       final lyricData = jsonDecode(lyricResponse.body);
       final String? lrc = lyricData['lrc']?['lyric'];
 
+      String? contributor;
+      final lyricUser = lyricData['lyricUser'];
+      if (lyricUser != null && lyricUser['nickname'] != null) {
+        contributor = lyricUser['nickname'];
+      }
+
+      final transUser = lyricData['transUser'];
+      if (transUser != null && transUser['nickname'] != null) {
+        if (contributor != null) {
+          contributor += " & ${transUser['nickname']}";
+        } else {
+          contributor = transUser['nickname'];
+        }
+      }
+
       if (lrc != null && lrc.isNotEmpty) {
         onStatusUpdate?.call("Processing lyrics...");
-        return LrcParser.parse(lrc);
+        return LyricsResult(
+          lyrics: LrcParser.parse(lrc),
+          source: 'Netease Music',
+          contributor: contributor,
+        );
       } else {
         print('Netease returned no lyrics for songId: $songId');
       }
     } catch (e) {
       print('Error fetching lyrics from Netease: $e');
     }
-    return [];
+    return LyricsResult.empty();
   }
 }
