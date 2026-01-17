@@ -66,9 +66,9 @@ class LinuxMediaService implements MediaService {
             final trackId = metadataValue
                 .asStringVariantDict()['mpris:trackid']
                 ?.asString();
-            if (trackId != '/org/mpris/MediaPlayer2/TrackList/NoTrack' ||
-                trackId == null ||
-                trackId.isEmpty) {
+            if (trackId != '/org/mpris/MediaPlayer2/TrackList/NoTrack' &&
+                trackId != null &&
+                trackId.isNotEmpty) {
               validPlayers.add(player);
             }
           }
@@ -150,7 +150,7 @@ class LinuxMediaService implements MediaService {
       final artUrl = unwrap(metadata['mpris:artUrl'])?.asString() ?? '';
 
       // length is in microseconds (Int64)
-      final length = unwrap(metadata['mpris:length'])?.asInt64() ?? 0;
+      final length = unwrap(metadata['mpris:length'])?.asUint64() ?? 0;
       final duration = Duration(microseconds: length);
 
       return MediaMetadata(
