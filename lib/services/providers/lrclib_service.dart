@@ -24,6 +24,7 @@ class LrclibService {
       final uri = Uri.parse(
         _baseSearchUrl,
       ).replace(queryParameters: queryParams);
+      print(uri);
 
       onStatusUpdate?.call("Searching lyrics on LRCLIB...");
 
@@ -36,11 +37,32 @@ class LrclibService {
           return [];
         }
 
-        // Use the first result
-        final data = results.first;
+        // Look for the first result that has synced lyrics
+        dynamic selectedResult;
+        for (final result in results) {
+          final synced = result['syncedLyrics'];
+          if (synced != null && synced.toString().isNotEmpty) {
+            selectedResult = result;
+            break;
+          }
+        }
 
-        final String? syncedLyrics = data['syncedLyrics'];
-        final String? plainLyrics = data['plainLyrics'];
+        // If no synced lyrics found, look for any result with plain lyrics
+        if (selectedResult == null) {
+          for (final result in results) {
+            final plain = result['plainLyrics'];
+            if (plain != null && plain.toString().isNotEmpty) {
+              selectedResult = result;
+              break;
+            }
+          }
+        }
+
+        // Fallback to the first result if still nothing found
+        selectedResult ??= results.first;
+
+        final String? syncedLyrics = selectedResult['syncedLyrics'];
+        final String? plainLyrics = selectedResult['plainLyrics'];
 
         onStatusUpdate?.call("Processing lyrics...");
         if (syncedLyrics != null && syncedLyrics.isNotEmpty) {
