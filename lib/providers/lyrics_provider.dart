@@ -18,6 +18,7 @@ class LyricsProvider with ChangeNotifier {
   Duration _trackOffset = Duration.zero;
   int _currentIndex = 0;
   int _linesBefore = 2;
+  int _scrollAutoResumeDelay = 5;
   bool _isPlaying = false;
   bool _isLoading = false;
   String _loadingStatus = "";
@@ -34,6 +35,7 @@ class LyricsProvider with ChangeNotifier {
   Duration get trackOffset => _trackOffset;
   int get currentIndex => _currentIndex;
   int get linesBefore => _linesBefore;
+  int get scrollAutoResumeDelay => _scrollAutoResumeDelay;
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
   String get loadingStatus => _loadingStatus;
@@ -42,12 +44,19 @@ class LyricsProvider with ChangeNotifier {
     _linesBefore = await _settingsService.getLinesBefore();
     final globalOffsetMs = await _settingsService.getGlobalOffset();
     _globalOffset = Duration(milliseconds: globalOffsetMs);
+    _scrollAutoResumeDelay = await _settingsService.getScrollAutoResumeDelay();
     notifyListeners();
   }
 
   void setLinesBefore(int lines) {
     _linesBefore = lines;
     _settingsService.setLinesBefore(lines);
+    notifyListeners();
+  }
+
+  void setScrollAutoResumeDelay(int seconds) {
+    _scrollAutoResumeDelay = seconds;
+    _settingsService.setScrollAutoResumeDelay(seconds);
     notifyListeners();
   }
 

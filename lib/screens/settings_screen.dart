@@ -297,6 +297,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Auto-Resume Delay',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          if (provider.scrollAutoResumeDelay != 5)
+                            IconButton(
+                              icon: const Icon(
+                                Icons.refresh,
+                                size: 18,
+                                color: Colors.blue,
+                              ),
+                              onPressed: () =>
+                                  provider.setScrollAutoResumeDelay(5),
+                              tooltip: 'Reset to 5s',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${provider.scrollAutoResumeDelay}s',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Time to wait before auto-scrolling resumes after you manual scroll.',
+                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: Colors.blue,
+                      inactiveTrackColor: Colors.white10,
+                      thumbColor: Colors.blue,
+                      overlayColor: Colors.blue.withValues(alpha: 0.2),
+                      showValueIndicator: ShowValueIndicator.always,
+                    ),
+                    child: Slider(
+                      value: provider.scrollAutoResumeDelay.toDouble(),
+                      min: 0,
+                      max: 30,
+                      divisions: 30,
+                      label: '${provider.scrollAutoResumeDelay}s',
+                      onChanged: (value) {
+                        provider.setScrollAutoResumeDelay(value.toInt());
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         );
       },

@@ -6,12 +6,14 @@ class LyricLine extends StatelessWidget {
   final String text;
   final bool isHighlighted;
   final double distance; // 0 is current, 1 is adjacent, etc.
+  final bool isManualScrolling;
 
   const LyricLine({
     super.key,
     required this.text,
     required this.isHighlighted,
     this.distance = 0,
+    this.isManualScrolling = false,
   });
 
   @override
@@ -19,10 +21,10 @@ class LyricLine extends StatelessWidget {
     // Calculate opacity and blur based on distance
     // Current line (distance 0) has full opacity and no blur.
     // Further lines fade and blur out.
-    final double opacity = isHighlighted
+    final double opacity = (isHighlighted || isManualScrolling)
         ? 1.0
         : (0.4 / (distance.abs() * 0.5 + 1)).clamp(0.05, 0.4);
-    final double blur = isHighlighted
+    final double blur = (isHighlighted || isManualScrolling)
         ? 0.0
         : (distance.abs() * 1.5).clamp(0.0, 4.0);
 

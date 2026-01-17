@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../providers/lyrics_provider.dart';
@@ -24,6 +26,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
   int _previousIndex = 0;
   String? _lastArtUrl;
   ImageProvider? _cachedArtProvider;
+  bool _isManualScrolling = false;
+  Timer? _autoResumeTimer;
 
   ImageProvider _updateArtProvider(MediaMetadata? metadata) {
     final artUrl = metadata?.artUrl.trim();
@@ -80,7 +84,12 @@ class _LyricsScreenState extends State<LyricsScreen> {
         // Auto-scroll logic
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (provider.currentIndex != _previousIndex) {
-            _scrollToCurrentIndex(provider.currentIndex, provider.linesBefore);
+            if (!_isManualScrolling) {
+              _scrollToCurrentIndex(
+                provider.currentIndex,
+                provider.linesBefore,
+              );
+            }
             _previousIndex = provider.currentIndex;
           }
         });
@@ -286,23 +295,62 @@ class _LyricsScreenState extends State<LyricsScreen> {
       );
     }
 
-    return ScrollablePositionedList.builder(
-      itemCount: provider.lyrics.length,
-      itemScrollController: _itemScrollController,
-      itemPositionsListener: _itemPositionsListener,
-      itemBuilder: (context, index) {
-        final lyric = provider.lyrics[index];
-        final isHighlighted = index == provider.currentIndex;
-        final distance = (index - provider.currentIndex).toDouble();
-
-        return LyricLine(
-          text: lyric.text,
-          isHighlighted: isHighlighted,
-          distance: distance,
-        );
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification is UserScrollNotification &&
+            notification.direction != ScrollDirection.idle) {
+          _handleUserInteraction(provider.scrollAutoResumeDelay);
+        }
+        return false;
       },
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height / 3),
+      child: ScrollablePositionedList.builder(
+        itemCount: provider.lyrics.length,
+        itemScrollController: _itemScrollController,
+        itemPositionsListener: _itemPositionsListener,
+        itemBuilder: (context, index) {
+          final lyric = provider.lyrics[index];
+          final isHighlighted = index == provider.currentIndex;
+          final distance = (index - provider.currentIndex).toDouble();
+
+          return LyricLine(
+            text: lyric.text,
+            isHighlighted: isHighlighted,
+            distance: distance,
+            isManualScrolling: _isManualScrolling,
+          );
+        },
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height / 3,
+        ),
+      ),
     );
+  }
+
+  void _handleUserInteraction(int delaySeconds) {
+    if (delaySeconds == 0) return;
+
+    if (!_isManualScrolling) {
+      setState(() {
+        _isManualScrolling = true;
+      });
+    }
+
+    _autoResumeTimer?.cancel();
+    _autoResumeTimer = Timer(Duration(seconds: delaySeconds), () {
+      if (mounted) {
+        setState(() {
+          _isManualScrolling = false;
+        });
+        final provider = Provider.of<LyricsProvider>(context, listen: false);
+        _scrollToCurrentIndex(provider.currentIndex, provider.linesBefore);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoResumeTimer?.cancel();
+    super.dispose();
   }
 
   Widget _buildProgressBar(LyricsProvider provider) {
