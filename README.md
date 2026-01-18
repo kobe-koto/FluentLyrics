@@ -1,16 +1,38 @@
-# fluent_lyrics
+# FluentLyrics
 
-A new Flutter project.
+A desktop lyrics viewer built with Flutter, displays and syncs song lyrics from multiple providers.
 
-## Getting Started
+## Lyrics Providers 
+- Musixmatch
+- Netease Music
+- lrclib
 
-This project is a starting point for a Flutter application.
+## Features
+- Synchronized lyrics support.
+- Multiple lyrics providers with configurable priority.
+- Local lyrics cache using Isar.
+- Per-track and global lyrics offset support.
 
-A few resources to get you started if this is your first Flutter project:
+## Screenshots
+![The main interface](https://raw.githubusercontent.com/kobe-koto/FluentLyrics/refs/heads/main/previews/main.jpg)
+The main interface.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Supports
+- Linux (get track metadata via MPRIS D-Bus Interface)
+- ~~Android~~ (Planned)
+- no other platform support planned 
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Quick start (developer)
+Requirements:
+- Flutter SDK with desktop support enabled
+- Dart
+
+Common commands:
+- flutter pub get
+- flutter run -d <device>
+- flutter build linux
+- please refer to fastforge for packaging
+
+## Disclaimer
+this project is vibe coded, I think I only produced the 5% of codebase, so don't expect any quality and experience from this.
+Non-AI Coded Up To 5%!
