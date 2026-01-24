@@ -121,10 +121,15 @@ class MusixmatchService {
             matcherTrack['message']['body']['track'] != null) {
           final trackBody = matcherTrack['message']['body']['track'];
           artworkUrl =
-              trackBody['album_coverart_800x800'] ??
-              trackBody['album_coverart_500x500'] ??
-              trackBody['album_coverart_350x350'] ??
-              trackBody['album_coverart_100x100'];
+              [
+                trackBody['album_coverart_800x800'],
+                trackBody['album_coverart_500x500'],
+                trackBody['album_coverart_350x350'],
+                trackBody['album_coverart_100x100'],
+              ].firstWhere(
+                (url) => url != null && url is String && url.isNotEmpty,
+                orElse: () => null,
+              );
         }
 
         if (artworkUrl != null ||
