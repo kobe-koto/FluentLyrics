@@ -45,16 +45,22 @@ class LyricLine extends StatelessWidget {
         opacity: opacity,
         child: ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: AnimatedDefaultTextStyle(
+          child: AnimatedScale(
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeOutQuart,
-            style: GoogleFonts.outfit(
-              fontSize: isHighlighted ? 36 : 28,
-              fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w700,
-              color: Colors.white,
-              height: 1.2,
+            scale: isHighlighted ? 1.0 : 0.85,
+            alignment: Alignment.centerLeft,
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutQuart,
+              style: GoogleFonts.outfit(
+                fontSize: 36,
+                fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w600,
+                color: Colors.white,
+                height: 1.2,
+              ),
+              child: Text(text, textAlign: TextAlign.left),
             ),
-            child: Text(text, textAlign: TextAlign.left),
           ),
         ),
       ),
