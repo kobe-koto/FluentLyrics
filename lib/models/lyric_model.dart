@@ -34,6 +34,52 @@ class LyricsResult {
     this.artworkUrl,
   }) : isSynced = isSynced ?? _checkIfSynced(lyrics);
 
+  LyricsResult trim() {
+    if (lyrics.isEmpty) return this;
+
+    List<Lyric> newLyrics = List<Lyric>.from(lyrics);
+    bool changed = false;
+
+    // Trim head
+    while (newLyrics.isNotEmpty && newLyrics.first.text.trim().isEmpty) {
+      newLyrics.removeAt(0);
+      changed = true;
+    }
+
+    // Trim tail
+    while (newLyrics.isNotEmpty && newLyrics.last.text.trim().isEmpty) {
+      newLyrics.removeLast();
+      changed = true;
+    }
+
+    // Merge continuous empty lines
+    if (newLyrics.isNotEmpty) {
+      final List<Lyric> compacted = [];
+      bool lastWasEmpty = false;
+
+      for (final lyric in newLyrics) {
+        final isEmpty = lyric.text.trim().isEmpty;
+        if (isEmpty) {
+          if (!lastWasEmpty) {
+            compacted.add(lyric);
+            lastWasEmpty = true;
+          } else {
+            changed = true;
+          }
+        } else {
+          compacted.add(lyric);
+          lastWasEmpty = false;
+        }
+      }
+      newLyrics = compacted;
+    }
+
+    if (changed) {
+      return copyWith(lyrics: newLyrics);
+    }
+    return this;
+  }
+
   LyricsResult copyWith({
     List<Lyric>? lyrics,
     String? source,

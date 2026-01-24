@@ -282,7 +282,7 @@ class LyricsProvider with ChangeNotifier {
 
     final cached = await _cacheService.getCachedLyrics(cacheId);
     if (cached != null) {
-      _lyricsResult = cached;
+      _lyricsResult = cached.trim();
       _isLoading = false;
       if (_currentMetadata?.artUrl == 'fallback' && cached.artworkUrl != null) {
         _currentMetadata = _currentMetadata!.copyWith(
@@ -309,6 +309,7 @@ class LyricsProvider with ChangeNotifier {
 
       await for (var result in stream) {
         if (metadata != _currentMetadata) return;
+        result = result.trim();
 
         if (result.lyrics.isNotEmpty &&
             result.lyrics[0].startTime > const Duration(seconds: 3)) {
