@@ -98,8 +98,6 @@ class MusixmatchService {
 
     final response = await http.get(url, headers: _headers);
 
-    print(response.body);
-
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final statusCode = data['message']['header']['status_code'];
