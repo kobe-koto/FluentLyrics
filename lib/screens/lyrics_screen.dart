@@ -259,6 +259,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                   style: TextStyle(
                     color: Colors.white.withAlpha(136),
                     fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -347,7 +348,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w800,
                 letterSpacing: 2.0,
               ),
             ),
@@ -368,6 +369,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.4),
               fontSize: 16,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -451,7 +453,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.45),
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -573,6 +575,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 12,
+                  fontWeight: FontWeight.w600,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
@@ -581,6 +584,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 12,
+                  fontWeight: FontWeight.w600,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),

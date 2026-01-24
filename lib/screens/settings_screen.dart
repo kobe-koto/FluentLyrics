@@ -148,14 +148,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(
                 color: Colors.white54,
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w800,
                 letterSpacing: 1.5,
               ),
             ),
             const SizedBox(height: 8),
             const Text(
               'Adjust how lyrics are displayed and scrolled.',
-              style: TextStyle(color: Colors.white38, fontSize: 14),
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 24),
             Container(
@@ -192,7 +196,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Number of preceding lines to show when auto-scrolling.',
-                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   SliderTheme(
@@ -271,7 +279,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Set a default offset for all lyrics (e.g. if your device has audio latency).',
-                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   SliderTheme(
@@ -354,7 +366,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Time to wait before auto-scrolling resumes after you manual scroll.',
-                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   SliderTheme(
@@ -405,7 +421,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SizedBox(height: 4),
                       Text(
                         'Blur non-active lyric lines for focus.',
-                        style: TextStyle(color: Colors.white38, fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.white38,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -461,14 +481,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             color: Colors.white54,
             fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
             letterSpacing: 1.5,
           ),
         ),
         const SizedBox(height: 8),
         const Text(
           'Reorder providers to prioritize where we fetch lyrics from first.',
-          style: TextStyle(color: Colors.white38, fontSize: 14),
+          style: TextStyle(
+            color: Colors.white38,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 24),
         ReorderableListView(
@@ -505,14 +529,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             color: Colors.white54,
             fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
             letterSpacing: 1.5,
           ),
         ),
         const SizedBox(height: 8),
         const Text(
           'The User Token is used to retrieve lyrics from Musixmatch. If you have problems with retrieving lyrics, try get a new one.',
-          style: TextStyle(color: Colors.white38, fontSize: 14),
+          style: TextStyle(
+            color: Colors.white38,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 24),
         Container(
@@ -608,14 +636,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             color: Colors.white54,
             fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
             letterSpacing: 1.5,
           ),
         ),
         const SizedBox(height: 8),
         const Text(
           'Manage local storage for lyrics.',
-          style: TextStyle(color: Colors.white38, fontSize: 14),
+          style: TextStyle(
+            color: Colors.white38,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 24),
         Container(
@@ -787,7 +819,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             name,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               fontSize: 18,
             ),
           ),
@@ -796,6 +828,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.4),
               fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
           trailing: const Icon(Icons.drag_indicator, color: Colors.white24),

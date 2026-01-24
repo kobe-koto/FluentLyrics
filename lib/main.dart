@@ -24,7 +24,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,
-        textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.outfitTextTheme(
+          ThemeData.dark().textTheme.copyWith(
+            bodyMedium: const TextStyle(fontWeight: FontWeight.w500),
+            bodyLarge: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ),
         fontFamilyFallback: const ['sans-serif'],
       ),
       home: const LyricsScreen(),

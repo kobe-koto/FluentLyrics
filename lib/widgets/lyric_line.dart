@@ -50,7 +50,7 @@ class LyricLine extends StatelessWidget {
             curve: Curves.easeOutQuart,
             style: GoogleFonts.outfit(
               fontSize: isHighlighted ? 36 : 28,
-              fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
+              fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w700,
               color: Colors.white,
               height: 1.2,
             ),
