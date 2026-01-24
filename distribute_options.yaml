@@ -10,7 +10,9 @@ releases:
         package:
           platform: linux
           target: zip
-      # - name: release-android
-      #   package:
-      #     platform: android
-      #     target: apk
+      - name: release-android
+        package:
+          platform: android
+          target: apk
+        build_args:
+          split-per-abi

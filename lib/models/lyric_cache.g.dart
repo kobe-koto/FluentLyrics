@@ -17,39 +17,44 @@ const LyricCacheSchema = CollectionSchema(
   name: r'LyricCache',
   id: -8078122028402574331,
   properties: {
-    r'cacheId': PropertySchema(
+    r'artworkUrl': PropertySchema(
       id: 0,
+      name: r'artworkUrl',
+      type: IsarType.string,
+    ),
+    r'cacheId': PropertySchema(
+      id: 1,
       name: r'cacheId',
       type: IsarType.string,
     ),
     r'contributor': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'contributor',
       type: IsarType.string,
     ),
     r'copyright': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'copyright',
       type: IsarType.string,
     ),
     r'isSynced': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'isSynced',
       type: IsarType.bool,
     ),
     r'lyrics': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'lyrics',
       type: IsarType.objectList,
       target: r'LyricItem',
     ),
     r'source': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'source',
       type: IsarType.string,
     ),
     r'writtenBy': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'writtenBy',
       type: IsarType.string,
     )
@@ -88,6 +93,12 @@ int _lyricCacheEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.artworkUrl;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.cacheId.length * 3;
   {
     final value = object.contributor;
@@ -125,18 +136,19 @@ void _lyricCacheSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.cacheId);
-  writer.writeString(offsets[1], object.contributor);
-  writer.writeString(offsets[2], object.copyright);
-  writer.writeBool(offsets[3], object.isSynced);
+  writer.writeString(offsets[0], object.artworkUrl);
+  writer.writeString(offsets[1], object.cacheId);
+  writer.writeString(offsets[2], object.contributor);
+  writer.writeString(offsets[3], object.copyright);
+  writer.writeBool(offsets[4], object.isSynced);
   writer.writeObjectList<LyricItem>(
-    offsets[4],
+    offsets[5],
     allOffsets,
     LyricItemSchema.serialize,
     object.lyrics,
   );
-  writer.writeString(offsets[5], object.source);
-  writer.writeString(offsets[6], object.writtenBy);
+  writer.writeString(offsets[6], object.source);
+  writer.writeString(offsets[7], object.writtenBy);
 }
 
 LyricCache _lyricCacheDeserialize(
@@ -146,20 +158,21 @@ LyricCache _lyricCacheDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = LyricCache();
-  object.cacheId = reader.readString(offsets[0]);
-  object.contributor = reader.readStringOrNull(offsets[1]);
-  object.copyright = reader.readStringOrNull(offsets[2]);
+  object.artworkUrl = reader.readStringOrNull(offsets[0]);
+  object.cacheId = reader.readString(offsets[1]);
+  object.contributor = reader.readStringOrNull(offsets[2]);
+  object.copyright = reader.readStringOrNull(offsets[3]);
   object.id = id;
-  object.isSynced = reader.readBool(offsets[3]);
+  object.isSynced = reader.readBool(offsets[4]);
   object.lyrics = reader.readObjectList<LyricItem>(
-        offsets[4],
+        offsets[5],
         LyricItemSchema.deserialize,
         allOffsets,
         LyricItem(),
       ) ??
       [];
-  object.source = reader.readString(offsets[5]);
-  object.writtenBy = reader.readStringOrNull(offsets[6]);
+  object.source = reader.readString(offsets[6]);
+  object.writtenBy = reader.readStringOrNull(offsets[7]);
   return object;
 }
 
@@ -171,14 +184,16 @@ P _lyricCacheDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
-    case 1:
       return (reader.readStringOrNull(offset)) as P;
+    case 1:
+      return (reader.readString(offset)) as P;
     case 2:
       return (reader.readStringOrNull(offset)) as P;
     case 3:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 4:
+      return (reader.readBool(offset)) as P;
+    case 5:
       return (reader.readObjectList<LyricItem>(
             offset,
             LyricItemSchema.deserialize,
@@ -186,9 +201,9 @@ P _lyricCacheDeserializeProp<P>(
             LyricItem(),
           ) ??
           []) as P;
-    case 5:
-      return (reader.readString(offset)) as P;
     case 6:
+      return (reader.readString(offset)) as P;
+    case 7:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -386,6 +401,159 @@ extension LyricCacheQueryWhere
 
 extension LyricCacheQueryFilter
     on QueryBuilder<LyricCache, LyricCache, QFilterCondition> {
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      artworkUrlIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'artworkUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      artworkUrlIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'artworkUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> artworkUrlEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'artworkUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      artworkUrlGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'artworkUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      artworkUrlLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'artworkUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> artworkUrlBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'artworkUrl',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      artworkUrlStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'artworkUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      artworkUrlEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'artworkUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      artworkUrlContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'artworkUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> artworkUrlMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'artworkUrl',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      artworkUrlIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'artworkUrl',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      artworkUrlIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'artworkUrl',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> cacheIdEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -1274,6 +1442,18 @@ extension LyricCacheQueryLinks
 
 extension LyricCacheQuerySortBy
     on QueryBuilder<LyricCache, LyricCache, QSortBy> {
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByArtworkUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'artworkUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByArtworkUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'artworkUrl', Sort.desc);
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByCacheId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'cacheId', Sort.asc);
@@ -1349,6 +1529,18 @@ extension LyricCacheQuerySortBy
 
 extension LyricCacheQuerySortThenBy
     on QueryBuilder<LyricCache, LyricCache, QSortThenBy> {
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByArtworkUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'artworkUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByArtworkUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'artworkUrl', Sort.desc);
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByCacheId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'cacheId', Sort.asc);
@@ -1436,6 +1628,13 @@ extension LyricCacheQuerySortThenBy
 
 extension LyricCacheQueryWhereDistinct
     on QueryBuilder<LyricCache, LyricCache, QDistinct> {
+  QueryBuilder<LyricCache, LyricCache, QDistinct> distinctByArtworkUrl(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'artworkUrl', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QDistinct> distinctByCacheId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1483,6 +1682,12 @@ extension LyricCacheQueryProperty
   QueryBuilder<LyricCache, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<LyricCache, String?, QQueryOperations> artworkUrlProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'artworkUrl');
     });
   }
 

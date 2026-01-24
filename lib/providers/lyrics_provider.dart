@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/lyric_model.dart';
 import '../services/media_service.dart';
@@ -7,7 +8,7 @@ import '../services/settings_service.dart';
 import '../services/lyrics_cache_service.dart';
 
 class LyricsProvider with ChangeNotifier {
-  final MediaService _mediaService = LinuxMediaService();
+  final MediaService mediaService = MediaService();
   final LyricsService _lyricsService = LyricsService();
   final SettingsService _settingsService = SettingsService();
   final LyricsCacheService _cacheService = LyricsCacheService();
@@ -24,6 +25,7 @@ class LyricsProvider with ChangeNotifier {
   bool _blurEnabled = true;
   bool _isPlaying = false;
   bool _isLoading = false;
+  bool _androidPermissionGranted = true;
   String _loadingStatus = "";
 
   LyricsProvider() {
@@ -43,6 +45,7 @@ class LyricsProvider with ChangeNotifier {
   bool get blurEnabled => _blurEnabled;
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
+  bool get androidPermissionGranted => _androidPermissionGranted;
   String get loadingStatus => _loadingStatus;
 
   String? get currentCacheId {
@@ -136,6 +139,10 @@ class LyricsProvider with ChangeNotifier {
   }
 
   void _startPolling() {
+    // Initial permission check for Android
+    if (Platform.isAndroid) {
+      _checkAndroidPermission();
+    }
     _pollTimer = Timer.periodic(const Duration(milliseconds: 250), (
       timer,
     ) async {
@@ -148,6 +155,13 @@ class LyricsProvider with ChangeNotifier {
     if (cacheId != null) {
       await _cacheService.clearCache(cacheId);
       if (_currentMetadata != null) {
+        // Force the fetching logic to re-search for artwork by resetting to 'fallback'.
+        // This is only necessary if the system art was 'fallback' (i.e. no local art).
+        final systemMetadata = await mediaService.getMetadata();
+        if (systemMetadata?.artUrl == '' ||
+            systemMetadata?.artUrl == 'fallback') {
+          _currentMetadata = _currentMetadata!.copyWith(artUrl: 'fallback');
+        }
         await _fetchLyrics(_currentMetadata!);
       }
     }
@@ -170,17 +184,30 @@ class LyricsProvider with ChangeNotifier {
     if (_isUpdatingStatus) return;
     _isUpdatingStatus = true;
     try {
-      final metadata = await _mediaService.getMetadata();
-      final isPlaying = await _mediaService.isPlaying();
-      final position = await _mediaService.getPosition();
+      final metadata = await mediaService.getMetadata();
+      final isPlaying = await mediaService.isPlaying();
+      final position = await mediaService.getPosition();
 
       bool metadataChanged = false;
-      if (metadata != _currentMetadata ||
-          (metadata != null &&
+
+      MediaMetadata? processedMetadata = metadata;
+      if (metadata != null &&
+          metadata.artUrl == 'fallback' &&
+          _currentMetadata != null &&
+          _currentMetadata!.artUrl != 'fallback' &&
+          _currentMetadata!.title == metadata.title &&
+          _currentMetadata!.artist == metadata.artist &&
+          _currentMetadata!.album == metadata.album) {
+        // Keep our existing artUrl if the fresh metadata is still reporting 'fallback'
+        processedMetadata = metadata.copyWith(artUrl: _currentMetadata!.artUrl);
+      }
+
+      if (processedMetadata != _currentMetadata ||
+          (processedMetadata != null &&
               _currentMetadata != null &&
               _currentMetadata!.duration.inSeconds == 0 &&
-              metadata.duration.inSeconds > 0)) {
-        _currentMetadata = metadata;
+              processedMetadata.duration.inSeconds > 0)) {
+        _currentMetadata = processedMetadata;
         metadataChanged = true;
         _trackOffset = Duration.zero; // Reset offset for new song
 
@@ -211,6 +238,24 @@ class LyricsProvider with ChangeNotifier {
     }
   }
 
+  Future<void> _checkAndroidPermission() async {
+    final service = mediaService;
+    if (service is AndroidMediaService) {
+      final granted = await service.checkPermission();
+      if (_androidPermissionGranted != granted) {
+        _androidPermissionGranted = granted;
+        notifyListeners();
+      }
+    }
+  }
+
+  void requestAndroidPermission() {
+    final service = mediaService;
+    if (service is AndroidMediaService) {
+      service.openSettings();
+    }
+  }
+
   Future<void> _fetchLyrics(MediaMetadata metadata) async {
     _isLoading = true;
     _loadingStatus = "Starting search...";
@@ -228,13 +273,18 @@ class LyricsProvider with ChangeNotifier {
     if (cached != null) {
       _lyricsResult = cached;
       _isLoading = false;
+      if (_currentMetadata?.artUrl == 'fallback' && cached.artworkUrl != null) {
+        _currentMetadata = _currentMetadata!.copyWith(
+          artUrl: cached.artworkUrl,
+        );
+      }
       _updateCurrentIndex();
       notifyListeners();
       return;
     }
 
     try {
-      final result = await _lyricsService.fetchLyrics(
+      final stream = _lyricsService.fetchLyrics(
         title: metadata.title,
         artist: metadata.artist,
         album: metadata.album,
@@ -246,19 +296,38 @@ class LyricsProvider with ChangeNotifier {
         isCancelled: () => metadata != _currentMetadata,
       );
 
-      if (metadata != _currentMetadata) return;
+      await for (var result in stream) {
+        if (metadata != _currentMetadata) return;
 
-      if (result.lyrics.isNotEmpty &&
-          result.lyrics[0].startTime > const Duration(seconds: 3)) {
-        result.lyrics.insert(0, Lyric(text: '', startTime: Duration.zero));
+        if (result.lyrics.isNotEmpty &&
+            result.lyrics[0].startTime > const Duration(seconds: 3)) {
+          // Ensure we don't modify the same list if it's shared
+          final newLyrics = List<Lyric>.from(result.lyrics);
+          if (newLyrics[0].text.isNotEmpty ||
+              newLyrics[0].startTime > Duration.zero) {
+            newLyrics.insert(0, Lyric(text: '', startTime: Duration.zero));
+          }
+          result = result.copyWith(lyrics: newLyrics);
+        }
+
+        _lyricsResult = result;
+        if (result.lyrics.isNotEmpty) {
+          await _cacheService.cacheLyrics(cacheId, result);
+          _isLoading = false;
+        }
+
+        if (_currentMetadata?.artUrl == 'fallback' &&
+            result.artworkUrl != null) {
+          _currentMetadata = _currentMetadata!.copyWith(
+            artUrl: result.artworkUrl,
+          );
+        }
+
+        _updateCurrentIndex();
+        notifyListeners();
       }
 
-      _lyricsResult = result;
-      if (result.lyrics.isNotEmpty) {
-        await _cacheService.cacheLyrics(cacheId, result);
-      }
       _isLoading = false;
-      _updateCurrentIndex();
       notifyListeners();
     } catch (e) {
       if (metadata != _currentMetadata) return;
@@ -300,7 +369,7 @@ class LyricsProvider with ChangeNotifier {
   @override
   void dispose() {
     _pollTimer?.cancel();
-    _mediaService.dispose();
+    mediaService.dispose();
     super.dispose();
   }
 }

@@ -27,45 +27,13 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
   int _previousIndex = 0;
   String? _lastArtUrl;
-  ImageProvider? _cachedArtProvider;
+  ImageProvider? _foregroundArtProvider;
+  ImageProvider? _backgroundArtProvider;
   bool _isManualScrolling = false;
   Timer? _autoResumeTimer;
-
-  ImageProvider _updateArtProvider(MediaMetadata? metadata) {
-    final artUrl = metadata?.artUrl.trim();
-    final title = metadata?.title;
-    final artist = metadata?.artist;
-
-    if (artUrl != null && artUrl.isNotEmpty) {
-      if (artUrl == _lastArtUrl && _cachedArtProvider != null) {
-        return _cachedArtProvider!;
-      }
-      _lastArtUrl = artUrl;
-      _cachedArtProvider = _getArtProvider(artUrl);
-      _lastTitle = title;
-      _lastArtist = artist;
-    } else {
-      // If artUrl is empty, check if we still have the same song.
-      // If it's the same song, keep the last cached art (prevent flicker).
-      if (title != null &&
-          title == _lastTitle &&
-          artist == _lastArtist &&
-          _cachedArtProvider != null) {
-        return _cachedArtProvider!;
-      }
-
-      // If it's a new song (or no song) and has no art, reset to default.
-      _lastArtUrl = artUrl;
-      _cachedArtProvider = const AssetImage('assets/album_art.png');
-      _lastTitle = title;
-      _lastArtist = artist;
-    }
-
-    return _cachedArtProvider!;
-  }
-
   String? _lastTitle;
   String? _lastArtist;
+  bool _isForceReloading = false;
 
   void _scrollToCurrentIndex(int index, int linesBefore) {
     if (_itemScrollController.isAttached) {
@@ -98,24 +66,38 @@ class _LyricsScreenState extends State<LyricsScreen> {
         });
 
         final metadata = provider.currentMetadata;
-        final artProvider = _updateArtProvider(metadata);
+        _updateArtProviders(
+          metadata,
+          provider.mediaService,
+          forceReload: _isForceReloading,
+        );
+        if (_isForceReloading) _isForceReloading = false;
+
+        final bgArt =
+            _backgroundArtProvider ??
+            _foregroundArtProvider ??
+            const AssetImage('assets/album_art.png');
+        final fgArt =
+            _foregroundArtProvider ?? const AssetImage('assets/album_art.png');
 
         return Scaffold(
           body: Stack(
             children: [
               // Background Layer
-              _buildBackground(artProvider),
+              _buildBackground(bgArt),
 
               // Content Layer
               SafeArea(
                 child: Column(
                   children: [
-                    _buildHeader(provider, artProvider),
+                    _buildHeader(provider, fgArt),
                     Expanded(child: _buildLyricsList(provider)),
                     _buildProgressBar(provider),
                   ],
                 ),
               ),
+              // Permission Overlay
+              _buildPermissionOverlay(provider),
             ],
           ),
         );
@@ -124,19 +106,86 @@ class _LyricsScreenState extends State<LyricsScreen> {
   }
 
   Widget _buildBackground(ImageProvider artProvider) {
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(image: artProvider, fit: BoxFit.cover),
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-        child: Container(color: Colors.black.withAlpha(136)),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 350),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+      child: Container(
+        key: ValueKey(artProvider),
+        decoration: BoxDecoration(
+          image: DecorationImage(image: artProvider, fit: BoxFit.cover),
+        ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+          child: Container(color: Colors.black.withAlpha(136)),
+        ),
       ),
     );
   }
 
-  ImageProvider _getArtProvider(String? artUrl) {
-    if (artUrl == null || artUrl.isEmpty) {
+  void _updateArtProviders(
+    MediaMetadata? metadata,
+    MediaService mediaService, {
+    bool forceReload = false,
+  }) {
+    final artUrl = metadata?.artUrl.trim();
+    final title = metadata?.title;
+    final artist = metadata?.artist;
+
+    final hasValidArt =
+        artUrl != null && artUrl.isNotEmpty && artUrl != 'fallback';
+
+    if (hasValidArt) {
+      if (artUrl != _lastArtUrl || forceReload) {
+        _lastArtUrl = artUrl;
+        _foregroundArtProvider = _getArtProvider(artUrl, mediaService);
+        _precacheAndSwap(_foregroundArtProvider!, artUrl);
+      }
+    } else {
+      // If artUrl is empty/fallback, check if we still have the same song.
+      if (!forceReload && title == _lastTitle && artist == _lastArtist) {
+        // Keep current providers
+      } else {
+        // New song with no art or forced reload
+        if (metadata == null) {
+          _lastArtUrl = null;
+          _foregroundArtProvider = const AssetImage('assets/album_art.png');
+          _backgroundArtProvider = _foregroundArtProvider;
+        } else {
+          // Reset to default but allow fetching logic to trigger again
+          _foregroundArtProvider = const AssetImage('assets/album_art.png');
+          // Don't set background immediately to allow preloading of the new fallback result
+          _lastArtUrl = artUrl;
+        }
+      }
+    }
+
+    _lastTitle = title;
+    _lastArtist = artist;
+  }
+
+  void _precacheAndSwap(ImageProvider provider, String url) {
+    precacheImage(provider, context)
+        .then((_) {
+          if (mounted && _lastArtUrl == url) {
+            setState(() {
+              _backgroundArtProvider = provider;
+            });
+          }
+        })
+        .catchError((e) {
+          // Still swap so errorBuilder can handle it
+          if (mounted && _lastArtUrl == url) {
+            setState(() {
+              _backgroundArtProvider = provider;
+            });
+          }
+        });
+  }
+
+  ImageProvider _getArtProvider(String? artUrl, MediaService mediaService) {
+    if (artUrl == null || artUrl.isEmpty || artUrl == 'fallback') {
       return const AssetImage('assets/album_art.png');
     }
 
@@ -176,7 +225,11 @@ class _LyricsScreenState extends State<LyricsScreen> {
     }
 
     // Fallback to NetworkImage for everything else (http, etc.)
-    return NetworkImage(artUrl);
+    try {
+      return NetworkImage(artUrl);
+    } catch (e) {
+      return const AssetImage('assets/album_art.png');
+    }
   }
 
   Widget _buildHeader(LyricsProvider provider, ImageProvider artProvider) {
@@ -213,15 +266,22 @@ class _LyricsScreenState extends State<LyricsScreen> {
               ],
             ),
           ),
-          Icon(
-            provider.isPlaying ? Icons.graphic_eq : Icons.pause,
-            color: Colors.white.withAlpha(200),
-            size: 24,
-          ),
-          const SizedBox(width: 8),
           IconButton(
             icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
-            onPressed: () => provider.clearCurrentTrackCache(),
+            onPressed: () async {
+              setState(() {
+                _isForceReloading = true;
+                _lastArtUrl = null; // Invalidate current art tracking
+              });
+              // Evict current images from Flutter's memory cache
+              if (_foregroundArtProvider != null) {
+                _foregroundArtProvider!.evict();
+              }
+              if (_backgroundArtProvider != null) {
+                _backgroundArtProvider!.evict();
+              }
+              await provider.clearCurrentTrackCache();
+            },
             tooltip: 'Clear cache & reload',
           ),
           IconButton(
@@ -252,7 +312,17 @@ class _LyricsScreenState extends State<LyricsScreen> {
             offset: const Offset(0, 4),
           ),
         ],
-        image: DecorationImage(image: artImage, fit: BoxFit.cover),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: _DelayedLoadingImage(
+          image: artImage,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('Error loading album art: $error');
+            return Image.asset('assets/album_art.png', fit: BoxFit.cover);
+          },
+        ),
       ),
     );
   }
@@ -527,6 +597,61 @@ class _LyricsScreenState extends State<LyricsScreen> {
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
     return "$twoDigitMinutes:$twoDigitSeconds";
   }
+
+  Widget _buildPermissionOverlay(LyricsProvider provider) {
+    if (provider.androidPermissionGranted) return const SizedBox.shrink();
+
+    return Material(
+      color: Colors.black.withValues(alpha: 0.8),
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.security, color: Colors.white, size: 64),
+            const SizedBox(height: 24),
+            const Text(
+              "Notification Access Required",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Fluent Lyrics needs notification access to read media metadata from other apps.",
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => provider.requestAndroidPermission(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+              ),
+              child: const Text("GRANT ACCESS"),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => provider
+                  .requestAndroidPermission(), // Re-using for now or could just use polling
+              child: const Text(
+                "Already granted? It should update automatically.",
+                style: TextStyle(color: Colors.white38, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _OffsetButton extends StatelessWidget {
@@ -543,6 +668,90 @@ class _OffsetButton extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
+    );
+  }
+}
+
+class _DelayedLoadingImage extends StatefulWidget {
+  final ImageProvider image;
+  final BoxFit fit;
+  final Widget Function(BuildContext, Object, StackTrace?)? errorBuilder;
+
+  const _DelayedLoadingImage({
+    required this.image,
+    required this.fit,
+    this.errorBuilder,
+  });
+
+  @override
+  State<_DelayedLoadingImage> createState() => _DelayedLoadingImageState();
+}
+
+class _DelayedLoadingImageState extends State<_DelayedLoadingImage> {
+  bool _showLoading = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(_DelayedLoadingImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.image != oldWidget.image) {
+      _startTimer();
+    }
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _showLoading = false;
+    _timer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _showLoading = true;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Image(
+      image: widget.image,
+      fit: widget.fit,
+      errorBuilder: widget.errorBuilder,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) {
+          _timer?.cancel();
+          return child;
+        }
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            child,
+            if (_showLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: Colors.white70,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

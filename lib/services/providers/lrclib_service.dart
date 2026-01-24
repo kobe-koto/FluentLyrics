@@ -79,6 +79,7 @@ class LrclibService {
             lyrics: lyrics,
             source: 'LRCLIB',
             isSynced: syncedLyrics != null && syncedLyrics.isNotEmpty,
+            artworkUrl: "", // lrclib doesn't provide artwork
           );
         }
       }

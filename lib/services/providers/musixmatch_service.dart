@@ -82,7 +82,7 @@ class MusixmatchService {
         ).replace(
           queryParameters: {
             'namespace': 'lyrics_richsynched',
-            'optional_calls': 'track.richsync',
+            'optional_calls': 'track.richsync,matcher.track.get',
             'subtitle_format': 'lrc',
             'q_track': track,
             'q_artist': artist,
@@ -98,6 +98,8 @@ class MusixmatchService {
 
     final response = await http.get(url, headers: _headers);
 
+    print(response.body);
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final statusCode = data['message']['header']['status_code'];
@@ -106,38 +108,67 @@ class MusixmatchService {
         final body = data['message']['body'];
         final macroCalls = body['macro_calls'];
         final trackSubtitles = macroCalls['track.subtitles.get'];
+        final matcherTrack = macroCalls['matcher.track.get'];
 
-        if (trackSubtitles != null &&
-            trackSubtitles['message']['header']['status_code'] == 200 &&
-            trackSubtitles['message']['header']['available'] > 0) {
-          final subtitleBody = trackSubtitles['message']['body'];
-          final subtitleList = subtitleBody['subtitle_list'];
-          if (subtitleList != null && subtitleList.isNotEmpty) {
-            final subtitle = subtitleList[0]['subtitle'];
-            final lrc = subtitle['subtitle_body'];
-            final copyrightText = subtitle['lyrics_copyright'] as String?;
-            String? writtenBy;
-            String? copyright;
+        String? artworkUrl;
+        if (matcherTrack != null &&
+            matcherTrack['message'] != null &&
+            matcherTrack['message']['header'] != null &&
+            matcherTrack['message']['header']['status_code'] == 200 &&
+            matcherTrack['message']['body'] != null &&
+            matcherTrack['message']['body']['track'] != null) {
+          final trackBody = matcherTrack['message']['body']['track'];
+          artworkUrl =
+              trackBody['album_coverart_800x800'] ??
+              trackBody['album_coverart_500x500'] ??
+              trackBody['album_coverart_350x350'] ??
+              trackBody['album_coverart_100x100'];
+        }
 
-            if (copyrightText != null && copyrightText.isNotEmpty) {
-              final lines = copyrightText.split('\n');
-              for (var line in lines) {
-                final trimmedLine = line.trim();
-                if (trimmedLine.startsWith('Writer(s):')) {
-                  writtenBy = trimmedLine.substring('Writer(s):'.length).trim();
-                } else if (trimmedLine.startsWith('Copyright:')) {
-                  copyright = trimmedLine.substring('Copyright:'.length).trim();
+        if (artworkUrl != null ||
+            (trackSubtitles != null &&
+                trackSubtitles['message']['header']['status_code'] == 200 &&
+                trackSubtitles['message']['header']['available'] > 0)) {
+          List<Lyric> lyrics = [];
+          String? writtenBy;
+          String? copyright;
+
+          if (trackSubtitles != null &&
+              trackSubtitles['message']['header']['status_code'] == 200 &&
+              trackSubtitles['message']['header']['available'] > 0) {
+            final subtitleBody = trackSubtitles['message']['body'];
+            final subtitleList = subtitleBody['subtitle_list'];
+            if (subtitleList != null && subtitleList.isNotEmpty) {
+              final subtitle = subtitleList[0]['subtitle'];
+              final lrc = subtitle['subtitle_body'];
+              final copyrightText = subtitle['lyrics_copyright'] as String?;
+
+              if (copyrightText != null && copyrightText.isNotEmpty) {
+                final lines = copyrightText.split('\n');
+                for (var line in lines) {
+                  final trimmedLine = line.trim();
+                  if (trimmedLine.startsWith('Writer(s):')) {
+                    writtenBy = trimmedLine
+                        .substring('Writer(s):'.length)
+                        .trim();
+                  } else if (trimmedLine.startsWith('Copyright:')) {
+                    copyright = trimmedLine
+                        .substring('Copyright:'.length)
+                        .trim();
+                  }
                 }
               }
+              lyrics = LrcParser.parse(lrc);
             }
-
-            return LyricsResult(
-              lyrics: LrcParser.parse(lrc),
-              source: 'Musixmatch',
-              writtenBy: writtenBy,
-              copyright: copyright,
-            );
           }
+
+          return LyricsResult(
+            lyrics: lyrics,
+            source: 'Musixmatch',
+            writtenBy: writtenBy,
+            copyright: copyright,
+            artworkUrl: artworkUrl,
+          );
         }
       } else if (statusCode == 401) {
         // Token expired?

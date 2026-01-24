@@ -59,6 +59,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   isar_generator: ^3.1.0+1
   build_runner: ^2.4.13
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -101,3 +102,8 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  image_path: "assets/logo.png"
+  min_sdk_android: 28 # android min sdk version

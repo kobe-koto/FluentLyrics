@@ -22,6 +22,7 @@ class LyricsResult {
   final String? writtenBy;
   final String? contributor;
   final String? copyright;
+  final String? artworkUrl;
 
   LyricsResult({
     required this.lyrics,
@@ -30,7 +31,28 @@ class LyricsResult {
     this.writtenBy,
     this.contributor,
     this.copyright,
+    this.artworkUrl,
   }) : isSynced = isSynced ?? _checkIfSynced(lyrics);
+
+  LyricsResult copyWith({
+    List<Lyric>? lyrics,
+    String? source,
+    bool? isSynced,
+    String? writtenBy,
+    String? contributor,
+    String? copyright,
+    String? artworkUrl,
+  }) {
+    return LyricsResult(
+      lyrics: lyrics ?? this.lyrics,
+      source: source ?? this.source,
+      isSynced: isSynced ?? this.isSynced,
+      writtenBy: writtenBy ?? this.writtenBy,
+      contributor: contributor ?? this.contributor,
+      copyright: copyright ?? this.copyright,
+      artworkUrl: artworkUrl ?? this.artworkUrl,
+    );
+  }
 
   static bool _checkIfSynced(List<Lyric> lyrics) {
     if (lyrics.isEmpty) return false;
@@ -42,7 +64,7 @@ class LyricsResult {
   }
 
   static LyricsResult empty() =>
-      LyricsResult(lyrics: [], source: '', isSynced: false);
+      LyricsResult(lyrics: [], source: '', isSynced: false, artworkUrl: null);
 
   Map<String, dynamic> toJson() => {
     'lyrics': lyrics.map((l) => l.toJson()).toList(),
@@ -51,6 +73,7 @@ class LyricsResult {
     'writtenBy': writtenBy,
     'contributor': contributor,
     'copyright': copyright,
+    'artworkUrl': artworkUrl,
   };
 
   factory LyricsResult.fromJson(Map<String, dynamic> json) => LyricsResult(
@@ -62,5 +85,6 @@ class LyricsResult {
     writtenBy: json['writtenBy'] as String?,
     contributor: json['contributor'] as String?,
     copyright: json['copyright'] as String?,
+    artworkUrl: json['artworkUrl'] as String?,
   );
 }

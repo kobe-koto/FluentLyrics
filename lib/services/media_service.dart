@@ -1,4 +1,6 @@
 import 'package:dbus/dbus.dart';
+import 'package:flutter/services.dart';
+import 'dart:io';
 
 class MediaMetadata {
   final String title;
@@ -14,6 +16,22 @@ class MediaMetadata {
     required this.duration,
     required this.artUrl,
   });
+
+  MediaMetadata copyWith({
+    String? title,
+    String? artist,
+    String? album,
+    Duration? duration,
+    String? artUrl,
+  }) {
+    return MediaMetadata(
+      title: title ?? this.title,
+      artist: artist ?? this.artist,
+      album: album ?? this.album,
+      duration: duration ?? this.duration,
+      artUrl: artUrl ?? this.artUrl,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -35,6 +53,15 @@ abstract class MediaService {
   Future<Duration> getPosition();
   Future<bool> isPlaying();
   void dispose();
+
+  factory MediaService() {
+    if (Platform.isLinux) {
+      return LinuxMediaService();
+    } else if (Platform.isAndroid) {
+      return AndroidMediaService();
+    }
+    throw UnsupportedError('Platform not supported');
+  }
 }
 
 class LinuxMediaService implements MediaService {
@@ -237,5 +264,64 @@ class LinuxMediaService implements MediaService {
   @override
   void dispose() {
     _client.close();
+  }
+}
+
+class AndroidMediaService implements MediaService {
+  static const MethodChannel _channel = MethodChannel(
+    'cc.koto.fluent_lyrics/media',
+  );
+
+  @override
+  Future<MediaMetadata?> getMetadata() async {
+    try {
+      final Map<dynamic, dynamic>? result = await _channel.invokeMethod(
+        'getMetadata',
+      );
+      if (result == null) return null;
+
+      return MediaMetadata(
+        title: result['title'] ?? 'Unknown Title',
+        artist: result['artist'] ?? 'Unknown Artist',
+        album: result['album'] ?? 'Unknown Album',
+        duration: Duration(milliseconds: result['duration'] ?? 0),
+        artUrl: result['artUrl'] ?? '',
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<Duration> getPosition() async {
+    try {
+      final int? position = await _channel.invokeMethod('getPosition');
+      return Duration(milliseconds: position ?? 0);
+    } catch (e) {
+      return Duration.zero;
+    }
+  }
+
+  @override
+  Future<bool> isPlaying() async {
+    try {
+      final bool? isPlaying = await _channel.invokeMethod('isPlaying');
+      return isPlaying ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  void dispose() {
+    // No specific resources to dispose for Android MethodChannel
+  }
+
+  Future<bool> checkPermission() async {
+    return await _channel.invokeMethod('checkPermission');
+  }
+
+  Future<void> openSettings() async {
+    await _channel.invokeMethod('openPermissionSettings');
   }
 }
