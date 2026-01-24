@@ -202,6 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       thumbColor: Colors.blue,
                       overlayColor: Colors.blue.withValues(alpha: 0.2),
                       showValueIndicator: ShowValueIndicator.onDrag,
+                      year2023: false,
                     ),
                     child: Slider(
                       value: provider.linesBefore.toDouble(),
@@ -280,6 +281,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       thumbColor: Colors.blue,
                       overlayColor: Colors.blue.withValues(alpha: 0.2),
                       showValueIndicator: ShowValueIndicator.onDrag,
+                      year2023: false,
                     ),
                     child: Slider(
                       value: (provider.globalOffset.inMilliseconds / 100)
@@ -362,6 +364,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       thumbColor: Colors.blue,
                       overlayColor: Colors.blue.withValues(alpha: 0.2),
                       showValueIndicator: ShowValueIndicator.always,
+                      year2023: false,
                     ),
                     child: Slider(
                       value: provider.scrollAutoResumeDelay.toDouble(),
