@@ -640,10 +640,9 @@ class _LyricsScreenState extends State<LyricsScreen> {
             ),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: () => provider
-                  .requestAndroidPermission(), // Re-using for now or could just use polling
+              onPressed: () => provider.checkAndroidPermission(),
               child: const Text(
-                "Already granted? It should update automatically.",
+                "Already granted? Tap to check now.",
                 style: TextStyle(color: Colors.white38, fontSize: 12),
               ),
             ),

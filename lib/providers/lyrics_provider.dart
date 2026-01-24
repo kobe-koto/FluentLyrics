@@ -139,13 +139,24 @@ class LyricsProvider with ChangeNotifier {
   }
 
   void _startPolling() {
-    // Initial permission check for Android
+    // Initial check
     if (Platform.isAndroid) {
-      _checkAndroidPermission();
+      checkAndroidPermission();
     }
+
+    int permissionTicks = 0;
     _pollTimer = Timer.periodic(const Duration(milliseconds: 250), (
       timer,
     ) async {
+      if (Platform.isAndroid) {
+        permissionTicks++;
+        // Check every 250ms if not granted (for responsive closing)
+        // Check every 2 seconds if already granted (to detect revocation)
+        if (!_androidPermissionGranted || permissionTicks >= 8) {
+          permissionTicks = 0;
+          await checkAndroidPermission();
+        }
+      }
       await _updateStatus();
     });
   }
@@ -238,7 +249,7 @@ class LyricsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _checkAndroidPermission() async {
+  Future<void> checkAndroidPermission() async {
     final service = mediaService;
     if (service is AndroidMediaService) {
       final granted = await service.checkPermission();
