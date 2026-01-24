@@ -1,8 +1,39 @@
 import 'package:flutter/material.dart';
 
-class InterludeIndicator extends StatelessWidget {
+class InterludeIndicator extends StatefulWidget {
   final double progress;
   const InterludeIndicator({super.key, required this.progress});
+
+  @override
+  State<InterludeIndicator> createState() => _InterludeIndicatorState();
+}
+
+class _InterludeIndicatorState extends State<InterludeIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _breathingController;
+  late Animation<double> _breathingAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _breathingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1350),
+    )..repeat(reverse: true);
+
+    _breathingAnimation = Tween<double>(begin: 0.98, end: 1.02).animate(
+      CurvedAnimation(
+        parent: _breathingController,
+        curve: Curves.easeInOutSine,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _breathingController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,8 +45,11 @@ class InterludeIndicator extends StatelessWidget {
 
     // Target scale for the entire widget
     double targetScale = 1.0;
-    if (progress >= totalDotWindow) {
-      targetScale = ((1.0 - progress) / (1.0 - totalDotWindow)).clamp(0.0, 1.0);
+    if (widget.progress >= totalDotWindow) {
+      targetScale = ((1.0 - widget.progress) / (1.0 - totalDotWindow)).clamp(
+        0.0,
+        1.0,
+      );
     }
 
     return Container(
@@ -29,17 +63,33 @@ class InterludeIndicator extends StatelessWidget {
         child: AnimatedOpacity(
           opacity: targetScale,
           duration: const Duration(milliseconds: 250),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _AnimatedDot(progress: (progress / d).clamp(0.0, 1.0)),
-              _AnimatedDot(
-                progress: ((progress - (step * d)) / d).clamp(0.0, 1.0),
-              ),
-              _AnimatedDot(
-                progress: ((progress - (2 * step * d)) / d).clamp(0.0, 1.0),
-              ),
-            ],
+          child: AnimatedBuilder(
+            animation: _breathingAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _breathingAnimation.value,
+                alignment: Alignment.centerLeft,
+                child: child,
+              );
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _AnimatedDot(progress: (widget.progress / d).clamp(0.0, 1.0)),
+                _AnimatedDot(
+                  progress: ((widget.progress - (step * d)) / d).clamp(
+                    0.0,
+                    1.0,
+                  ),
+                ),
+                _AnimatedDot(
+                  progress: ((widget.progress - (2 * step * d)) / d).clamp(
+                    0.0,
+                    1.0,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
