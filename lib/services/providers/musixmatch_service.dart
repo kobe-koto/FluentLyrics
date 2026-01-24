@@ -127,7 +127,11 @@ class MusixmatchService {
                 trackBody['album_coverart_350x350'],
                 trackBody['album_coverart_100x100'],
               ].firstWhere(
-                (url) => url != null && url is String && url.isNotEmpty,
+                (url) =>
+                    url != null &&
+                    url is String &&
+                    url.isNotEmpty &&
+                    !url.contains('nocover.png'),
                 orElse: () => null,
               );
         }
