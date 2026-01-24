@@ -57,7 +57,9 @@ class MusixmatchService {
       'https://apic-desktop.musixmatch.com/ws/1.1/token.get?app_id=$_appId&t=$t',
     );
     try {
-      final response = await http.get(url, headers: _headers);
+      final response = await http
+          .get(url, headers: _headers)
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -96,7 +98,9 @@ class MusixmatchService {
           },
         );
 
-    final response = await http.get(url, headers: _headers);
+    final response = await http
+        .get(url, headers: _headers)
+        .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);

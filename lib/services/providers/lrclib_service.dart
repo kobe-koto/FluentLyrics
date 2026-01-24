@@ -27,7 +27,7 @@ class LrclibService {
 
       onStatusUpdate?.call("Searching lyrics on LRCLIB...");
 
-      final response = await http.get(uri);
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> results = jsonDecode(response.body);

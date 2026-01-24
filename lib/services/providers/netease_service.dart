@@ -59,11 +59,9 @@ class NeteaseService {
       final encrypted = _NeteaseEapiHelper.encrypt(eapiSearchUrl, eapiData);
       final headers = _NeteaseEapiHelper.buildHeaders(eapiHeader);
 
-      final searchResponse = await http.post(
-        Uri.parse(eapiSearchUrl),
-        headers: headers,
-        body: encrypted,
-      );
+      final searchResponse = await http
+          .post(Uri.parse(eapiSearchUrl), headers: headers, body: encrypted)
+          .timeout(const Duration(seconds: 10));
 
       if (searchResponse.statusCode != 200) {
         print('Netease search failed: ${searchResponse.statusCode}');
@@ -122,7 +120,9 @@ class NeteaseService {
         queryParameters: {'id': songId, 'lv': '1', 'kv': '1', 'tv': '-1'},
       );
 
-      final lyricResponse = await http.get(lyricUri, headers: _headers);
+      final lyricResponse = await http
+          .get(lyricUri, headers: _headers)
+          .timeout(const Duration(seconds: 10));
       if (lyricResponse.statusCode != 200) {
         print('Netease lyric fetch failed: ${lyricResponse.statusCode}');
         return LyricsResult.empty();

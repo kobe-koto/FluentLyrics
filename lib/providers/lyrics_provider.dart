@@ -213,11 +213,16 @@ class LyricsProvider with ChangeNotifier {
         processedMetadata = metadata.copyWith(artUrl: _currentMetadata!.artUrl);
       }
 
-      if (processedMetadata != _currentMetadata ||
-          (processedMetadata != null &&
-              _currentMetadata != null &&
-              _currentMetadata!.duration.inSeconds == 0 &&
-              processedMetadata.duration.inSeconds > 0)) {
+      final trackChanged = processedMetadata == null
+          ? _currentMetadata != null
+          : !processedMetadata.isSameTrack(_currentMetadata);
+      final durationBecameValid =
+          processedMetadata != null &&
+          _currentMetadata != null &&
+          _currentMetadata!.duration.inSeconds == 0 &&
+          processedMetadata.duration.inSeconds > 0;
+
+      if (trackChanged || durationBecameValid) {
         _currentMetadata = processedMetadata;
         metadataChanged = true;
         _trackOffset = Duration.zero; // Reset offset for new song
@@ -235,6 +240,10 @@ class LyricsProvider with ChangeNotifier {
           _lyricsResult = LyricsResult.empty();
           notifyListeners();
         }
+      } else if (processedMetadata != _currentMetadata) {
+        // Only artUrl or something else minor changed
+        _currentMetadata = processedMetadata;
+        metadataChanged = true;
       }
 
       _isPlaying = isPlaying;
@@ -304,11 +313,11 @@ class LyricsProvider with ChangeNotifier {
           _loadingStatus = status;
           notifyListeners();
         },
-        isCancelled: () => metadata != _currentMetadata,
+        isCancelled: () => !metadata.isSameTrack(_currentMetadata),
       );
 
       await for (var result in stream) {
-        if (metadata != _currentMetadata) return;
+        if (!metadata.isSameTrack(_currentMetadata)) return;
         result = result.trim();
 
         if (result.lyrics.isNotEmpty &&
@@ -338,14 +347,14 @@ class LyricsProvider with ChangeNotifier {
         _updateCurrentIndex();
         notifyListeners();
       }
-
-      _isLoading = false;
-      notifyListeners();
     } catch (e) {
-      if (metadata != _currentMetadata) return;
-      _isLoading = false;
+      if (!metadata.isSameTrack(_currentMetadata)) return;
       _loadingStatus = "Error: $e";
-      notifyListeners();
+    } finally {
+      if (metadata.isSameTrack(_currentMetadata)) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 

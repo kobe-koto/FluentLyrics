@@ -46,6 +46,14 @@ class MediaMetadata {
   @override
   int get hashCode =>
       title.hashCode ^ artist.hashCode ^ album.hashCode ^ artUrl.hashCode;
+
+  bool isSameTrack(MediaMetadata? other) {
+    if (other == null) return false;
+    return title == other.title &&
+        artist == other.artist &&
+        album == other.album &&
+        duration.inSeconds == other.duration.inSeconds;
+  }
 }
 
 abstract class MediaService {
