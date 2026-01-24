@@ -363,7 +363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       inactiveTrackColor: Colors.white10,
                       thumbColor: Colors.blue,
                       overlayColor: Colors.blue.withValues(alpha: 0.2),
-                      showValueIndicator: ShowValueIndicator.always,
+                      showValueIndicator: ShowValueIndicator.onDrag,
                       year2023: false,
                     ),
                     child: Slider(
