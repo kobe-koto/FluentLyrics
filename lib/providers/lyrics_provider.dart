@@ -331,6 +331,8 @@ class LyricsProvider with ChangeNotifier {
       await for (var result in stream) {
         if (!metadata.isSameTrack(_currentMetadata)) return;
 
+        result = result.trim();
+
         if (result.lyrics.isNotEmpty &&
             result.lyrics[0].startTime > const Duration(seconds: 3)) {
           // Ensure we don't modify the same list if it's shared
