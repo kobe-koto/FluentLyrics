@@ -330,6 +330,7 @@ class LyricsProvider with ChangeNotifier {
         trimMetadataProviders: _trimMetadataProviders,
       );
 
+      // instert the prelude indication line
       await for (var result in stream) {
         if (!metadata.isSameTrack(_currentMetadata)) return;
         result = result.trim();
