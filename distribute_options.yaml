@@ -6,13 +6,18 @@ releases:
         package:
           platform: linux
           target: appimage
+          build_args:
+            profile: true
       - name: release-linux-zip
         package:
           platform: linux
           target: zip
+          build_args:
+            profile: true
       - name: release-android
         package:
           platform: android
           target: apk
           build_args:
+            profile: true
             split-per-abi:
