@@ -163,7 +163,9 @@ class NeteaseService {
           source: 'Netease Music',
           contributor: contributor,
           artworkUrl: artworkUrl,
-          writtenBy: parseResult.trimmedMetadata['作词'],
+          writtenBy:
+              parseResult.trimmedMetadata['作词'] ??
+              parseResult.trimmedMetadata['作詞'],
           isPureMusic: isPureMusic,
         );
       } else {
