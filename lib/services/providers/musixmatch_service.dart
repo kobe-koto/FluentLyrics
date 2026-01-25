@@ -137,40 +137,59 @@ class MusixmatchService {
               );
         }
 
+        bool isInstrumental = false;
+        if (trackSubtitles != null &&
+            trackSubtitles['message'] != null &&
+            trackSubtitles['message']['header'] != null &&
+            trackSubtitles['message']['header']['lyrics'] != null) {
+          isInstrumental =
+              trackSubtitles['message']['header']['lyrics']['instrumental'] ==
+              1;
+        }
+
         if (artworkUrl != null ||
+            isInstrumental ||
             (trackSubtitles != null &&
                 trackSubtitles['message']['header']['status_code'] == 200 &&
                 trackSubtitles['message']['header']['available'] > 0)) {
           List<Lyric> lyrics = [];
           String? writtenBy;
           String? copyright;
+          bool isPureMusic = isInstrumental;
 
           if (trackSubtitles != null &&
-              trackSubtitles['message']['header']['status_code'] == 200 &&
-              trackSubtitles['message']['header']['available'] > 0) {
-            final subtitleBody = trackSubtitles['message']['body'];
-            final subtitleList = subtitleBody['subtitle_list'];
-            if (subtitleList != null && subtitleList.isNotEmpty) {
-              final subtitle = subtitleList[0]['subtitle'];
-              final lrc = subtitle['subtitle_body'];
-              final copyrightText = subtitle['lyrics_copyright'] as String?;
+              trackSubtitles['message']['header']['status_code'] == 200) {
+            final header = trackSubtitles['message']['header'];
+            final lyricsHeader = header['lyrics'];
+            if (lyricsHeader != null) {
+              isPureMusic = lyricsHeader['instrumental'] == 1;
+            }
 
-              if (copyrightText != null && copyrightText.isNotEmpty) {
-                final lines = copyrightText.split('\n');
-                for (var line in lines) {
-                  final trimmedLine = line.trim();
-                  if (trimmedLine.startsWith('Writer(s):')) {
-                    writtenBy = trimmedLine
-                        .substring('Writer(s):'.length)
-                        .trim();
-                  } else if (trimmedLine.startsWith('Copyright:')) {
-                    copyright = trimmedLine
-                        .substring('Copyright:'.length)
-                        .trim();
+            if (header['available'] > 0) {
+              final subtitleBody = trackSubtitles['message']['body'];
+              final subtitleList = subtitleBody['subtitle_list'];
+              if (subtitleList != null && subtitleList.isNotEmpty) {
+                final subtitle = subtitleList[0]['subtitle'];
+                final lrc = subtitle['subtitle_body'];
+                final copyrightText = subtitle['lyrics_copyright'] as String?;
+
+                if (copyrightText != null && copyrightText.isNotEmpty) {
+                  final lines = copyrightText.split('\n');
+                  for (var line in lines) {
+                    final trimmedLine = line.trim();
+                    if (trimmedLine.startsWith('Writer(s):')) {
+                      writtenBy = trimmedLine
+                          .substring('Writer(s):'.length)
+                          .trim();
+                    } else if (trimmedLine.startsWith('Copyright:')) {
+                      copyright = trimmedLine
+                          .substring('Copyright:'.length)
+                          .trim();
+                    }
                   }
                 }
+                lyrics = LrcParser.parse(lrc).lyrics;
               }
-              lyrics = LrcParser.parse(lrc).lyrics;
             }
           }
 
@@ -180,6 +199,7 @@ class MusixmatchService {
             writtenBy: writtenBy,
             copyright: copyright,
             artworkUrl: artworkUrl,
+            isPureMusic: isPureMusic,
           );
         }
       } else if (statusCode == 401) {

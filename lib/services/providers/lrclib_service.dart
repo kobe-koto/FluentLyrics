@@ -63,6 +63,7 @@ class LrclibService {
 
         final String? syncedLyrics = selectedResult['syncedLyrics'];
         final String? plainLyrics = selectedResult['plainLyrics'];
+        final bool isInstrumental = selectedResult['instrumental'] == true;
 
         onStatusUpdate?.call("Processing lyrics...");
         List<Lyric> lyrics = [];
@@ -75,12 +76,13 @@ class LrclibService {
               .toList();
         }
 
-        if (lyrics.isNotEmpty) {
+        if (lyrics.isNotEmpty || isInstrumental) {
           return LyricsResult(
             lyrics: lyrics,
             source: 'LRCLIB',
             isSynced: syncedLyrics != null && syncedLyrics.isNotEmpty,
             artworkUrl: null, // lrclib doesn't provide artwork
+            isPureMusic: isInstrumental,
           );
         }
       }

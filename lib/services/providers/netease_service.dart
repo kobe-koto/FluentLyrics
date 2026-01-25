@@ -134,6 +134,7 @@ class NeteaseService {
 
       final lyricData = jsonDecode(lyricResponse.body);
       final String? lrc = lyricData['lrc']?['lyric'];
+      final bool isPureMusic = lyricData['pureMusic'] == true;
 
       String? contributor;
       final lyricUser = lyricData['lyricUser'];
@@ -150,7 +151,9 @@ class NeteaseService {
         }
       }
 
-      if ((lrc != null && lrc.isNotEmpty) || artworkUrl != null) {
+      if ((lrc != null && lrc.isNotEmpty) ||
+          artworkUrl != null ||
+          isPureMusic) {
         onStatusUpdate?.call("Processing lyrics...");
         final parseResult = lrc != null
             ? LrcParser.parse(lrc, trimMetadata: trimMetadata)
@@ -161,6 +164,7 @@ class NeteaseService {
           contributor: contributor,
           artworkUrl: artworkUrl,
           writtenBy: parseResult.trimmedMetadata['作词'],
+          isPureMusic: isPureMusic,
         );
       } else {
         debugPrint('Netease returned no lyrics or artwork for songId: $songId');

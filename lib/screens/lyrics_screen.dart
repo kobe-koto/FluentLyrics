@@ -358,13 +358,18 @@ class _LyricsScreenState extends State<LyricsScreen> {
     }
 
     if (provider.lyrics.isEmpty) {
+      String message = "No lyrics found for this track";
+      if (provider.currentMetadata == null) {
+        message = "Start playing music";
+      } else if (provider.lyricsResult.isPureMusic) {
+        message = "Pure Music / Instrumental";
+      }
+
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40.0),
           child: Text(
-            provider.currentMetadata == null
-                ? "Start playing music"
-                : "No lyrics found for this track",
+            message,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.4),

@@ -346,7 +346,7 @@ class LyricsProvider with ChangeNotifier {
         }
 
         _lyricsResult = result;
-        if (result.lyrics.isNotEmpty) {
+        if (result.lyrics.isNotEmpty || result.isPureMusic) {
           await _cacheService.cacheLyrics(cacheId, result);
           _isLoading = false;
         }

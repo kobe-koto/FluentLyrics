@@ -30,7 +30,7 @@ class LyricsService {
 
       LyricsResult result = LyricsResult.empty();
       final shouldTrimMetadata = trimMetadataProviders.contains(provider);
-      
+
       if (provider == LyricProviderType.lrclib) {
         result = await _lrclibService.fetchLyrics(
           title: title,
@@ -57,14 +57,26 @@ class LyricsService {
         );
       }
 
-      if (result.lyrics.isNotEmpty || result.artworkUrl != null) {
+      if (result.lyrics.isNotEmpty ||
+          result.artworkUrl != null ||
+          result.isPureMusic) {
         if (bestResult == null) {
           bestResult = result;
         } else {
-          // If the new result has lyrics and the current best doesn't, or if the new one is synced and old isn't.
-          if (result.lyrics.isNotEmpty &&
-              (bestResult.lyrics.isEmpty ||
-                  (result.isSynced && !bestResult.isSynced))) {
+          // If the new result has lyrics/pureMusic and the current best doesn't,
+          // or if the new one is synced and old isn't.
+          bool newBetter = false;
+          if (result.isPureMusic && !bestResult.isPureMusic) {
+            newBetter = true;
+          } else if (result.lyrics.isNotEmpty && bestResult.lyrics.isEmpty) {
+            newBetter = true;
+          } else if (result.lyrics.isNotEmpty &&
+              result.isSynced &&
+              !bestResult.isSynced) {
+            newBetter = true;
+          }
+
+          if (newBetter) {
             bestResult = result.copyWith(
               lyrics: result.lyrics,
               source: result.source,
@@ -73,6 +85,7 @@ class LyricsService {
               contributor: result.contributor,
               copyright: result.copyright,
               artworkUrl: result.artworkUrl ?? bestResult.artworkUrl,
+              isPureMusic: result.isPureMusic,
             );
           } else {
             // Keep existing lyrics, but take artwork if missing.
@@ -84,10 +97,10 @@ class LyricsService {
         yield bestResult;
       }
 
-      // If we have synced lyrics AND artwork, we can stop early.
+      // If we have (synced lyrics OR pure music) AND artwork, we can stop early.
       if (bestResult != null &&
-          bestResult.lyrics.isNotEmpty &&
-          bestResult.isSynced &&
+          (bestResult.isPureMusic ||
+              (bestResult.lyrics.isNotEmpty && bestResult.isSynced)) &&
           bestResult.artworkUrl != null) {
         return;
       }

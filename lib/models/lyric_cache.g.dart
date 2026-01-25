@@ -37,24 +37,29 @@ const LyricCacheSchema = CollectionSchema(
       name: r'copyright',
       type: IsarType.string,
     ),
-    r'isSynced': PropertySchema(
+    r'isPureMusic': PropertySchema(
       id: 4,
+      name: r'isPureMusic',
+      type: IsarType.bool,
+    ),
+    r'isSynced': PropertySchema(
+      id: 5,
       name: r'isSynced',
       type: IsarType.bool,
     ),
     r'lyrics': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'lyrics',
       type: IsarType.objectList,
       target: r'LyricItem',
     ),
     r'source': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'source',
       type: IsarType.string,
     ),
     r'writtenBy': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'writtenBy',
       type: IsarType.string,
     )
@@ -140,15 +145,16 @@ void _lyricCacheSerialize(
   writer.writeString(offsets[1], object.cacheId);
   writer.writeString(offsets[2], object.contributor);
   writer.writeString(offsets[3], object.copyright);
-  writer.writeBool(offsets[4], object.isSynced);
+  writer.writeBool(offsets[4], object.isPureMusic);
+  writer.writeBool(offsets[5], object.isSynced);
   writer.writeObjectList<LyricItem>(
-    offsets[5],
+    offsets[6],
     allOffsets,
     LyricItemSchema.serialize,
     object.lyrics,
   );
-  writer.writeString(offsets[6], object.source);
-  writer.writeString(offsets[7], object.writtenBy);
+  writer.writeString(offsets[7], object.source);
+  writer.writeString(offsets[8], object.writtenBy);
 }
 
 LyricCache _lyricCacheDeserialize(
@@ -163,16 +169,17 @@ LyricCache _lyricCacheDeserialize(
   object.contributor = reader.readStringOrNull(offsets[2]);
   object.copyright = reader.readStringOrNull(offsets[3]);
   object.id = id;
-  object.isSynced = reader.readBool(offsets[4]);
+  object.isPureMusic = reader.readBool(offsets[4]);
+  object.isSynced = reader.readBool(offsets[5]);
   object.lyrics = reader.readObjectList<LyricItem>(
-        offsets[5],
+        offsets[6],
         LyricItemSchema.deserialize,
         allOffsets,
         LyricItem(),
       ) ??
       [];
-  object.source = reader.readString(offsets[6]);
-  object.writtenBy = reader.readStringOrNull(offsets[7]);
+  object.source = reader.readString(offsets[7]);
+  object.writtenBy = reader.readStringOrNull(offsets[8]);
   return object;
 }
 
@@ -194,6 +201,8 @@ P _lyricCacheDeserializeProp<P>(
     case 4:
       return (reader.readBool(offset)) as P;
     case 5:
+      return (reader.readBool(offset)) as P;
+    case 6:
       return (reader.readObjectList<LyricItem>(
             offset,
             LyricItemSchema.deserialize,
@@ -201,9 +210,9 @@ P _lyricCacheDeserializeProp<P>(
             LyricItem(),
           ) ??
           []) as P;
-    case 6:
-      return (reader.readString(offset)) as P;
     case 7:
+      return (reader.readString(offset)) as P;
+    case 8:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1045,6 +1054,16 @@ extension LyricCacheQueryFilter
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      isPureMusicEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isPureMusic',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> isSyncedEqualTo(
       bool value) {
     return QueryBuilder.apply(this, (query) {
@@ -1490,6 +1509,18 @@ extension LyricCacheQuerySortBy
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByIsPureMusic() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPureMusic', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByIsPureMusicDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPureMusic', Sort.desc);
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByIsSynced() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isSynced', Sort.asc);
@@ -1589,6 +1620,18 @@ extension LyricCacheQuerySortThenBy
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByIsPureMusic() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPureMusic', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByIsPureMusicDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPureMusic', Sort.desc);
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByIsSynced() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isSynced', Sort.asc);
@@ -1656,6 +1699,12 @@ extension LyricCacheQueryWhereDistinct
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QDistinct> distinctByIsPureMusic() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isPureMusic');
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QDistinct> distinctByIsSynced() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isSynced');
@@ -1706,6 +1755,12 @@ extension LyricCacheQueryProperty
   QueryBuilder<LyricCache, String?, QQueryOperations> copyrightProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'copyright');
+    });
+  }
+
+  QueryBuilder<LyricCache, bool, QQueryOperations> isPureMusicProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isPureMusic');
     });
   }
 
