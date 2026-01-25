@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
 import '../services/providers/musixmatch_service.dart';
 import '../providers/lyrics_provider.dart';
+import '../widgets/settings_slider_card.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -94,6 +95,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -141,7 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               const SizedBox(height: 48),
                               _buildDisplaySection(),
                               const SizedBox(height: 48),
-                              _buildMusixmatchSection(),
+                              _buildLyricConfigurationSection(),
                               const SizedBox(height: 48),
                               _buildCacheSection(),
                               const SizedBox(height: 48),
@@ -155,567 +162,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDisplaySection() {
-    return Consumer<LyricsProvider>(
-      builder: (context, provider, child) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'DISPLAY CONFIGURATION',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Adjust how lyrics are displayed and scrolled.',
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Lines Before Active',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '${provider.linesBefore}',
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Number of preceding lines to show when auto-scrolling.',
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Colors.blue,
-                      inactiveTrackColor: Colors.white10,
-                      thumbColor: Colors.blue,
-                      overlayColor: Colors.blue.withValues(alpha: 0.2),
-                      showValueIndicator: ShowValueIndicator.onDrag,
-                      year2023: false,
-                    ),
-                    child: Slider(
-                      value: provider.linesBefore.toDouble(),
-                      min: 0,
-                      max: 5,
-                      divisions: 5,
-                      label: provider.linesBefore.toString(),
-                      onChanged: (value) {
-                        provider.setLinesBefore(value.toInt());
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Global Lyrics Offset',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          if (provider.globalOffset != Duration.zero)
-                            IconButton(
-                              icon: const Icon(
-                                Icons.refresh,
-                                size: 18,
-                                color: Colors.blue,
-                              ),
-                              onPressed: () =>
-                                  provider.setGlobalOffset(Duration.zero),
-                              tooltip: 'Reset to 0s',
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${(provider.globalOffset.inMilliseconds / 1000.0).toStringAsFixed(1)}s',
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Set a default offset for all lyrics (e.g. if your device has audio latency).',
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Colors.blue,
-                      inactiveTrackColor: Colors.white10,
-                      thumbColor: Colors.blue,
-                      overlayColor: Colors.blue.withValues(alpha: 0.2),
-                      showValueIndicator: ShowValueIndicator.onDrag,
-                      year2023: false,
-                    ),
-                    child: Slider(
-                      value: (provider.globalOffset.inMilliseconds / 100)
-                          .toDouble(),
-                      min: -50,
-                      max: 50,
-                      divisions: 100,
-                      label: (provider.globalOffset.inMilliseconds / 1000.0)
-                          .toStringAsFixed(1),
-                      onChanged: (value) {
-                        provider.setGlobalOffset(
-                          Duration(milliseconds: (value * 100).toInt()),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Auto-Resume Delay',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          if (provider.scrollAutoResumeDelay != 5)
-                            IconButton(
-                              icon: const Icon(
-                                Icons.refresh,
-                                size: 18,
-                                color: Colors.blue,
-                              ),
-                              onPressed: () =>
-                                  provider.setScrollAutoResumeDelay(5),
-                              tooltip: 'Reset to 5s',
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${provider.scrollAutoResumeDelay}s',
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Time to wait before auto-scrolling resumes after you manual scroll.',
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Colors.blue,
-                      inactiveTrackColor: Colors.white10,
-                      thumbColor: Colors.blue,
-                      overlayColor: Colors.blue.withValues(alpha: 0.2),
-                      showValueIndicator: ShowValueIndicator.onDrag,
-                      year2023: false,
-                    ),
-                    child: Slider(
-                      value: provider.scrollAutoResumeDelay.toDouble(),
-                      min: 0,
-                      max: 30,
-                      divisions: 30,
-                      label: '${provider.scrollAutoResumeDelay}s',
-                      onChanged: (value) {
-                        provider.setScrollAutoResumeDelay(value.toInt());
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Font Size',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          if (provider.fontSize != 36.0)
-                            IconButton(
-                              icon: const Icon(
-                                Icons.refresh,
-                                size: 18,
-                                color: Colors.blue,
-                              ),
-                              onPressed: () => provider.setFontSize(36.0),
-                              tooltip: 'Reset to 36px',
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${provider.fontSize.toInt()}',
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Size of the lyric text in pixels.',
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Colors.blue,
-                      inactiveTrackColor: Colors.white10,
-                      thumbColor: Colors.blue,
-                      overlayColor: Colors.blue.withValues(alpha: 0.2),
-                      showValueIndicator: ShowValueIndicator.onDrag,
-                      year2023: false,
-                    ),
-                    child: Slider(
-                      value: provider.fontSize,
-                      min: 12,
-                      max: 64,
-                      divisions: 52,
-                      label: provider.fontSize.toInt().toString(),
-                      onChanged: (value) {
-                        provider.setFontSize(value);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Inactive Line Scale',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          if (provider.inactiveScale != 0.85)
-                            IconButton(
-                              icon: const Icon(
-                                Icons.refresh,
-                                size: 18,
-                                color: Colors.blue,
-                              ),
-                              onPressed: () => provider.setInactiveScale(0.85),
-                              tooltip: 'Reset to 85%',
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${(provider.inactiveScale * 100).toInt()}%',
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Scale factor for non-highlighted lines.',
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Colors.blue,
-                      inactiveTrackColor: Colors.white10,
-                      thumbColor: Colors.blue,
-                      overlayColor: Colors.blue.withValues(alpha: 0.2),
-                      showValueIndicator: ShowValueIndicator.onDrag,
-                      year2023: false,
-                    ),
-                    child: Slider(
-                      value: provider.inactiveScale,
-                      min: 0.5,
-                      max: 1.0,
-                      divisions: 50,
-                      label: '${(provider.inactiveScale * 100).toInt()}%',
-                      onChanged: (value) {
-                        provider.setInactiveScale(value);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Blur Effect',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Blur non-active lyric lines for focus.',
-                        style: TextStyle(
-                          color: Colors.white38,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Switch(
-                    value: provider.blurEnabled,
-                    activeThumbColor: Colors.blue,
-                    activeTrackColor: Colors.blue.withValues(alpha: 0.3),
-                    onChanged: (value) => provider.setBlurEnabled(value),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Trim Metadata Lines',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Attempt to remove staff/metadata lines from selected providers.',
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Column(
-                    children: LyricProviderType.values
-                        .where((v) => v != LyricProviderType.cache)
-                        .map((providerType) {
-                          final isSelected = provider.trimMetadataProviders
-                              .contains(providerType);
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: GestureDetector(
-                              onTap: () {
-                                final updated = List<LyricProviderType>.from(
-                                  provider.trimMetadataProviders,
-                                );
-                                if (isSelected) {
-                                  updated.remove(providerType);
-                                } else {
-                                  updated.add(providerType);
-                                }
-                                provider.setTrimMetadataProviders(updated);
-                              },
-                              child: Row(
-                                children: [
-                                  Checkbox(
-                                    value: isSelected,
-                                    onChanged: (value) {
-                                      final updated =
-                                          List<LyricProviderType>.from(
-                                            provider.trimMetadataProviders,
-                                          );
-                                      if (value == true) {
-                                        updated.add(providerType);
-                                      } else {
-                                        updated.remove(providerType);
-                                      }
-                                      provider.setTrimMetadataProviders(
-                                        updated,
-                                      );
-                                    },
-                                    activeColor: Colors.blue,
-                                    checkColor: Colors.black,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    providerType.name[0].toUpperCase() +
-                                        providerType.name.substring(1),
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        })
-                        .toList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -744,75 +190,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCacheButton() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.2),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.storage, color: Colors.grey),
-        ),
-        title: const Text(
-          'Lyrics Cache',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        subtitle: const Text(
-          'Always prioritized if enabled',
-          style: TextStyle(color: Colors.white38, fontSize: 12),
-        ),
-        trailing: Switch(
-          value: _cacheEnabled,
-          onChanged: _toggleCache,
-          activeThumbColor: Colors.blue,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDisabledHeader({required Key key}) {
-    return Column(
-      key: key,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16.0),
-          child: Row(
-            children: [
-              Expanded(child: Divider(color: Colors.white10)),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  'DISABLED AREA',
-                  style: TextStyle(
-                    color: Colors.white24,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
-              Expanded(child: Divider(color: Colors.white10)),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -906,111 +283,368 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildMusixmatchSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'MUSIXMATCH CONFIGURATION',
-          style: TextStyle(
-            color: Colors.white54,
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'The User Token is used to retrieve lyrics from Musixmatch. If you have problems with retrieving lyrics, try get a new one.',
-          style: TextStyle(
-            color: Colors.white38,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'User Token',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+  Widget _buildDisplaySection() {
+    return Consumer<LyricsProvider>(
+      builder: (context, provider, child) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'DISPLAY CONFIGURATION',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _tokenController,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontFamily: 'monospace',
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Enter your User Token',
-                  hintStyle: const TextStyle(color: Colors.white24),
-                  filled: true,
-                  fillColor: Colors.black26,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-                onChanged: (_) => _saveToken(),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Adjust how lyrics are displayed.',
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(height: 16),
-              Row(
+            ),
+            const SizedBox(height: 24),
+            SettingsSliderCard(
+              title: 'Font Size',
+              subtitle: 'Size of the lyric text in pixels.',
+              value: provider.fontSize,
+              min: 12,
+              max: 64,
+              divisions: 52,
+              label: provider.fontSize.toInt().toString(),
+              valueText: '${provider.fontSize.toInt()}',
+              onChanged: (value) => provider.setFontSize(value),
+              onReset: provider.fontSize != 36.0
+                  ? () => provider.setFontSize(36.0)
+                  : null,
+              resetTooltip: 'Reset to 36px',
+            ),
+            const SizedBox(height: 24),
+            SettingsSliderCard(
+              title: 'Inactive Line Scale',
+              subtitle: 'Scale factor for non-highlighted lines.',
+              value: provider.inactiveScale,
+              min: 0.5,
+              max: 1.0,
+              divisions: 50,
+              label: '${(provider.inactiveScale * 100).toInt()}%',
+              valueText: '${(provider.inactiveScale * 100).toInt()}%',
+              onChanged: (value) => provider.setInactiveScale(value),
+              onReset: provider.inactiveScale != 0.85
+                  ? () => provider.setInactiveScale(0.85)
+                  : null,
+              resetTooltip: 'Reset to 85%',
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isFetchingToken ? null : _getNewToken,
-                      icon: _isFetchingToken
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.orange,
-                              ),
-                            )
-                          : const Icon(Icons.refresh, size: 18),
-                      label: const Text('Get New Token'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange.withValues(alpha: 0.2),
-                        foregroundColor: Colors.orange,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Blur Effect',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Blur non-active lyric lines for focus.',
+                        style: TextStyle(
+                          color: Colors.white38,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: provider.blurEnabled,
+                    activeThumbColor: Colors.blue,
+                    activeTrackColor: Colors.blue.withValues(alpha: 0.3),
+                    onChanged: (value) => provider.setBlurEnabled(value),
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+            const SizedBox(height: 24),
+            SettingsSliderCard(
+              title: 'Lines Before Active',
+              subtitle:
+                  'Number of preceding lines to show when auto-scrolling.',
+              value: provider.linesBefore.toDouble(),
+              min: 0,
+              max: 5,
+              divisions: 5,
+              label: provider.linesBefore.toString(),
+              valueText: '${provider.linesBefore}',
+              onChanged: (value) => provider.setLinesBefore(value.toInt()),
+              onReset: provider.linesBefore != 2
+                  ? () => provider.setLinesBefore(2)
+                  : null,
+              resetTooltip: 'Reset to 2',
+            ),
+            const SizedBox(height: 24),
+            SettingsSliderCard(
+              title: 'Auto-Resume Delay',
+              subtitle:
+                  'Time to wait before auto-scrolling resumes after you manual scroll.',
+              value: provider.scrollAutoResumeDelay.toDouble(),
+              min: 0,
+              max: 30,
+              divisions: 30,
+              label: '${provider.scrollAutoResumeDelay}s',
+              valueText: '${provider.scrollAutoResumeDelay}s',
+              onChanged: (value) =>
+                  provider.setScrollAutoResumeDelay(value.toInt()),
+              onReset: provider.scrollAutoResumeDelay != 5
+                  ? () => provider.setScrollAutoResumeDelay(5)
+                  : null,
+              resetTooltip: 'Reset to 5s',
+            ),
+          ],
+        );
+      },
     );
   }
 
-  String _formatSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  Widget _buildLyricConfigurationSection() {
+    return Consumer<LyricsProvider>(
+      builder: (context, provider, child) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'LYRIC CONFIGURATION',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Configure how lyrics are fetched and processed.',
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SettingsSliderCard(
+              title: 'Global Lyrics Offset',
+              subtitle:
+                  'Set a default offset for all lyrics (e.g. if your device has audio latency).',
+              value: (provider.globalOffset.inMilliseconds / 100).toDouble(),
+              min: -50,
+              max: 50,
+              divisions: 100,
+              label: (provider.globalOffset.inMilliseconds / 1000.0)
+                  .toStringAsFixed(1),
+              valueText:
+                  '${(provider.globalOffset.inMilliseconds / 1000.0).toStringAsFixed(1)}s',
+              onChanged: (value) {
+                provider.setGlobalOffset(
+                  Duration(milliseconds: (value * 100).toInt()),
+                );
+              },
+              onReset: provider.globalOffset != Duration.zero
+                  ? () => provider.setGlobalOffset(Duration.zero)
+                  : null,
+              resetTooltip: 'Reset to 0s',
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Trim Metadata Lines',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Attempt to remove staff/metadata lines from selected providers.',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
+                    children: LyricProviderType.values
+                        .where((v) => v != LyricProviderType.cache)
+                        .map((providerType) {
+                          final isSelected = provider.trimMetadataProviders
+                              .contains(providerType);
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: GestureDetector(
+                              onTap: () {
+                                final updated = List<LyricProviderType>.from(
+                                  provider.trimMetadataProviders,
+                                );
+                                if (isSelected) {
+                                  updated.remove(providerType);
+                                } else {
+                                  updated.add(providerType);
+                                }
+                                provider.setTrimMetadataProviders(updated);
+                              },
+                              child: Row(
+                                children: [
+                                  Checkbox(
+                                    value: isSelected,
+                                    onChanged: (value) {
+                                      final updated =
+                                          List<LyricProviderType>.from(
+                                            provider.trimMetadataProviders,
+                                          );
+                                      if (value == true) {
+                                        updated.add(providerType);
+                                      } else {
+                                        updated.remove(providerType);
+                                      }
+                                      provider.setTrimMetadataProviders(
+                                        updated,
+                                      );
+                                    },
+                                    activeColor: Colors.blue,
+                                    checkColor: Colors.black,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    providerType.name[0].toUpperCase() +
+                                        providerType.name.substring(1),
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        })
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Musixmatch Token',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Required for Musixmatch provider.',
+                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _tokenController,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontFamily: 'monospace',
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your User Token',
+                      hintStyle: const TextStyle(color: Colors.white24),
+                      filled: true,
+                      fillColor: Colors.black26,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    onChanged: (_) => _saveToken(),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isFetchingToken ? null : _getNewToken,
+                          icon: _isFetchingToken
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.orange,
+                                  ),
+                                )
+                              : const Icon(Icons.refresh, size: 18),
+                          label: const Text('Get New Token'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange.withValues(
+                              alpha: 0.2,
+                            ),
+                            foregroundColor: Colors.orange,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildCacheSection() {
@@ -1149,6 +783,99 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildVersionSection() {
+    final versionDisplay = kReleaseMode
+        ? 'v$_version'
+        : '(dev, parent v$_version)';
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          'Fluent Lyrics $versionDisplay',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.3),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCacheButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.storage, color: Colors.grey),
+        ),
+        title: const Text(
+          'Lyrics Cache',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        subtitle: const Text(
+          'Always prioritized if enabled',
+          style: TextStyle(color: Colors.white38, fontSize: 12),
+        ),
+        trailing: Switch(
+          value: _cacheEnabled,
+          onChanged: _toggleCache,
+          activeThumbColor: Colors.blue,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisabledHeader({required Key key}) {
+    return Column(
+      key: key,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.0),
+          child: Row(
+            children: [
+              Expanded(child: Divider(color: Colors.white10)),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'DISABLED AREA',
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+              Expanded(child: Divider(color: Colors.white10)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildProviderCard(
     LyricProviderType type,
     int index, {
@@ -1185,7 +912,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       opacity: isEnabled ? 1.0 : 0.4,
       key: ValueKey(type),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
@@ -1238,30 +965,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             trailing: const Icon(Icons.drag_indicator, color: Colors.white24),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVersionSection() {
-    final versionDisplay = kReleaseMode
-        ? 'v$_version'
-        : '(dev, parent v$_version)';
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          'Fluent Lyrics $versionDisplay',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.3),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
           ),
         ),
       ),
