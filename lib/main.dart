@@ -1,10 +1,18 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'providers/lyrics_provider.dart';
 import 'screens/lyrics_screen.dart';
 
 void main() {
+  LicenseRegistry.addLicense(() async* {
+    final String license = await rootBundle.loadString(
+      'assets/fonts/google/Outfit/OFL.txt',
+    );
+    yield LicenseEntryWithLineBreaks(<String>['Outfit font'], license);
+  });
+
   runApp(
     MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => LyricsProvider())],
@@ -24,11 +32,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,
-        textTheme: GoogleFonts.outfitTextTheme(
-          ThemeData.dark().textTheme.copyWith(
-            bodyMedium: const TextStyle(fontWeight: FontWeight.w500),
-            bodyLarge: const TextStyle(fontWeight: FontWeight.w500),
-          ),
+        fontFamily: 'Outfit',
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(fontWeight: FontWeight.w500),
+          bodyLarge: TextStyle(fontWeight: FontWeight.w500),
         ),
         fontFamilyFallback: const ['sans-serif'],
       ),

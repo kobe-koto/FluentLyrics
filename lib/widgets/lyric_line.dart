@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/lyrics_provider.dart';
 
@@ -59,7 +58,7 @@ class LyricLine extends StatelessWidget {
             child: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 500),
               curve: Curves.easeOutQuart,
-              style: GoogleFonts.outfit(
+              style: TextStyle(
                 fontSize: fontSize,
                 fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w600,
                 color: Colors.white,
