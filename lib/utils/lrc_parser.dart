@@ -6,16 +6,13 @@ import '../models/lyric_model.dart';
 class LrcParseResult {
   /// The parsed lyric lines.
   final List<Lyric> lyrics;
-  
+
   /// Metadata lines that were trimmed, as key-value pairs.
   /// Key: position (e.g., "作词", "作曲"), Value: staff names
   /// Empty if trimMetadata was false or no metadata was found.
   final Map<String, String> trimmedMetadata;
 
-  LrcParseResult({
-    required this.lyrics,
-    this.trimmedMetadata = const {},
-  });
+  LrcParseResult({required this.lyrics, this.trimmedMetadata = const {}});
 }
 
 class LrcParser {
@@ -43,11 +40,11 @@ class LrcParser {
     }
 
     lyrics.sort((a, b) => a.startTime.compareTo(b.startTime));
-    
+
     if (trimMetadata) {
       return _trimMetadataLines(lyrics);
     }
-    
+
     return LrcParseResult(lyrics: lyrics);
   }
 
@@ -56,7 +53,7 @@ class LrcParser {
   /// where <position> is like "作词" (songwriter), "作曲" (composer), etc.
   /// and the full-width colon "：" is used instead of regular ":"
   /// This pattern matches metadata commonly found in Chinese lyrics.
-  /// 
+  ///
   /// Returns a LrcParseResult with:
   /// - lyrics: the trimmed lyric lines
   /// - trimmedMetadata: map of removed metadata with position as key and staff names as value
@@ -79,7 +76,6 @@ class LrcParser {
         final staff = match.group(3)?.trim() ?? '';
         if (position.isNotEmpty) {
           trimmedMetadata[position] = staff;
-          debugPrint('Trimming metadata line from lyric head: $text');
         }
         result.removeAt(0);
       } else {
@@ -96,7 +92,6 @@ class LrcParser {
         final staff = match.group(3)?.trim() ?? '';
         if (position.isNotEmpty) {
           trimmedMetadata[position] = staff;
-          debugPrint('Trimming metadata line from lyric tail: $text');
         }
         result.removeLast();
       } else {
@@ -104,9 +99,6 @@ class LrcParser {
       }
     }
 
-    return LrcParseResult(
-      lyrics: result,
-      trimmedMetadata: trimmedMetadata,
-    );
+    return LrcParseResult(lyrics: result, trimmedMetadata: trimmedMetadata);
   }
 }

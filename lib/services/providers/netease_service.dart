@@ -150,10 +150,9 @@ class NeteaseService {
 
       if ((lrc != null && lrc.isNotEmpty) || artworkUrl != null) {
         onStatusUpdate?.call("Processing lyrics...");
-        final parseResult = lrc != null 
-          ? LrcParser.parse(lrc, trimMetadata: trimMetadata) 
-          : LrcParseResult(lyrics: [], trimmedMetadata: {});
-        debugPrint('Netease trimmed metadata: ${parseResult.trimmedMetadata}');
+        final parseResult = lrc != null
+            ? LrcParser.parse(lrc, trimMetadata: trimMetadata)
+            : LrcParseResult(lyrics: [], trimmedMetadata: {});
         return LyricsResult(
           lyrics: parseResult.lyrics,
           source: 'Netease Music',
