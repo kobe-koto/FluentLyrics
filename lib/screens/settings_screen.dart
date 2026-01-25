@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
 import '../services/providers/musixmatch_service.dart';
 import '../providers/lyrics_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<LyricProviderType> _priority = [];
   bool _isLoading = true;
   bool _isFetchingToken = false;
+  String _version = '';
 
   @override
   void initState() {
@@ -35,9 +38,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     final priority = await _settingsService.getPriority();
     final token = await _settingsService.getMusixmatchToken();
+    final packageInfo = await PackageInfo.fromPlatform();
     setState(() {
       _priority = priority;
       _tokenController.text = token ?? '';
+      _version = packageInfo.version;
       _isLoading = false;
     });
   }
@@ -125,6 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               const SizedBox(height: 48),
                               _buildCacheSection(),
                               const SizedBox(height: 48),
+                              _buildVersionSection(),
                             ],
                           ),
                         ),
@@ -916,6 +922,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           trailing: const Icon(Icons.drag_indicator, color: Colors.white24),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVersionSection() {
+    final versionDisplay = kReleaseMode
+        ? 'v$_version'
+        : '(dev, parent v$_version)';
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          'Fluent Lyrics $versionDisplay',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.3),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
     );
