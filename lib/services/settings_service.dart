@@ -10,19 +10,21 @@ class SettingsService {
   static const String _scrollAutoResumeDelayKey = 'scroll_auto_resume_delay';
   static const String _blurEnabledKey = 'blur_enabled';
   static const String _trimMetadataProvidersKey = 'trim_metadata_providers';
+  static const String _enabledCountKey = 'enabled_provider_count';
+  static const String _cacheEnabledKey = 'cache_enabled';
 
-  Future<List<LyricProviderType>> getPriority() async {
+  Future<List<LyricProviderType>> getAllProvidersOrdered() async {
     final prefs = await SharedPreferences.getInstance();
     final savedPriority = prefs.getStringList(_priorityKey);
 
-    final List<LyricProviderType> defaultPriority = [
+    final List<LyricProviderType> defaultOrder = [
       LyricProviderType.lrclib,
       LyricProviderType.musixmatch,
       LyricProviderType.netease,
     ];
 
     if (savedPriority == null) {
-      return defaultPriority;
+      return defaultOrder;
     }
 
     final savedList = savedPriority
@@ -41,6 +43,41 @@ class SettingsService {
     }
 
     return savedList;
+  }
+
+  Future<int> getEnabledCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Default to 100 to enable all if not set, or use a sensible default
+    return prefs.getInt(_enabledCountKey) ?? 3;
+  }
+
+  Future<void> setEnabledCount(int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_enabledCountKey, count);
+  }
+
+  Future<bool> isCacheEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_cacheEnabledKey) ?? true;
+  }
+
+  Future<void> setCacheEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_cacheEnabledKey, enabled);
+  }
+
+  Future<List<LyricProviderType>> getPriority() async {
+    final allOrdered = await getAllProvidersOrdered();
+    final enabledCount = await getEnabledCount();
+    final cacheEnabled = await isCacheEnabled();
+
+    final List<LyricProviderType> priority = [];
+    if (cacheEnabled) {
+      priority.add(LyricProviderType.cache);
+    }
+
+    priority.addAll(allOrdered.take(enabledCount));
+    return priority;
   }
 
   Future<void> setPriority(List<LyricProviderType> priority) async {

@@ -18,7 +18,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final MusixmatchService _musixmatchService = MusixmatchService();
   final TextEditingController _tokenController = TextEditingController();
 
-  List<LyricProviderType> _priority = [];
+  List<LyricProviderType> _allProviders = [];
+  int _enabledCount = 0;
+  bool _cacheEnabled = true;
   bool _isLoading = true;
   bool _isFetchingToken = false;
   String _version = '';
@@ -36,11 +38,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
-    final priority = await _settingsService.getPriority();
+    final allProviders = await _settingsService.getAllProvidersOrdered();
+    final enabledCount = await _settingsService.getEnabledCount();
+    final cacheEnabled = await _settingsService.isCacheEnabled();
     final token = await _settingsService.getMusixmatchToken();
     final packageInfo = await PackageInfo.fromPlatform();
     setState(() {
-      _priority = priority;
+      _allProviders = allProviders;
+      _enabledCount = enabledCount;
+      _cacheEnabled = cacheEnabled;
       _tokenController.text = token ?? '';
       _version = packageInfo.version;
       _isLoading = false;
@@ -48,9 +54,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _savePriority() async {
-    await _settingsService.setPriority(_priority);
+    await _settingsService.setPriority(_allProviders);
+    await _settingsService.setEnabledCount(_enabledCount);
     if (mounted) {
       _showSnackBar('Priority updated');
+    }
+  }
+
+  Future<void> _toggleCache(bool enabled) async {
+    setState(() => _cacheEnabled = enabled);
+    await _settingsService.setCacheEnabled(enabled);
+    if (mounted) {
+      _showSnackBar(enabled ? 'Cache enabled' : 'Cache disabled');
     }
   }
 
@@ -568,7 +583,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildCacheButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.storage, color: Colors.grey),
+        ),
+        title: const Text(
+          'Lyrics Cache',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        subtitle: const Text(
+          'Always prioritized if enabled',
+          style: TextStyle(color: Colors.white38, fontSize: 12),
+        ),
+        trailing: Switch(
+          value: _cacheEnabled,
+          onChanged: _toggleCache,
+          activeThumbColor: Colors.blue,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisabledHeader({required Key key}) {
+    return Column(
+      key: key,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.0),
+          child: Row(
+            children: [
+              Expanded(child: Divider(color: Colors.white10)),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'DISABLED AREA',
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+              Expanded(child: Divider(color: Colors.white10)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPrioritySection() {
+    final List<Widget> listItems = [];
+    for (int i = 0; i < _allProviders.length; i++) {
+      if (i == _enabledCount) {
+        listItems.add(
+          _buildDisabledHeader(key: const ValueKey('disabled_header')),
+        );
+      }
+      listItems.add(
+        _buildProviderCard(_allProviders[i], i, isEnabled: i < _enabledCount),
+      );
+    }
+    if (_enabledCount == _allProviders.length) {
+      listItems.add(
+        _buildDisabledHeader(key: const ValueKey('disabled_header')),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -583,7 +684,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Reorder providers to prioritize where we fetch lyrics from first.',
+          'Reorder providers to prioritize where we fetch lyrics from first. Drag below "DISABLED AREA" to disable.',
           style: TextStyle(
             color: Colors.white38,
             fontSize: 14,
@@ -591,26 +692,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         const SizedBox(height: 24),
+        _buildCacheButton(),
+        const SizedBox(height: 16),
         ReorderableListView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           buildDefaultDragHandles: false,
           onReorder: (oldIndex, newIndex) {
             setState(() {
-              if (oldIndex < newIndex) {
-                newIndex -= 1;
+              // ReorderableListView indices correspond to the children list
+              // Get current visual list to map indices correctly
+              final visualList = [];
+              for (int i = 0; i < _allProviders.length; i++) {
+                if (i == _enabledCount) visualList.add('HEADER');
+                visualList.add(_allProviders[i]);
               }
-              final item = _priority.removeAt(oldIndex);
-              _priority.insert(newIndex, item);
+              if (_enabledCount == _allProviders.length) {
+                visualList.add('HEADER');
+              }
+
+              final item = visualList.removeAt(oldIndex);
+              if (newIndex > oldIndex) newIndex--;
+              visualList.insert(newIndex, item);
+
+              // Now reconstruct _allProviders and _enabledCount from visualList
+              final newAllProviders = <LyricProviderType>[];
+              int newEnabledCount = 0;
+              bool foundHeader = false;
+              for (final v in visualList) {
+                if (v == 'HEADER') {
+                  foundHeader = true;
+                } else {
+                  newAllProviders.add(v as LyricProviderType);
+                  if (!foundHeader) newEnabledCount++;
+                }
+              }
+
+              _allProviders = newAllProviders;
+              _enabledCount = newEnabledCount;
             });
             _savePriority();
           },
           proxyDecorator: (child, index, animation) {
             return Material(color: Colors.transparent, child: child);
           },
-          children: _priority.asMap().entries.map((entry) {
-            return _buildProviderCard(entry.value, entry.key);
-          }).toList(),
+          children: listItems,
         ),
       ],
     );
@@ -859,7 +985,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildProviderCard(LyricProviderType type, int index) {
+  Widget _buildProviderCard(
+    LyricProviderType type,
+    int index, {
+    bool isEnabled = true,
+  }) {
     Color color;
     String name;
     String description;
@@ -887,52 +1017,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
         break;
     }
 
-    return Container(
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.4,
       key: ValueKey(type),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: ReorderableDragStartListener(
-        index: index,
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 8,
-          ),
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: ReorderableDragStartListener(
+          index: index + (index >= _enabledCount ? 1 : 0),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 8,
             ),
-            child: Center(
-              child: Text(
-                (index + 1).toString(),
-                style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: isEnabled
+                    ? Text(
+                        (index + 1).toString(),
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : Icon(
+                        Icons.block,
+                        size: 20,
+                        color: color.withValues(alpha: 0.5),
+                      ),
               ),
             ),
-          ),
-          title: Text(
-            name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
+            title: Text(
+              name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
             ),
-          ),
-          subtitle: Text(
-            description,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.4),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+            subtitle: Text(
+              description,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
+            trailing: const Icon(Icons.drag_indicator, color: Colors.white24),
           ),
-          trailing: const Icon(Icons.drag_indicator, color: Colors.white24),
         ),
       ),
     );
