@@ -66,7 +66,7 @@ class LrclibService {
         onStatusUpdate?.call("Processing lyrics...");
         List<Lyric> lyrics = [];
         if (syncedLyrics != null && syncedLyrics.isNotEmpty) {
-          lyrics = LrcParser.parse(syncedLyrics);
+          lyrics = LrcParser.parse(syncedLyrics).lyrics;
         } else if (plainLyrics != null && plainLyrics.isNotEmpty) {
           lyrics = plainLyrics
               .split('\n')

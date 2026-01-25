@@ -438,6 +438,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Trim Metadata Lines',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Attempt to remove staff/metadata lines from selected providers.',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
+                    children: LyricProviderType.values.map((providerType) {
+                      final isSelected = provider.trimMetadataProviders.contains(providerType);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            final updated = List<LyricProviderType>.from(provider.trimMetadataProviders);
+                            if (isSelected) {
+                              updated.remove(providerType);
+                            } else {
+                              updated.add(providerType);
+                            }
+                            provider.setTrimMetadataProviders(updated);
+                          },
+                          child: Row(
+                            children: [
+                              Checkbox(
+                                value: isSelected,
+                                onChanged: (value) {
+                                  final updated = List<LyricProviderType>.from(provider.trimMetadataProviders);
+                                  if (value == true) {
+                                    updated.add(providerType);
+                                  } else {
+                                    updated.remove(providerType);
+                                  }
+                                  provider.setTrimMetadataProviders(updated);
+                                },
+                                activeColor: Colors.blue,
+                                checkColor: Colors.black,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                providerType.name[0].toUpperCase() + providerType.name.substring(1),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
           ],
         );
       },

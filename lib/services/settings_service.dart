@@ -9,6 +9,7 @@ class SettingsService {
   static const String _globalOffsetKey = 'global_offset_ms';
   static const String _scrollAutoResumeDelayKey = 'scroll_auto_resume_delay';
   static const String _blurEnabledKey = 'blur_enabled';
+  static const String _trimMetadataProvidersKey = 'trim_metadata_providers';
 
   Future<List<LyricProviderType>> getPriority() async {
     final prefs = await SharedPreferences.getInstance();
@@ -97,5 +98,33 @@ class SettingsService {
   Future<void> setBlurEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_blurEnabledKey, enabled);
+  }
+
+  Future<List<LyricProviderType>> getTrimMetadataProviders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(_trimMetadataProvidersKey);
+
+    // Default: trim metadata only for netease
+    final List<LyricProviderType> defaultProviders = [LyricProviderType.netease];
+
+    if (saved == null) {
+      return defaultProviders;
+    }
+
+    final savedList = saved
+        .map((e) => LyricProviderType.values.where((v) => v.name == e))
+        .where((matches) => matches.isNotEmpty)
+        .map((matches) => matches.first)
+        .toList();
+
+    return savedList.isEmpty ? defaultProviders : savedList;
+  }
+
+  Future<void> setTrimMetadataProviders(List<LyricProviderType> providers) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _trimMetadataProvidersKey,
+      providers.map((e) => e.name).toList(),
+    );
   }
 }

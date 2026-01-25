@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:math';
 import 'package:crypto/crypto.dart';
@@ -20,6 +21,7 @@ class NeteaseService {
     required String album,
     required int durationSeconds,
     Function(String)? onStatusUpdate,
+    bool trimMetadata = false,
   }) async {
     try {
       onStatusUpdate?.call("Searching lyrics on Netease...");
@@ -148,11 +150,16 @@ class NeteaseService {
 
       if ((lrc != null && lrc.isNotEmpty) || artworkUrl != null) {
         onStatusUpdate?.call("Processing lyrics...");
+        final parseResult = lrc != null 
+          ? LrcParser.parse(lrc, trimMetadata: trimMetadata) 
+          : LrcParseResult(lyrics: [], trimmedMetadata: {});
+        debugPrint('Netease trimmed metadata: ${parseResult.trimmedMetadata}');
         return LyricsResult(
-          lyrics: lrc != null ? LrcParser.parse(lrc) : [],
+          lyrics: parseResult.lyrics,
           source: 'Netease Music',
           contributor: contributor,
           artworkUrl: artworkUrl,
+          writtenBy: parseResult.trimmedMetadata['作词'],
         );
       } else {
         print('Netease returned no lyrics or artwork for songId: $songId');

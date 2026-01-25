@@ -169,7 +169,7 @@ class MusixmatchService {
                   }
                 }
               }
-              lyrics = LrcParser.parse(lrc);
+              lyrics = LrcParser.parse(lrc).lyrics;
             }
           }
 

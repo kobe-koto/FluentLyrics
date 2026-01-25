@@ -17,6 +17,7 @@ class LyricsService {
     required int durationSeconds,
     Function(String)? onStatusUpdate,
     bool Function()? isCancelled,
+    List<LyricProviderType> trimMetadataProviders = const [],
   }) async* {
     final priority = await _settingsService.getPriority();
     LyricsResult? bestResult;
@@ -28,6 +29,8 @@ class LyricsService {
       }
 
       LyricsResult result = LyricsResult.empty();
+      final shouldTrimMetadata = trimMetadataProviders.contains(provider);
+      
       if (provider == LyricProviderType.lrclib) {
         result = await _lrclibService.fetchLyrics(
           title: title,
@@ -50,6 +53,7 @@ class LyricsService {
           album: album,
           durationSeconds: durationSeconds,
           onStatusUpdate: onStatusUpdate,
+          trimMetadata: shouldTrimMetadata,
         );
       }
 

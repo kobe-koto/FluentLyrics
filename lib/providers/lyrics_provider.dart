@@ -23,6 +23,7 @@ class LyricsProvider with ChangeNotifier {
   int _linesBefore = 2;
   int _scrollAutoResumeDelay = 5;
   bool _blurEnabled = true;
+  List<LyricProviderType> _trimMetadataProviders = [LyricProviderType.netease];
   bool _isPlaying = false;
   bool _isLoading = false;
   bool _androidPermissionGranted = true;
@@ -43,6 +44,7 @@ class LyricsProvider with ChangeNotifier {
   int get linesBefore => _linesBefore;
   int get scrollAutoResumeDelay => _scrollAutoResumeDelay;
   bool get blurEnabled => _blurEnabled;
+  List<LyricProviderType> get trimMetadataProviders => _trimMetadataProviders;
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
   bool get androidPermissionGranted => _androidPermissionGranted;
@@ -98,6 +100,7 @@ class LyricsProvider with ChangeNotifier {
     _globalOffset = Duration(milliseconds: globalOffsetMs);
     _scrollAutoResumeDelay = await _settingsService.getScrollAutoResumeDelay();
     _blurEnabled = await _settingsService.getBlurEnabled();
+    _trimMetadataProviders = await _settingsService.getTrimMetadataProviders();
     notifyListeners();
   }
 
@@ -117,6 +120,16 @@ class LyricsProvider with ChangeNotifier {
     _blurEnabled = enabled;
     _settingsService.setBlurEnabled(enabled);
     notifyListeners();
+  }
+
+  void setTrimMetadataProviders(List<LyricProviderType> providers) {
+    _trimMetadataProviders = providers;
+    _settingsService.setTrimMetadataProviders(providers);
+    notifyListeners();
+  }
+
+  bool shouldTrimMetadata(LyricProviderType provider) {
+    return _trimMetadataProviders.contains(provider);
   }
 
   void setGlobalOffset(Duration offset) {
@@ -314,6 +327,7 @@ class LyricsProvider with ChangeNotifier {
           notifyListeners();
         },
         isCancelled: () => !metadata.isSameTrack(_currentMetadata),
+        trimMetadataProviders: _trimMetadataProviders,
       );
 
       await for (var result in stream) {
