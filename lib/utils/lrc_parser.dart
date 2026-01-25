@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../models/lyric_model.dart';
 
 /// Result of parsing LRC content with optional metadata trimming.
@@ -49,8 +47,8 @@ class LrcParser {
   }
 
   /// Trims metadata lines from lyrics (head and tail).
-  /// Metadata lines have format: [mm:ss.xx]<position>：staff names
-  /// where <position> is like "作词" (songwriter), "作曲" (composer), etc.
+  /// Metadata lines have format: [mm:ss.xx]position:staff names
+  /// where position is like "作词" (songwriter), "作曲" (composer), etc.
   /// and the full-width colon "：" is used instead of regular ":"
   /// This pattern matches metadata commonly found in Chinese lyrics.
   ///
