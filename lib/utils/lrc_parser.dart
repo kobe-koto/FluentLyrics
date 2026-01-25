@@ -76,6 +76,8 @@ class LrcParser {
           trimmedMetadata[position] = staff;
         }
         result.removeAt(0);
+      } else if (text.isEmpty) {
+        result.removeAt(0);
       } else {
         break;
       }
@@ -91,6 +93,8 @@ class LrcParser {
         if (position.isNotEmpty) {
           trimmedMetadata[position] = staff;
         }
+        result.removeLast();
+      } else if (text.isEmpty) {
         result.removeLast();
       } else {
         break;
