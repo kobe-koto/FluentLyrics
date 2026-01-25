@@ -14,5 +14,5 @@ releases:
         package:
           platform: android
           target: apk
-        build_args:
-          split-per-abi
+          build_args:
+            split-per-abi:
