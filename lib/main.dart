@@ -34,8 +34,14 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         fontFamily: 'Outfit',
         textTheme: const TextTheme(
-          bodyMedium: TextStyle(fontWeight: FontWeight.w500),
-          bodyLarge: TextStyle(fontWeight: FontWeight.w500),
+          bodyMedium: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontVariations: <FontVariation>[FontVariation('wght', 500)],
+          ),
+          bodyLarge: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontVariations: <FontVariation>[FontVariation('wght', 500)],
+          ),
         ),
         fontFamilyFallback: const ['sans-serif'],
       ),
