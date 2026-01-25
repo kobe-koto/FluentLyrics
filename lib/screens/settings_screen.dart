@@ -431,7 +431,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   Switch(
                     value: provider.blurEnabled,
-                    activeColor: Colors.blue,
+                    activeThumbColor: Colors.blue,
                     activeTrackColor: Colors.blue.withValues(alpha: 0.3),
                     onChanged: (value) => provider.setBlurEnabled(value),
                   ),
@@ -469,12 +469,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 16),
                   Column(
                     children: LyricProviderType.values.map((providerType) {
-                      final isSelected = provider.trimMetadataProviders.contains(providerType);
+                      final isSelected = provider.trimMetadataProviders
+                          .contains(providerType);
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: GestureDetector(
                           onTap: () {
-                            final updated = List<LyricProviderType>.from(provider.trimMetadataProviders);
+                            final updated = List<LyricProviderType>.from(
+                              provider.trimMetadataProviders,
+                            );
                             if (isSelected) {
                               updated.remove(providerType);
                             } else {
@@ -487,7 +490,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Checkbox(
                                 value: isSelected,
                                 onChanged: (value) {
-                                  final updated = List<LyricProviderType>.from(provider.trimMetadataProviders);
+                                  final updated = List<LyricProviderType>.from(
+                                    provider.trimMetadataProviders,
+                                  );
                                   if (value == true) {
                                     updated.add(providerType);
                                   } else {
@@ -500,7 +505,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               const SizedBox(width: 12),
                               Text(
-                                providerType.name[0].toUpperCase() + providerType.name.substring(1),
+                                providerType.name[0].toUpperCase() +
+                                    providerType.name.substring(1),
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 14,
