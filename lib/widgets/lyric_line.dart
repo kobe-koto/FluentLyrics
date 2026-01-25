@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/lyrics_provider.dart';
 
 class LyricLine extends StatelessWidget {
   final String text;
@@ -20,6 +22,10 @@ class LyricLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lyricsProvider = context.watch<LyricsProvider>();
+    final fontSize = lyricsProvider.fontSize;
+    final inactiveScale = lyricsProvider.inactiveScale;
+
     // Calculate opacity and blur based on distance
     // Current line (distance 0) has full opacity and no blur.
     // Further lines fade and blur out.
@@ -48,13 +54,13 @@ class LyricLine extends StatelessWidget {
           child: AnimatedScale(
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeOutQuart,
-            scale: isHighlighted ? 1.0 : 0.85,
+            scale: isHighlighted ? 1.0 : inactiveScale,
             alignment: Alignment.centerLeft,
             child: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 500),
               curve: Curves.easeOutQuart,
               style: GoogleFonts.outfit(
-                fontSize: 36,
+                fontSize: fontSize,
                 fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w600,
                 color: Colors.white,
                 height: 1.2,

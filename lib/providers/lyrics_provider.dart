@@ -28,6 +28,8 @@ class LyricsProvider with ChangeNotifier {
   bool _isLoading = false;
   bool _androidPermissionGranted = true;
   String _loadingStatus = "";
+  double _fontSize = 36.0;
+  double _inactiveScale = 0.85;
 
   LyricsProvider() {
     _loadSettings();
@@ -49,6 +51,8 @@ class LyricsProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get androidPermissionGranted => _androidPermissionGranted;
   String get loadingStatus => _loadingStatus;
+  double get fontSize => _fontSize;
+  double get inactiveScale => _inactiveScale;
 
   String? get currentCacheId {
     if (_currentMetadata == null) return null;
@@ -101,6 +105,8 @@ class LyricsProvider with ChangeNotifier {
     _scrollAutoResumeDelay = await _settingsService.getScrollAutoResumeDelay();
     _blurEnabled = await _settingsService.getBlurEnabled();
     _trimMetadataProviders = await _settingsService.getTrimMetadataProviders();
+    _fontSize = await _settingsService.getFontSize();
+    _inactiveScale = await _settingsService.getInactiveScale();
     notifyListeners();
   }
 
@@ -130,6 +136,18 @@ class LyricsProvider with ChangeNotifier {
 
   bool shouldTrimMetadata(LyricProviderType provider) {
     return _trimMetadataProviders.contains(provider);
+  }
+
+  void setFontSize(double size) {
+    _fontSize = size;
+    _settingsService.setFontSize(size);
+    notifyListeners();
+  }
+
+  void setInactiveScale(double scale) {
+    _inactiveScale = scale;
+    _settingsService.setInactiveScale(scale);
+    notifyListeners();
   }
 
   void setGlobalOffset(Duration offset) {

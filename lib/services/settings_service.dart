@@ -12,6 +12,8 @@ class SettingsService {
   static const String _trimMetadataProvidersKey = 'trim_metadata_providers';
   static const String _enabledCountKey = 'enabled_provider_count';
   static const String _cacheEnabledKey = 'cache_enabled';
+  static const String _fontSizeKey = 'font_size';
+  static const String _inactiveScaleKey = 'inactive_scale';
 
   Future<List<LyricProviderType>> getAllProvidersOrdered() async {
     final prefs = await SharedPreferences.getInstance();
@@ -168,5 +170,25 @@ class SettingsService {
       _trimMetadataProvidersKey,
       providers.map((e) => e.name).toList(),
     );
+  }
+
+  Future<double> getFontSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(_fontSizeKey) ?? 36.0;
+  }
+
+  Future<void> setFontSize(double size) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_fontSizeKey, size);
+  }
+
+  Future<double> getInactiveScale() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(_inactiveScaleKey) ?? 0.85;
+  }
+
+  Future<void> setInactiveScale(double scale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_inactiveScaleKey, scale);
   }
 }

@@ -425,6 +425,170 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Font Size',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          if (provider.fontSize != 36.0)
+                            IconButton(
+                              icon: const Icon(
+                                Icons.refresh,
+                                size: 18,
+                                color: Colors.blue,
+                              ),
+                              onPressed: () => provider.setFontSize(36.0),
+                              tooltip: 'Reset to 36px',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${provider.fontSize.toInt()}',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Size of the lyric text in pixels.',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: Colors.blue,
+                      inactiveTrackColor: Colors.white10,
+                      thumbColor: Colors.blue,
+                      overlayColor: Colors.blue.withValues(alpha: 0.2),
+                      showValueIndicator: ShowValueIndicator.onDrag,
+                      year2023: false,
+                    ),
+                    child: Slider(
+                      value: provider.fontSize,
+                      min: 12,
+                      max: 64,
+                      divisions: 52,
+                      label: provider.fontSize.toInt().toString(),
+                      onChanged: (value) {
+                        provider.setFontSize(value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Inactive Line Scale',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          if (provider.inactiveScale != 0.85)
+                            IconButton(
+                              icon: const Icon(
+                                Icons.refresh,
+                                size: 18,
+                                color: Colors.blue,
+                              ),
+                              onPressed: () => provider.setInactiveScale(0.85),
+                              tooltip: 'Reset to 85%',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${(provider.inactiveScale * 100).toInt()}%',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Scale factor for non-highlighted lines.',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: Colors.blue,
+                      inactiveTrackColor: Colors.white10,
+                      thumbColor: Colors.blue,
+                      overlayColor: Colors.blue.withValues(alpha: 0.2),
+                      showValueIndicator: ShowValueIndicator.onDrag,
+                      year2023: false,
+                    ),
+                    child: Slider(
+                      value: provider.inactiveScale,
+                      min: 0.5,
+                      max: 1.0,
+                      divisions: 50,
+                      label: '${(provider.inactiveScale * 100).toInt()}%',
+                      onChanged: (value) {
+                        provider.setInactiveScale(value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
