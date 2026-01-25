@@ -86,7 +86,10 @@ class LyricsProvider with ChangeNotifier {
       final currentStartTime = lyrics[_currentIndex].startTime;
       final nextStartTime = lyrics[_currentIndex + 1].startTime;
       final duration =
-          nextStartTime.inMilliseconds - currentStartTime.inMilliseconds;
+          nextStartTime.inMilliseconds -
+          currentStartTime.inMilliseconds -
+          500 - // auto scroll takes 500ms
+          250; // shrink animation takes 250ms
       if (duration > 0) {
         return ((adjustedPosition.inMilliseconds -
                     currentStartTime.inMilliseconds) /
@@ -96,6 +99,19 @@ class LyricsProvider with ChangeNotifier {
     }
 
     return 0.0;
+  }
+
+  Duration get interludeDuration {
+    if (!isInterlude || lyrics.isEmpty) return Duration.zero;
+    if (_currentIndex >= 0 && _currentIndex < lyrics.length - 1) {
+      final currentStartTime = lyrics[_currentIndex].startTime;
+      final nextStartTime = lyrics[_currentIndex + 1].startTime;
+      return nextStartTime -
+          currentStartTime -
+          Duration(milliseconds: 500) - // auto scroll takes 500ms
+          Duration(milliseconds: 250); // shrink animation takes 250ms
+    }
+    return Duration.zero;
   }
 
   Future<void> _loadSettings() async {

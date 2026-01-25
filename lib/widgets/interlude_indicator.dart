@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 class InterludeIndicator extends StatefulWidget {
   final double progress;
-  const InterludeIndicator({super.key, required this.progress});
+  final Duration duration;
+  const InterludeIndicator({
+    super.key,
+    required this.progress,
+    required this.duration,
+  });
 
   @override
   State<InterludeIndicator> createState() => _InterludeIndicatorState();
@@ -43,6 +48,11 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     final double step = 1 - overlap;
     final double d = totalDotWindow / (2 * step + 1);
 
+    // Calculate duration for each dot's animation
+    final dotDuration = Duration(
+      milliseconds: (d * widget.duration.inMilliseconds).round(),
+    );
+
     // Target scale for the entire widget
     double targetScale = 1.0;
     if (widget.progress >= totalDotWindow) {
@@ -75,18 +85,23 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _AnimatedDot(progress: (widget.progress / d).clamp(0.0, 1.0)),
+                _AnimatedDot(
+                  progress: (widget.progress / d).clamp(0.0, 1.0),
+                  duration: dotDuration,
+                ),
                 _AnimatedDot(
                   progress: ((widget.progress - (step * d)) / d).clamp(
                     0.0,
                     1.0,
                   ),
+                  duration: dotDuration,
                 ),
                 _AnimatedDot(
                   progress: ((widget.progress - (2 * step * d)) / d).clamp(
                     0.0,
                     1.0,
                   ),
+                  duration: dotDuration,
                 ),
               ],
             ),
@@ -99,7 +114,8 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
 
 class _AnimatedDot extends StatelessWidget {
   final double progress;
-  const _AnimatedDot({required this.progress});
+  final Duration duration;
+  const _AnimatedDot({required this.progress, required this.duration});
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +135,7 @@ class _AnimatedDot extends StatelessWidget {
         height: n2,
         child: Center(
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            duration: duration,
             curve: Curves.linear, // Tracking real progress linearly
             width: size,
             height: size,
@@ -127,12 +143,11 @@ class _AnimatedDot extends StatelessWidget {
               color: Colors.white.withValues(alpha: opacity),
               shape: BoxShape.circle,
               boxShadow: [
-                if (progress > 0.1) // Only show glow when sufficiently active
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha: progress * 0.3),
-                    blurRadius: 8 * progress,
-                    spreadRadius: 1 * progress,
-                  ),
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: progress * 0.3),
+                  blurRadius: 8 * progress,
+                  spreadRadius: 1 * progress,
+                ),
               ],
             ),
           ),

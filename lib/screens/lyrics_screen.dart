@@ -416,7 +416,10 @@ class _LyricsScreenState extends State<LyricsScreen> {
           if (isHighlighted &&
               provider.isInterlude &&
               lyric.text.trim().isEmpty) {
-            return InterludeIndicator(progress: provider.interludeProgress);
+            return InterludeIndicator(
+              progress: provider.interludeProgress,
+              duration: provider.interludeDuration,
+            );
           }
 
           return lyricLine;
