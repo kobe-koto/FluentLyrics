@@ -623,7 +623,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 )
                               : const Icon(Icons.refresh, size: 18),
-                          label: const Text('Get New Token'),
+                          label: const Text(
+                            'Get New Token',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange.withValues(
                               alpha: 0.2,
@@ -761,7 +764,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             }
                           },
                           icon: const Icon(Icons.delete_sweep, size: 18),
-                          label: const Text('Clear All Lyrics Cache'),
+                          label: const Text(
+                            'Clear All Lyrics Cache',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red.withValues(alpha: 0.2),
                             foregroundColor: Colors.redAccent,

@@ -59,8 +59,13 @@ class LyricLine extends StatelessWidget {
               duration: const Duration(milliseconds: 500),
               curve: Curves.easeOutQuart,
               style: TextStyle(
+                fontFamily: 'Outfit',
                 fontSize: fontSize,
                 fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w600,
+                fontVariations: <FontVariation>[
+                  FontVariation('wght', 600),
+                  FontVariation('wght', 800),
+                ],
                 color: Colors.white,
                 height: 1.2,
               ),
