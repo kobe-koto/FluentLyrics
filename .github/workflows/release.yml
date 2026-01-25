@@ -11,7 +11,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Linux dependencies
         run: |
@@ -52,10 +54,18 @@ jobs:
           ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/android/upload-keystore.jks
         run: fastforge release --name production
 
+      - name: Generate Release Notes
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          bash ./.github/generate-release-notes.sh
+
       - name: Upload Release Artifacts
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
+          body_path: release.md
           files: |
             dist/**/*
         env:
