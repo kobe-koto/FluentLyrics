@@ -5,7 +5,7 @@ import '../models/lyric_model.dart';
 import '../services/media_service.dart';
 import '../services/lyrics_service.dart';
 import '../services/settings_service.dart';
-import '../services/lyrics_cache_service.dart';
+import '../services/providers/lyrics_cache_service.dart';
 
 class LyricsProvider with ChangeNotifier {
   final MediaService mediaService = MediaService();
@@ -295,27 +295,6 @@ class LyricsProvider with ChangeNotifier {
     _lyricsResult = LyricsResult.empty();
     notifyListeners();
 
-    final cacheId = _cacheService.generateCacheId(
-      metadata.title,
-      metadata.artist,
-      metadata.album,
-      metadata.duration.inSeconds,
-    );
-
-    final cached = await _cacheService.getCachedLyrics(cacheId);
-    if (cached != null) {
-      _lyricsResult = cached.trim();
-      _isLoading = false;
-      if (_currentMetadata?.artUrl == 'fallback' && cached.artworkUrl != null) {
-        _currentMetadata = _currentMetadata!.copyWith(
-          artUrl: cached.artworkUrl,
-        );
-      }
-      _updateCurrentIndex();
-      notifyListeners();
-      return;
-    }
-
     try {
       final stream = _lyricsService.fetchLyrics(
         title: metadata.title,
@@ -330,10 +309,9 @@ class LyricsProvider with ChangeNotifier {
         trimMetadataProviders: _trimMetadataProviders,
       );
 
-      // instert the prelude indication line
+      // Insert the prelude indication line if needed
       await for (var result in stream) {
         if (!metadata.isSameTrack(_currentMetadata)) return;
-        result = result.trim();
 
         if (result.lyrics.isNotEmpty &&
             result.lyrics[0].startTime > const Duration(seconds: 3)) {
@@ -345,7 +323,6 @@ class LyricsProvider with ChangeNotifier {
 
         _lyricsResult = result;
         if (result.lyrics.isNotEmpty || result.isPureMusic) {
-          await _cacheService.cacheLyrics(cacheId, result);
           _isLoading = false;
         }
 

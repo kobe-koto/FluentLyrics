@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import '../models/lyric_model.dart';
-import '../models/lyric_cache.dart';
+import '../../models/lyric_model.dart';
+import '../../models/lyric_cache.dart';
 
 class LyricsCacheService {
   static Isar? _isar;
@@ -31,6 +31,20 @@ class LyricsCacheService {
     final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
     return digest.toString();
+  }
+
+  Future<LyricsResult> fetchLyrics({
+    required String title,
+    required String artist,
+    required String? album,
+    required int durationSeconds,
+  }) async {
+    final cacheId = generateCacheId(title, artist, album, durationSeconds);
+    final cached = await getCachedLyrics(cacheId);
+    if (cached != null) {
+      return cached.copyWith(source: '${cached.source} (cached)');
+    }
+    return LyricsResult.empty();
   }
 
   Future<LyricsResult?> getCachedLyrics(String cacheId) async {

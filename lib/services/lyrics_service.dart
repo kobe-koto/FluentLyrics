@@ -1,14 +1,17 @@
 import '../models/lyric_model.dart';
+import 'settings_service.dart';
 import 'providers/lrclib_service.dart';
 import 'providers/musixmatch_service.dart';
 import 'providers/netease_service.dart';
-import 'settings_service.dart';
+import 'providers/lyrics_cache_service.dart';
 
 class LyricsService {
+  final SettingsService _settingsService = SettingsService();
+  // lyrics providers
   final LrclibService _lrclibService = LrclibService();
   final MusixmatchService _musixmatchService = MusixmatchService();
   final NeteaseService _neteaseService = NeteaseService();
-  final SettingsService _settingsService = SettingsService();
+  final LyricsCacheService _cacheService = LyricsCacheService();
 
   Stream<LyricsResult> fetchLyrics({
     required String title,
@@ -20,9 +23,12 @@ class LyricsService {
     List<LyricProviderType> trimMetadataProviders = const [],
   }) async* {
     final priority = await _settingsService.getPriority();
+    // Always prioritize cache first
+    final fullPriority = [LyricProviderType.cache, ...priority];
+
     LyricsResult? bestResult;
 
-    for (var provider in priority) {
+    for (var provider in fullPriority) {
       if (isCancelled?.call() == true) {
         if (bestResult != null) yield bestResult;
         return;
@@ -31,7 +37,14 @@ class LyricsService {
       LyricsResult result = LyricsResult.empty();
       final shouldTrimMetadata = trimMetadataProviders.contains(provider);
 
-      if (provider == LyricProviderType.lrclib) {
+      if (provider == LyricProviderType.cache) {
+        result = await _cacheService.fetchLyrics(
+          title: title,
+          artist: artist,
+          album: album,
+          durationSeconds: durationSeconds,
+        );
+      } else if (provider == LyricProviderType.lrclib) {
         result = await _lrclibService.fetchLyrics(
           title: title,
           artist: artist,
@@ -60,6 +73,17 @@ class LyricsService {
       if (result.lyrics.isNotEmpty ||
           result.artworkUrl != null ||
           result.isPureMusic) {
+        // Cache the raw result from other providers
+        if (provider != LyricProviderType.cache) {
+          final cacheId = _cacheService.generateCacheId(
+            title,
+            artist,
+            album,
+            durationSeconds,
+          );
+          await _cacheService.cacheLyrics(cacheId, result);
+        }
+
         if (bestResult == null) {
           bestResult = result;
         } else {

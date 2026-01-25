@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum LyricProviderType { lrclib, musixmatch, netease }
+enum LyricProviderType { lrclib, musixmatch, netease, cache }
 
 class SettingsService {
   static const String _priorityKey = 'lyric_provider_priority';
@@ -29,12 +29,13 @@ class SettingsService {
         .map((e) => LyricProviderType.values.where((v) => v.name == e))
         .where((matches) => matches.isNotEmpty)
         .map((matches) => matches.first)
+        .where((v) => v != LyricProviderType.cache)
         .toList();
 
     // Find missing providers and append them
     final Set<LyricProviderType> savedSet = savedList.toSet();
     for (var provider in LyricProviderType.values) {
-      if (!savedSet.contains(provider)) {
+      if (provider != LyricProviderType.cache && !savedSet.contains(provider)) {
         savedList.add(provider);
       }
     }
@@ -105,7 +106,9 @@ class SettingsService {
     final saved = prefs.getStringList(_trimMetadataProvidersKey);
 
     // Default: trim metadata only for netease
-    final List<LyricProviderType> defaultProviders = [LyricProviderType.netease];
+    final List<LyricProviderType> defaultProviders = [
+      LyricProviderType.netease,
+    ];
 
     if (saved == null) {
       return defaultProviders;
@@ -120,7 +123,9 @@ class SettingsService {
     return savedList.isEmpty ? defaultProviders : savedList;
   }
 
-  Future<void> setTrimMetadataProviders(List<LyricProviderType> providers) async {
+  Future<void> setTrimMetadataProviders(
+    List<LyricProviderType> providers,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
       _trimMetadataProvidersKey,
