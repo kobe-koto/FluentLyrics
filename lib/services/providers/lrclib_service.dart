@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../models/lyric_model.dart';
 import '../../utils/lrc_parser.dart';
@@ -84,7 +85,7 @@ class LrclibService {
         }
       }
     } catch (e) {
-      print('Error fetching lyrics from LRCLIB: $e');
+      debugPrint('Error fetching lyrics from LRCLIB: $e');
     }
     return LyricsResult.empty();
   }

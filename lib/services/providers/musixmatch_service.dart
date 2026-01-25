@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../models/lyric_model.dart';
 import '../../utils/lrc_parser.dart';
@@ -46,7 +47,7 @@ class MusixmatchService {
         return result;
       }
     } catch (e) {
-      print('Error fetching Musixmatch lyrics: $e');
+      debugPrint('Error fetching Musixmatch lyrics: $e');
     }
     return LyricsResult.empty();
   }
@@ -66,7 +67,7 @@ class MusixmatchService {
         return data['message']['body']['user_token'];
       }
     } catch (e) {
-      print('Error fetching Musixmatch token: $e');
+      debugPrint('Error fetching Musixmatch token: $e');
     }
     return null;
   }

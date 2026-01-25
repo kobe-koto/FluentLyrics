@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_pkg;
 import '../../models/lyric_model.dart';
@@ -66,26 +66,28 @@ class NeteaseService {
           .timeout(const Duration(seconds: 10));
 
       if (searchResponse.statusCode != 200) {
-        print('Netease search failed: ${searchResponse.statusCode}');
+        debugPrint('Netease search failed: ${searchResponse.statusCode}');
         return LyricsResult.empty();
       }
 
       final searchData = jsonDecode(searchResponse.body);
       if (searchData['code'] != 200) {
-        print('Netease search returned code: ${searchData['code']}');
+        debugPrint(
+          'Netease search returned unexpected code: ${searchData['code']}',
+        );
         return LyricsResult.empty();
       }
 
       final result = searchData['result'];
       if (result == null ||
           (result['songs'] == null && result['songCount'] == 0)) {
-        print('Netease search returned no results');
+        // Netease search returned no results
         return LyricsResult.empty();
       }
 
       final songs = result['songs'] as List? ?? [];
       if (songs.isEmpty) {
-        print('Netease search returned empty songs list');
+        // Netease search returned empty songs list
         return LyricsResult.empty();
       }
 
@@ -112,7 +114,7 @@ class NeteaseService {
       // If the best match duration is too different, it might not be the same song
       // (Netease duration is in ms)
       if (minDiff > 10 && durationSeconds > 0) {
-        print('Netease best match duration diff too large: ${minDiff}s');
+        debugPrint('Netease best match duration diff too large: ${minDiff}s');
       }
 
       final songId = bestMatch['id'].toString();
@@ -126,7 +128,7 @@ class NeteaseService {
           .get(lyricUri, headers: _headers)
           .timeout(const Duration(seconds: 10));
       if (lyricResponse.statusCode != 200) {
-        print('Netease lyric fetch failed: ${lyricResponse.statusCode}');
+        debugPrint('Netease lyric fetch failed: ${lyricResponse.statusCode}');
         return LyricsResult.empty();
       }
 
@@ -161,10 +163,10 @@ class NeteaseService {
           writtenBy: parseResult.trimmedMetadata['作词'],
         );
       } else {
-        print('Netease returned no lyrics or artwork for songId: $songId');
+        debugPrint('Netease returned no lyrics or artwork for songId: $songId');
       }
     } catch (e) {
-      print('Error fetching lyrics from Netease: $e');
+      debugPrint('Error fetching lyrics from Netease: $e');
     }
     return LyricsResult.empty();
   }
