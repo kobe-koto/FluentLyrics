@@ -201,7 +201,10 @@ class LinuxMediaService implements MediaService {
 
       final album =
           unwrap(metadata['xesam:album'])?.asString() ?? 'Unknown Album';
-      final artUrl = unwrap(metadata['mpris:artUrl'])?.asString() ?? '';
+      final artUrlValue = unwrap(metadata['mpris:artUrl'])?.asString();
+      final artUrl = (artUrlValue == null || artUrlValue.isEmpty)
+          ? 'fallback'
+          : artUrlValue;
 
       final lengthValue = unwrap(metadata['mpris:length']);
       int length = 0;
@@ -293,7 +296,10 @@ class AndroidMediaService implements MediaService {
         artist: result['artist'] ?? 'Unknown Artist',
         album: result['album'] ?? 'Unknown Album',
         duration: Duration(milliseconds: result['duration'] ?? 0),
-        artUrl: result['artUrl'] ?? '',
+        artUrl:
+            (result['artUrl'] == null || (result['artUrl'] as String).isEmpty)
+            ? 'fallback'
+            : result['artUrl'],
       );
     } catch (e) {
       return null;
