@@ -338,10 +338,7 @@ class LyricsProvider with ChangeNotifier {
             result.lyrics[0].startTime > const Duration(seconds: 3)) {
           // Ensure we don't modify the same list if it's shared
           final newLyrics = List<Lyric>.from(result.lyrics);
-          if (newLyrics[0].text.isNotEmpty ||
-              newLyrics[0].startTime > Duration.zero) {
-            newLyrics.insert(0, Lyric(text: '', startTime: Duration.zero));
-          }
+          newLyrics.insert(0, Lyric(text: '', startTime: Duration.zero));
           result = result.copyWith(lyrics: newLyrics);
         }
 
