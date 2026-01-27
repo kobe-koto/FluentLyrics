@@ -92,7 +92,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                   children: [
                     _buildHeader(provider, fgArt),
                     Expanded(child: _buildLyricsList(provider)),
-                    _buildProgressBar(provider),
+                    _buildControlArea(provider),
                   ],
                 ),
               ),
@@ -499,7 +499,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
     super.dispose();
   }
 
-  Widget _buildProgressBar(LyricsProvider provider) {
+  Widget _buildControlArea(LyricsProvider provider) {
     final metadata = provider.currentMetadata;
     final totalMs = metadata?.duration.inMilliseconds ?? 1;
     final currentMs = provider.currentPosition.inMilliseconds;
@@ -522,13 +522,15 @@ class _LyricsScreenState extends State<LyricsScreen> {
                   const Duration(milliseconds: -250),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               GestureDetector(
                 onLongPress: () => provider.setTrackOffset(Duration.zero),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
+                  padding: const EdgeInsets.only(
+                    left: 8,
+                    right: 10,
+                    top: 4,
+                    bottom: 4,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha(25),
@@ -555,7 +557,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               _OffsetButton(
                 icon: Icons.add_circle_outline,
                 onPressed: () => provider.adjustTrackOffset(
@@ -564,7 +566,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
@@ -598,7 +600,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
