@@ -790,9 +790,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildVersionSection() {
-    final versionDisplay = kReleaseMode
-        ? 'v$_version'
-        : '(dev, parent v$_version)';
+    final versionDisplay = kDebugMode
+        ? '(dev, parent v$_version)'
+        : 'v$_version';
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
