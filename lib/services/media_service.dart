@@ -1,6 +1,8 @@
 import 'package:dbus/dbus.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 class MediaMetadata {
   final String title;
@@ -56,13 +58,80 @@ class MediaMetadata {
   }
 }
 
-abstract class MediaService {
-  Future<MediaMetadata?> getMetadata();
-  Future<Duration> getPosition();
-  Future<bool> isPlaying();
+class MediaControlAbility {
+  final bool canPlayPause;
+  final bool canGoNext;
+  final bool canGoPrevious;
+
+  MediaControlAbility({
+    required this.canPlayPause,
+    required this.canGoNext,
+    required this.canGoPrevious,
+  });
+
+  factory MediaControlAbility.none() => MediaControlAbility(
+    canPlayPause: false,
+    canGoNext: false,
+    canGoPrevious: false,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MediaControlAbility &&
+          runtimeType == other.runtimeType &&
+          canPlayPause == other.canPlayPause &&
+          canGoNext == other.canGoNext &&
+          canGoPrevious == other.canGoPrevious;
+
+  @override
+  int get hashCode =>
+      canPlayPause.hashCode ^ canGoNext.hashCode ^ canGoPrevious.hashCode;
+}
+
+class MediaPlaybackStatus {
+  final bool isPlaying;
+  final Duration position;
+
+  MediaPlaybackStatus({required this.isPlaying, required this.position});
+
+  factory MediaPlaybackStatus.empty() =>
+      MediaPlaybackStatus(isPlaying: false, position: Duration.zero);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MediaPlaybackStatus &&
+          runtimeType == other.runtimeType &&
+          isPlaying == other.isPlaying &&
+          position == other.position;
+
+  @override
+  int get hashCode => isPlaying.hashCode ^ position.hashCode;
+}
+
+abstract class MediaController {
+  Future<void> play();
+  Future<void> pause();
+  Future<void> playPause();
+  Future<void> nextTrack();
+  Future<void> previousTrack();
+}
+
+abstract class MediaService extends ChangeNotifier {
+  MediaService();
+
+  MediaMetadata? get metadata;
+  MediaPlaybackStatus get status;
+  MediaControlAbility get controlAbility;
+  MediaController get controller;
+
+  void startPolling();
+  void stopPolling();
+  @override
   void dispose();
 
-  factory MediaService() {
+  factory MediaService.create() {
     if (Platform.isLinux) {
       return LinuxMediaService();
     } else if (Platform.isAndroid) {
@@ -72,12 +141,154 @@ abstract class MediaService {
   }
 }
 
-class LinuxMediaService implements MediaService {
+class LinuxMediaService extends MediaService implements MediaController {
   final DBusClient _client = DBusClient.session();
   String? _cachedPlayerBusName;
   DateTime? _lastDiscoveryTime;
   static const _discoveryInterval = Duration(seconds: 2);
   static const _dbusTimeout = Duration(milliseconds: 500);
+
+  Timer? _pollTimer;
+  MediaMetadata? _metadata;
+  MediaPlaybackStatus _status = MediaPlaybackStatus.empty();
+  MediaControlAbility _controlAbility = MediaControlAbility.none();
+
+  @override
+  MediaMetadata? get metadata => _metadata;
+  @override
+  MediaPlaybackStatus get status => _status;
+  @override
+  MediaControlAbility get controlAbility => _controlAbility;
+  @override
+  MediaController get controller => this;
+
+  @override
+  void startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(
+      const Duration(milliseconds: 250),
+      (_) => _updateState(),
+    );
+    _updateState();
+  }
+
+  @override
+  void stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  Future<void> _updateState() async {
+    try {
+      final playerBusName = await _getBestPlayer();
+      if (playerBusName == null) {
+        if (_metadata != null || _status != MediaPlaybackStatus.empty()) {
+          _metadata = null;
+          _status = MediaPlaybackStatus.empty();
+          _controlAbility = MediaControlAbility.none();
+          notifyListeners();
+        }
+        return;
+      }
+
+      final object = DBusRemoteObject(
+        _client,
+        name: playerBusName,
+        path: DBusObjectPath('/org/mpris/MediaPlayer2'),
+      );
+
+      final properties = await object
+          .getAllProperties('org.mpris.MediaPlayer2.Player')
+          .timeout(_dbusTimeout);
+
+      final metadataValue = properties['Metadata'];
+      MediaMetadata? newMetadata;
+      if (metadataValue is DBusDict) {
+        final dict = metadataValue.children.map(
+          (key, value) => MapEntry(key.asString(), value),
+        );
+
+        DBusValue? unwrap(DBusValue? v) {
+          if (v is DBusVariant) return v.value;
+          return v;
+        }
+
+        final title =
+            unwrap(dict['xesam:title'])?.asString() ?? 'Unknown Title';
+        final artistValue = unwrap(dict['xesam:artist']);
+        String artist = 'Unknown Artist';
+        if (artistValue is DBusArray) {
+          artist = artistValue.children.map((e) => e.asString()).join(', ');
+        } else if (artistValue != null) {
+          artist = artistValue.asString();
+        }
+
+        final album =
+            unwrap(dict['xesam:album'])?.asString() ?? 'Unknown Album';
+        final artUrlValue = unwrap(dict['mpris:artUrl'])?.asString();
+        final artUrl = (artUrlValue == null || artUrlValue.isEmpty)
+            ? 'fallback'
+            : artUrlValue;
+
+        final lengthValue = unwrap(dict['mpris:length']);
+        int length = 0;
+        if (lengthValue is DBusUint64) {
+          length = lengthValue.value;
+        } else if (lengthValue is DBusInt64) {
+          length = lengthValue.value;
+        }
+        final duration = Duration(microseconds: length);
+
+        newMetadata = MediaMetadata(
+          title: title,
+          artist: artist,
+          album: album,
+          duration: duration,
+          artUrl: artUrl,
+        );
+      }
+
+      final playbackStatus =
+          properties['PlaybackStatus']?.asString() ?? 'Stopped';
+      final isPlaying = playbackStatus == 'Playing';
+
+      final posValue = properties['Position'];
+      Duration position = Duration.zero;
+      DBusValue? p = posValue;
+      if (p is DBusVariant) p = p.value;
+      if (p is DBusInt64) {
+        position = Duration(microseconds: p.value);
+      } else if (p is DBusUint64) {
+        position = Duration(microseconds: p.value);
+      }
+
+      final canPlay = properties['CanPlay']?.asBoolean() ?? false;
+      final canPause = properties['CanPause']?.asBoolean() ?? false;
+      final canGoNext = properties['CanGoNext']?.asBoolean() ?? false;
+      final canGoPrevious = properties['CanGoPrevious']?.asBoolean() ?? false;
+
+      final newStatus = MediaPlaybackStatus(
+        isPlaying: isPlaying,
+        position: position,
+      );
+      final newAbility = MediaControlAbility(
+        canPlayPause: canPlay || canPause,
+        canGoNext: canGoNext,
+        canGoPrevious: canGoPrevious,
+      );
+
+      if (_metadata != newMetadata ||
+          _status != newStatus ||
+          _controlAbility != newAbility) {
+        _metadata = newMetadata;
+        _status = newStatus;
+        _controlAbility = newAbility;
+        notifyListeners();
+      }
+    } catch (e) {
+      _cachedPlayerBusName = null;
+    }
+  }
 
   Future<String?> _getBestPlayer() async {
     final now = DateTime.now();
@@ -88,7 +299,6 @@ class LinuxMediaService implements MediaService {
     }
 
     try {
-      // List all available players
       final names = await _client.listNames().timeout(_dbusTimeout);
       final players = names
           .where((n) => n.startsWith('org.mpris.MediaPlayer2.'))
@@ -98,7 +308,6 @@ class LinuxMediaService implements MediaService {
         return null;
       }
 
-      // filter out players that dont have any metadata
       final List<String> validPlayers = [];
       for (final player in players) {
         try {
@@ -110,7 +319,6 @@ class LinuxMediaService implements MediaService {
           final metadataValue = await object
               .getProperty('org.mpris.MediaPlayer2.Player', 'Metadata')
               .timeout(_dbusTimeout);
-
           if (metadataValue is DBusDict) {
             final dict = metadataValue.asStringVariantDict();
             final trackId = dict['mpris:trackid']?.asString();
@@ -120,9 +328,7 @@ class LinuxMediaService implements MediaService {
               validPlayers.add(player);
             }
           }
-        } catch (e) {
-          // Skip unresponsive or invalid players
-        }
+        } catch (e) {}
       }
 
       if (validPlayers.isEmpty) {
@@ -130,7 +336,6 @@ class LinuxMediaService implements MediaService {
         return null;
       }
 
-      // Prefer the player that is currently playing
       String? bestFound;
       for (final player in validPlayers) {
         final status = await _getPlaybackStatus(player);
@@ -144,7 +349,7 @@ class LinuxMediaService implements MediaService {
       _lastDiscoveryTime = now;
       return _cachedPlayerBusName;
     } catch (e) {
-      return _cachedPlayerBusName; // Return old one on failure if we have it
+      return _cachedPlayerBusName;
     }
   }
 
@@ -165,170 +370,218 @@ class LinuxMediaService implements MediaService {
   }
 
   @override
-  Future<MediaMetadata?> getMetadata() async {
-    try {
-      final playerBusName = await _getBestPlayer();
-      if (playerBusName == null) return null;
-
-      final object = DBusRemoteObject(
-        _client,
-        name: playerBusName,
-        path: DBusObjectPath('/org/mpris/MediaPlayer2'),
-      );
-      final metadataValue = await object
-          .getProperty('org.mpris.MediaPlayer2.Player', 'Metadata')
-          .timeout(_dbusTimeout);
-
-      if (metadataValue is! DBusDict) return null;
-      final metadata = metadataValue.children.map(
-        (key, value) => MapEntry(key.asString(), value),
-      );
-
-      DBusValue? unwrap(DBusValue? v) {
-        if (v is DBusVariant) return v.value;
-        return v;
-      }
-
-      final title =
-          unwrap(metadata['xesam:title'])?.asString() ?? 'Unknown Title';
-      final artistValue = unwrap(metadata['xesam:artist']);
-      String artist = 'Unknown Artist';
-      if (artistValue is DBusArray) {
-        artist = artistValue.children.map((e) => e.asString()).join(', ');
-      } else if (artistValue != null) {
-        artist = artistValue.asString();
-      }
-
-      final album =
-          unwrap(metadata['xesam:album'])?.asString() ?? 'Unknown Album';
-      final artUrlValue = unwrap(metadata['mpris:artUrl'])?.asString();
-      final artUrl = (artUrlValue == null || artUrlValue.isEmpty)
-          ? 'fallback'
-          : artUrlValue;
-
-      final lengthValue = unwrap(metadata['mpris:length']);
-      int length = 0;
-      if (lengthValue is DBusUint64) {
-        length = lengthValue.value;
-      } else if (lengthValue is DBusInt64) {
-        length = lengthValue.value;
-      }
-      final duration = Duration(microseconds: length);
-
-      return MediaMetadata(
-        title: title,
-        artist: artist,
-        album: album,
-        duration: duration,
-        artUrl: artUrl,
-      );
-    } catch (e) {
-      // If the cached player fails, invalidate it
-      _cachedPlayerBusName = null;
-      return null;
-    }
+  Future<void> play() async {
+    final playerBusName = await _getBestPlayer();
+    if (playerBusName == null) return;
+    final object = DBusRemoteObject(
+      _client,
+      name: playerBusName,
+      path: DBusObjectPath('/org/mpris/MediaPlayer2'),
+    );
+    await object.callMethod(
+      'org.mpris.MediaPlayer2.Player',
+      'Play',
+      [],
+      replySignature: DBusSignature(''),
+    );
   }
 
   @override
-  Future<Duration> getPosition() async {
-    try {
-      final playerBusName = await _getBestPlayer();
-      if (playerBusName == null) return Duration.zero;
-
-      final object = DBusRemoteObject(
-        _client,
-        name: playerBusName,
-        path: DBusObjectPath('/org/mpris/MediaPlayer2'),
-      );
-      final positionValue = await object
-          .getProperty('org.mpris.MediaPlayer2.Player', 'Position')
-          .timeout(_dbusTimeout);
-
-      DBusValue? unwrap(DBusValue? v) {
-        if (v is DBusVariant) return v.value;
-        return v;
-      }
-
-      final pos = unwrap(positionValue);
-      if (pos is DBusInt64) {
-        return Duration(microseconds: pos.value);
-      } else if (pos is DBusUint64) {
-        return Duration(microseconds: pos.value);
-      }
-      return Duration.zero;
-    } catch (e) {
-      return Duration.zero;
-    }
+  Future<void> pause() async {
+    final playerBusName = await _getBestPlayer();
+    if (playerBusName == null) return;
+    final object = DBusRemoteObject(
+      _client,
+      name: playerBusName,
+      path: DBusObjectPath('/org/mpris/MediaPlayer2'),
+    );
+    await object.callMethod(
+      'org.mpris.MediaPlayer2.Player',
+      'Pause',
+      [],
+      replySignature: DBusSignature(''),
+    );
   }
 
   @override
-  Future<bool> isPlaying() async {
-    try {
-      final playerBusName = await _getBestPlayer();
-      if (playerBusName == null) return false;
-      return (await _getPlaybackStatus(playerBusName)) == 'Playing';
-    } catch (e) {
-      return false;
-    }
+  Future<void> playPause() async {
+    final playerBusName = await _getBestPlayer();
+    if (playerBusName == null) return;
+    final object = DBusRemoteObject(
+      _client,
+      name: playerBusName,
+      path: DBusObjectPath('/org/mpris/MediaPlayer2'),
+    );
+    await object.callMethod(
+      'org.mpris.MediaPlayer2.Player',
+      'PlayPause',
+      [],
+      replySignature: DBusSignature(''),
+    );
+  }
+
+  @override
+  Future<void> nextTrack() async {
+    final playerBusName = await _getBestPlayer();
+    if (playerBusName == null) return;
+    final object = DBusRemoteObject(
+      _client,
+      name: playerBusName,
+      path: DBusObjectPath('/org/mpris/MediaPlayer2'),
+    );
+    await object.callMethod(
+      'org.mpris.MediaPlayer2.Player',
+      'Next',
+      [],
+      replySignature: DBusSignature(''),
+    );
+  }
+
+  @override
+  Future<void> previousTrack() async {
+    final playerBusName = await _getBestPlayer();
+    if (playerBusName == null) return;
+    final object = DBusRemoteObject(
+      _client,
+      name: playerBusName,
+      path: DBusObjectPath('/org/mpris/MediaPlayer2'),
+    );
+    await object.callMethod(
+      'org.mpris.MediaPlayer2.Player',
+      'Previous',
+      [],
+      replySignature: DBusSignature(''),
+    );
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _client.close();
+    super.dispose();
   }
 }
 
-class AndroidMediaService implements MediaService {
+class AndroidMediaService extends MediaService implements MediaController {
   static const MethodChannel _channel = MethodChannel(
     'cc.koto.fluent_lyrics/media',
   );
 
-  @override
-  Future<MediaMetadata?> getMetadata() async {
-    try {
-      final Map<dynamic, dynamic>? result = await _channel.invokeMethod(
-        'getMetadata',
-      );
-      if (result == null) return null;
+  Timer? _pollTimer;
+  MediaMetadata? _metadata;
+  MediaPlaybackStatus _status = MediaPlaybackStatus.empty();
+  MediaControlAbility _controlAbility = MediaControlAbility.none();
 
-      return MediaMetadata(
-        title: result['title'] ?? 'Unknown Title',
-        artist: result['artist'] ?? 'Unknown Artist',
-        album: result['album'] ?? 'Unknown Album',
-        duration: Duration(milliseconds: result['duration'] ?? 0),
-        artUrl:
-            (result['artUrl'] == null || (result['artUrl'] as String).isEmpty)
-            ? 'fallback'
-            : result['artUrl'],
-      );
-    } catch (e) {
-      return null;
-    }
+  @override
+  MediaMetadata? get metadata => _metadata;
+  @override
+  MediaPlaybackStatus get status => _status;
+  @override
+  MediaControlAbility get controlAbility => _controlAbility;
+  @override
+  MediaController get controller => this;
+
+  @override
+  void startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(
+      const Duration(milliseconds: 250),
+      (_) => _updateState(),
+    );
+    _updateState();
   }
 
   @override
-  Future<Duration> getPosition() async {
+  void stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  Future<void> _updateState() async {
     try {
-      final int? position = await _channel.invokeMethod('getPosition');
-      return Duration(milliseconds: position ?? 0);
-    } catch (e) {
-      return Duration.zero;
-    }
+      final Map? result = await _channel.invokeMethod('getStatus');
+      if (result == null) {
+        if (_metadata != null || _status != MediaPlaybackStatus.empty()) {
+          _metadata = null;
+          _status = MediaPlaybackStatus.empty();
+          _controlAbility = MediaControlAbility.none();
+          notifyListeners();
+        }
+        return;
+      }
+
+      final metadataMap = result['metadata'] as Map?;
+      MediaMetadata? newMetadata;
+      if (metadataMap != null) {
+        newMetadata = MediaMetadata(
+          title: metadataMap['title'] ?? 'Unknown Title',
+          artist: metadataMap['artist'] ?? 'Unknown Artist',
+          album: metadataMap['album'] ?? 'Unknown Album',
+          duration: Duration(milliseconds: metadataMap['duration'] ?? 0),
+          artUrl:
+              (metadataMap['artUrl'] == null ||
+                  (metadataMap['artUrl'] as String).isEmpty)
+              ? 'fallback'
+              : metadataMap['artUrl'],
+        );
+      }
+
+      final abilityMap = result['controlAbility'] as Map?;
+      final isPlaying = result['isPlaying'] ?? false;
+      final position = Duration(milliseconds: result['position'] ?? 0);
+
+      final newStatus = MediaPlaybackStatus(
+        isPlaying: isPlaying,
+        position: position,
+      );
+      final newAbility = abilityMap != null
+          ? MediaControlAbility(
+              canPlayPause: abilityMap['canPlayPause'] ?? false,
+              canGoNext: abilityMap['canGoNext'] ?? false,
+              canGoPrevious: abilityMap['canGoPrevious'] ?? false,
+            )
+          : MediaControlAbility.none();
+
+      if (_metadata != newMetadata ||
+          _status != newStatus ||
+          _controlAbility != newAbility) {
+        _metadata = newMetadata;
+        _status = newStatus;
+        _controlAbility = newAbility;
+        notifyListeners();
+      }
+    } catch (e) {}
   }
 
   @override
-  Future<bool> isPlaying() async {
-    try {
-      final bool? isPlaying = await _channel.invokeMethod('isPlaying');
-      return isPlaying ?? false;
-    } catch (e) {
-      return false;
-    }
+  Future<void> play() async {
+    await _channel.invokeMethod('play');
+  }
+
+  @override
+  Future<void> pause() async {
+    await _channel.invokeMethod('pause');
+  }
+
+  @override
+  Future<void> playPause() async {
+    await _channel.invokeMethod('playPause');
+  }
+
+  @override
+  Future<void> nextTrack() async {
+    await _channel.invokeMethod('nextTrack');
+  }
+
+  @override
+  Future<void> previousTrack() async {
+    await _channel.invokeMethod('previousTrack');
   }
 
   @override
   void dispose() {
-    // No specific resources to dispose for Android MethodChannel
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<bool> checkPermission() async {

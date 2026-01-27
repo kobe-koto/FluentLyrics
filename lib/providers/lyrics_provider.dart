@@ -8,13 +8,13 @@ import '../services/settings_service.dart';
 import '../services/providers/lyrics_cache_service.dart';
 
 class LyricsProvider with ChangeNotifier {
-  final MediaService mediaService = MediaService();
+  final MediaService mediaService = MediaService.create();
   final LyricsService _lyricsService = LyricsService();
   final SettingsService _settingsService = SettingsService();
   final LyricsCacheService _cacheService = LyricsCacheService();
 
-  Timer? _pollTimer;
   MediaMetadata? _currentMetadata;
+  Timer? _permissionTimer;
   LyricsResult _lyricsResult = LyricsResult.empty();
   Duration _currentPosition = Duration.zero;
   Duration _globalOffset = Duration.zero;
@@ -26,14 +26,29 @@ class LyricsProvider with ChangeNotifier {
   List<LyricProviderType> _trimMetadataProviders = [LyricProviderType.netease];
   bool _isPlaying = false;
   bool _isLoading = false;
-  bool _androidPermissionGranted = true;
+  bool _androidPermissionGranted = !Platform.isAndroid;
   String _loadingStatus = "";
   double _fontSize = 36.0;
   double _inactiveScale = 0.85;
 
+  MediaControlAbility _controlAbility = MediaControlAbility.none();
+  DateTime? _playbackToggleLockedUntil;
+
   LyricsProvider() {
     _loadSettings();
-    _startPolling();
+    mediaService.addListener(_onMediaChanged);
+    mediaService.startPolling();
+    if (Platform.isAndroid) {
+      _startPermissionPolling();
+    }
+  }
+
+  void _startPermissionPolling() {
+    _permissionTimer?.cancel();
+    _permissionTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      checkAndroidPermission();
+    });
+    checkAndroidPermission();
   }
 
   MediaMetadata? get currentMetadata => _currentMetadata;
@@ -53,6 +68,7 @@ class LyricsProvider with ChangeNotifier {
   String get loadingStatus => _loadingStatus;
   double get fontSize => _fontSize;
   double get inactiveScale => _inactiveScale;
+  MediaControlAbility get controlAbility => _controlAbility;
 
   String? get currentCacheId {
     if (_currentMetadata == null) return null;
@@ -185,27 +201,46 @@ class LyricsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void _startPolling() {
-    // Initial check
+  Future<void> playPause() async {
+    // Optimistic toggle
+    _isPlaying = !_isPlaying;
+    _playbackToggleLockedUntil = DateTime.now().add(const Duration(seconds: 1));
+    notifyListeners();
+
+    try {
+      await mediaService.controller.playPause();
+    } catch (e) {
+      // Revert on error
+      _isPlaying = !_isPlaying;
+      _playbackToggleLockedUntil = null;
+      notifyListeners();
+    }
+  }
+
+  Future<void> nextTrack() async {
+    await mediaService.controller.nextTrack();
+  }
+
+  Future<void> previousTrack() async {
+    await mediaService.controller.previousTrack();
+  }
+
+  void _onMediaChanged() {
     if (Platform.isAndroid) {
       checkAndroidPermission();
     }
+    _syncWithMediaService();
+  }
 
-    int permissionTicks = 0;
-    _pollTimer = Timer.periodic(const Duration(milliseconds: 250), (
-      timer,
-    ) async {
-      if (Platform.isAndroid) {
-        permissionTicks++;
-        // Check every 250ms if not granted (for responsive closing)
-        // Check every 2 seconds if already granted (to detect revocation)
-        if (!_androidPermissionGranted || permissionTicks >= 8) {
-          permissionTicks = 0;
-          await checkAndroidPermission();
-        }
+  Future<void> checkAndroidPermission() async {
+    final service = mediaService;
+    if (service is AndroidMediaService) {
+      final granted = await service.checkPermission();
+      if (_androidPermissionGranted != granted) {
+        _androidPermissionGranted = granted;
+        notifyListeners();
       }
-      await _updateStatus();
-    });
+    }
   }
 
   Future<void> clearCurrentTrackCache() async {
@@ -215,7 +250,7 @@ class LyricsProvider with ChangeNotifier {
       if (_currentMetadata != null) {
         // Force the fetching logic to re-search for artwork by resetting to 'fallback'.
         // This is only necessary if the system art was 'fallback' (i.e. no local art).
-        final systemMetadata = await mediaService.getMetadata();
+        final systemMetadata = mediaService.metadata;
         if (systemMetadata?.artUrl == '' ||
             systemMetadata?.artUrl == 'fallback') {
           _currentMetadata = _currentMetadata!.copyWith(artUrl: 'fallback');
@@ -236,83 +271,76 @@ class LyricsProvider with ChangeNotifier {
     return await _cacheService.getCacheStats();
   }
 
-  bool _isUpdatingStatus = false;
+  void _syncWithMediaService() {
+    final metadata = mediaService.metadata;
+    final isPlaying = mediaService.status.isPlaying;
+    final position = mediaService.status.position;
+    final controlAbility = mediaService.controlAbility;
 
-  Future<void> _updateStatus() async {
-    if (_isUpdatingStatus) return;
-    _isUpdatingStatus = true;
-    try {
-      final metadata = await mediaService.getMetadata();
-      final isPlaying = await mediaService.isPlaying();
-      final position = await mediaService.getPosition();
+    bool metadataChanged = false;
 
-      bool metadataChanged = false;
+    MediaMetadata? processedMetadata = metadata;
+    if (metadata != null &&
+        metadata.artUrl == 'fallback' &&
+        _currentMetadata != null &&
+        _currentMetadata!.artUrl != 'fallback' &&
+        _currentMetadata!.isSameTrack(metadata)) {
+      // Keep our existing artUrl if the fresh metadata is still reporting 'fallback'
+      processedMetadata = metadata.copyWith(artUrl: _currentMetadata!.artUrl);
+    }
 
-      MediaMetadata? processedMetadata = metadata;
-      if (metadata != null &&
-          metadata.artUrl == 'fallback' &&
-          _currentMetadata != null &&
-          _currentMetadata!.artUrl != 'fallback' &&
-          _currentMetadata!.title == metadata.title &&
-          _currentMetadata!.artist == metadata.artist &&
-          _currentMetadata!.album == metadata.album) {
-        // Keep our existing artUrl if the fresh metadata is still reporting 'fallback'
-        processedMetadata = metadata.copyWith(artUrl: _currentMetadata!.artUrl);
-      }
+    final trackChanged = processedMetadata == null
+        ? _currentMetadata != null
+        : !processedMetadata.isSameTrack(_currentMetadata);
+    final durationBecameValid =
+        processedMetadata != null &&
+        _currentMetadata != null &&
+        _currentMetadata!.duration.inSeconds == 0 &&
+        processedMetadata.duration.inSeconds > 0;
 
-      final trackChanged = processedMetadata == null
-          ? _currentMetadata != null
-          : !processedMetadata.isSameTrack(_currentMetadata);
-      final durationBecameValid =
-          processedMetadata != null &&
-          _currentMetadata != null &&
-          _currentMetadata!.duration.inSeconds == 0 &&
-          processedMetadata.duration.inSeconds > 0;
+    if (trackChanged || durationBecameValid) {
+      _currentMetadata = processedMetadata;
+      metadataChanged = true;
+      _trackOffset = Duration.zero; // Reset offset for new song
 
-      if (trackChanged || durationBecameValid) {
-        _currentMetadata = processedMetadata;
-        metadataChanged = true;
-        _trackOffset = Duration.zero; // Reset offset for new song
-
-        if (_currentMetadata != null) {
-          if (_currentMetadata!.duration.inSeconds > 0) {
-            _fetchLyrics(_currentMetadata!);
-          } else {
-            _isLoading = false;
-            _lyricsResult = LyricsResult.empty();
-            notifyListeners();
-          }
+      if (_currentMetadata != null) {
+        if (_currentMetadata!.duration.inSeconds > 0) {
+          _fetchLyrics(_currentMetadata!);
         } else {
           _isLoading = false;
           _lyricsResult = LyricsResult.empty();
           notifyListeners();
         }
-      } else if (processedMetadata != _currentMetadata) {
-        // Only artUrl or something else minor changed
-        _currentMetadata = processedMetadata;
-        metadataChanged = true;
-      }
-
-      _isPlaying = isPlaying;
-      _currentPosition = position;
-      _updateCurrentIndex();
-
-      if (metadataChanged || isPlaying) {
+      } else {
+        _isLoading = false;
+        _lyricsResult = LyricsResult.empty();
         notifyListeners();
       }
-    } finally {
-      _isUpdatingStatus = false;
+    } else if (processedMetadata != _currentMetadata) {
+      // Only artUrl or something else minor changed
+      _currentMetadata = processedMetadata;
+      metadataChanged = true;
     }
-  }
 
-  Future<void> checkAndroidPermission() async {
-    final service = mediaService;
-    if (service is AndroidMediaService) {
-      final granted = await service.checkPermission();
-      if (_androidPermissionGranted != granted) {
-        _androidPermissionGranted = granted;
-        notifyListeners();
-      }
+    bool capabilitiesChanged = _controlAbility != controlAbility;
+
+    // Update playback state if not locked
+    final now = DateTime.now();
+    if (_playbackToggleLockedUntil == null ||
+        now.isAfter(_playbackToggleLockedUntil!)) {
+      _isPlaying = isPlaying;
+      _playbackToggleLockedUntil = null;
+    } else if (_isPlaying == isPlaying) {
+      // Unlock early if system caught up
+      _playbackToggleLockedUntil = null;
+    }
+
+    _currentPosition = position;
+    _controlAbility = controlAbility;
+    _updateCurrentIndex();
+
+    if (metadataChanged || isPlaying || capabilitiesChanged) {
+      notifyListeners();
     }
   }
 
@@ -414,7 +442,9 @@ class LyricsProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
+    _permissionTimer?.cancel();
+    mediaService.removeListener(_onMediaChanged);
+    mediaService.stopPolling();
     mediaService.dispose();
     super.dispose();
   }

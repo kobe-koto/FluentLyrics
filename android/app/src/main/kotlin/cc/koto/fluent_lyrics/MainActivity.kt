@@ -22,37 +22,49 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
-                "getMetadata" -> {
-                    val controller = getActiveController()
-                    if (controller != null) {
-                        val metadata = controller.metadata
-                        if (metadata != null) {
-                            val data = mutableMapOf<String, Any?>()
-                            data["title"] = metadata.getString(MediaMetadata.METADATA_KEY_TITLE)
-                            data["artist"] = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)
-                            data["album"] = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM)
-                            data["duration"] = metadata.getLong(MediaMetadata.METADATA_KEY_DURATION)
-                            
-                            // MediaMetadata API is not reliable for art on Android.
-                            // Return a magic string to trigger fallback logic in Dart.
-                            data["artUrl"] = "fallback"
-                            result.success(data)
-                        } else {
-                            result.success(null)
-                        }
-                    } else {
+                "getStatus" -> {
+                    if (!isNotificationPermissionGranted()) {
                         result.success(null)
+                        return@setMethodCallHandler
                     }
-                }
-                "getPosition" -> {
                     val controller = getActiveController()
-                    val position = controller?.playbackState?.position ?: 0L
-                    result.success(position)
-                }
-                "isPlaying" -> {
-                    val controller = getActiveController()
-                    val isPlaying = controller?.playbackState?.state == PlaybackState.STATE_PLAYING
-                    result.success(isPlaying)
+                    if (controller == null) {
+                        result.success(null)
+                        return@setMethodCallHandler
+                    }
+
+                    val metadata = controller.metadata
+                    val playbackState = controller.playbackState
+
+                    val statusMap = mutableMapOf<String, Any?>()
+
+                    // Metadata
+                    if (metadata != null) {
+                        val metaMap = mutableMapOf<String, Any?>()
+                        metaMap["title"] = metadata.getString(MediaMetadata.METADATA_KEY_TITLE)
+                        metaMap["artist"] = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)
+                        metaMap["album"] = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM)
+                        metaMap["duration"] = metadata.getLong(MediaMetadata.METADATA_KEY_DURATION)
+                        metaMap["artUrl"] = "fallback"
+                        statusMap["metadata"] = metaMap
+                    } else {
+                        statusMap["metadata"] = null
+                    }
+
+                    // Playback State & Position
+                    statusMap["isPlaying"] = playbackState?.state == PlaybackState.STATE_PLAYING
+                    statusMap["position"] = playbackState?.position ?: 0L
+
+                    // Control Ability
+                    val actions = playbackState?.actions ?: 0L
+                    val abilityMap = mutableMapOf<String, Boolean>()
+                    abilityMap["canPlayPause"] = (actions and PlaybackState.ACTION_PLAY_PAUSE) != 0L ||
+                                          ((actions and PlaybackState.ACTION_PLAY) != 0L && (actions and PlaybackState.ACTION_PAUSE) != 0L)
+                    abilityMap["canGoNext"] = (actions and PlaybackState.ACTION_SKIP_TO_NEXT) != 0L
+                    abilityMap["canGoPrevious"] = (actions and PlaybackState.ACTION_SKIP_TO_PREVIOUS) != 0L
+                    statusMap["controlAbility"] = abilityMap
+
+                    result.success(statusMap)
                 }
                 "checkPermission" -> {
                     result.success(isNotificationPermissionGranted())
@@ -61,6 +73,40 @@ class MainActivity : FlutterActivity() {
                     val intent = android.content.Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
                     startActivity(intent)
                     result.success(true)
+                }
+                "playPause" -> {
+                    val controller = getActiveController()
+                    if (controller != null) {
+                        val state = controller.playbackState?.state
+                        if (state == PlaybackState.STATE_PLAYING) {
+                            controller.transportControls.pause()
+                        } else {
+                            controller.transportControls.play()
+                        }
+                        result.success(true)
+                    } else {
+                        result.success(false)
+                    }
+                }
+                "play" -> {
+                    val controller = getActiveController()
+                    controller?.transportControls?.play()
+                    result.success(controller != null)
+                }
+                "pause" -> {
+                    val controller = getActiveController()
+                    controller?.transportControls?.pause()
+                    result.success(controller != null)
+                }
+                "nextTrack" -> {
+                    val controller = getActiveController()
+                    controller?.transportControls?.skipToNext()
+                    result.success(controller != null)
+                }
+                "previousTrack" -> {
+                    val controller = getActiveController()
+                    controller?.transportControls?.skipToPrevious()
+                    result.success(controller != null)
                 }
                 else -> {
                     result.notImplemented()
@@ -85,6 +131,15 @@ class MainActivity : FlutterActivity() {
     private fun isNotificationPermissionGranted(): Boolean {
         val packageName = packageName
         val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
-        return flat != null && flat.contains(packageName)
+        if (flat != null) {
+            val names = flat.split(":")
+            for (name in names) {
+                val cn = ComponentName.unflattenFromString(name)
+                if (cn != null && cn.packageName == packageName) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 }
