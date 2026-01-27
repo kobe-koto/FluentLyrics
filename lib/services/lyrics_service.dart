@@ -23,6 +23,7 @@ class LyricsService {
     List<LyricProviderType> trimMetadataProviders = const [],
   }) async* {
     final priority = await _settingsService.getPriority();
+    final cacheEnabled = await _settingsService.isCacheEnabled();
     // Always prioritize cache first
     final fullPriority = [LyricProviderType.cache, ...priority];
 
@@ -74,7 +75,7 @@ class LyricsService {
           result.artworkUrl != null ||
           result.isPureMusic) {
         // Cache the raw result from other providers
-        if (provider != LyricProviderType.cache) {
+        if (cacheEnabled && provider != LyricProviderType.cache) {
           await _cacheService.cacheLyrics(
             title,
             artist,
