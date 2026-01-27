@@ -77,6 +77,7 @@ class LyricsProvider with ChangeNotifier {
       _currentMetadata!.artist,
       _currentMetadata!.album,
       _currentMetadata!.duration.inSeconds,
+      isRichSync: _lyricsResult.isRichSync,
     );
   }
 
@@ -244,9 +245,13 @@ class LyricsProvider with ChangeNotifier {
   }
 
   Future<void> clearCurrentTrackCache() async {
-    final cacheId = currentCacheId;
-    if (cacheId != null) {
-      await _cacheService.clearCache(cacheId);
+    if (_currentMetadata != null) {
+      await _cacheService.clearTrackCache(
+        _currentMetadata!.title,
+        _currentMetadata!.artist,
+        _currentMetadata!.album,
+        _currentMetadata!.duration.inSeconds,
+      );
       if (_currentMetadata != null) {
         // Force the fetching logic to re-search for artwork by resetting to 'fallback'.
         // This is only necessary if the system art was 'fallback' (i.e. no local art).
@@ -381,7 +386,14 @@ class LyricsProvider with ChangeNotifier {
             result.lyrics[0].startTime > const Duration(seconds: 3)) {
           // Ensure we don't modify the same list if it's shared
           final newLyrics = List<Lyric>.from(result.lyrics);
-          newLyrics.insert(0, Lyric(text: '', startTime: Duration.zero));
+          newLyrics.insert(
+            0,
+            Lyric(
+              text: '',
+              startTime: Duration.zero,
+              endTime: result.lyrics[0].startTime,
+            ),
+          );
           result = result.copyWith(lyrics: newLyrics);
         }
 

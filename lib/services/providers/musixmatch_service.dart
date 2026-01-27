@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../models/lyric_model.dart';
 import '../../utils/lrc_parser.dart';
+import '../../utils/rich_lrc_parser.dart';
 import '../settings_service.dart';
 
 class MusixmatchService {
@@ -111,6 +112,7 @@ class MusixmatchService {
         final body = data['message']['body'];
         final macroCalls = body['macro_calls'];
         final trackSubtitles = macroCalls['track.subtitles.get'];
+        final trackRichsync = macroCalls['track.richsync.get'];
         final matcherTrack = macroCalls['matcher.track.get'];
 
         String? artworkUrl;
@@ -151,7 +153,9 @@ class MusixmatchService {
             isInstrumental ||
             (trackSubtitles != null &&
                 trackSubtitles['message']['header']['status_code'] == 200 &&
-                trackSubtitles['message']['header']['available'] > 0)) {
+                trackSubtitles['message']['header']['available'] > 0) ||
+            (trackRichsync != null &&
+                trackRichsync['message']['header']['status_code'] == 200)) {
           List<Lyric> lyrics = [];
           String? writtenBy;
           String? copyright;
@@ -189,6 +193,21 @@ class MusixmatchService {
                   }
                 }
                 lyrics = LrcParser.parse(lrc).lyrics;
+              }
+            }
+          }
+
+          if (trackRichsync != null &&
+              trackRichsync['message']['header']['status_code'] == 200) {
+            final richsyncBody = trackRichsync['message']['body'];
+            if (richsyncBody != null && richsyncBody['richsync'] != null) {
+              final richsync = richsyncBody['richsync'];
+              final richsyncLrc = richsync['richsync_body'] as String?;
+              if (richsyncLrc != null && richsyncLrc.isNotEmpty) {
+                final richLyrics = MusixmatchRichParser.parse(richsyncLrc);
+                if (richLyrics.isNotEmpty) {
+                  lyrics = richLyrics;
+                }
               }
             }
           }

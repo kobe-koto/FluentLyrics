@@ -39,11 +39,29 @@ class LrcParser {
 
     lyrics.sort((a, b) => a.startTime.compareTo(b.startTime));
 
-    if (trimMetadata) {
-      return _trimMetadataLines(lyrics);
+    // Calculate end times
+    final List<Lyric> lyricsWithEndTime = [];
+    for (int i = 0; i < lyrics.length; i++) {
+      final current = lyrics[i];
+      Duration? endTime;
+      if (i < lyrics.length - 1) {
+        endTime = lyrics[i + 1].startTime;
+      }
+      lyricsWithEndTime.add(
+        Lyric(
+          startTime: current.startTime,
+          endTime: endTime,
+          text: current.text,
+          inlineParts: current.inlineParts,
+        ),
+      );
     }
 
-    return LrcParseResult(lyrics: lyrics);
+    if (trimMetadata) {
+      return trimMetadataLines(lyricsWithEndTime);
+    }
+
+    return LrcParseResult(lyrics: lyricsWithEndTime);
   }
 
   /// Trims metadata lines from lyrics (head and tail).
@@ -55,7 +73,7 @@ class LrcParser {
   /// Returns a LrcParseResult with:
   /// - lyrics: the trimmed lyric lines
   /// - trimmedMetadata: map of removed metadata with position as key and staff names as value
-  static LrcParseResult _trimMetadataLines(List<Lyric> lyrics) {
+  static LrcParseResult trimMetadataLines(List<Lyric> lyrics) {
     if (lyrics.isEmpty) return LrcParseResult(lyrics: lyrics);
 
     final List<Lyric> result = List<Lyric>.from(lyrics);

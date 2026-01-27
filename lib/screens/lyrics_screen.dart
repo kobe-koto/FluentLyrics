@@ -405,7 +405,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
           final distance = (index - provider.currentIndex).toDouble();
 
           final lyricLine = LyricLine(
-            text: lyric.text,
+            lyric: lyric,
             isHighlighted: isHighlighted,
             distance: distance,
             isManualScrolling: _isManualScrolling,

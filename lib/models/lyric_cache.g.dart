@@ -42,24 +42,29 @@ const LyricCacheSchema = CollectionSchema(
       name: r'isPureMusic',
       type: IsarType.bool,
     ),
-    r'isSynced': PropertySchema(
+    r'isRichSync': PropertySchema(
       id: 5,
+      name: r'isRichSync',
+      type: IsarType.bool,
+    ),
+    r'isSynced': PropertySchema(
+      id: 6,
       name: r'isSynced',
       type: IsarType.bool,
     ),
     r'lyrics': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'lyrics',
       type: IsarType.objectList,
       target: r'LyricItem',
     ),
     r'source': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'source',
       type: IsarType.string,
     ),
     r'writtenBy': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'writtenBy',
       type: IsarType.string,
     )
@@ -85,7 +90,10 @@ const LyricCacheSchema = CollectionSchema(
     )
   },
   links: {},
-  embeddedSchemas: {r'LyricItem': LyricItemSchema},
+  embeddedSchemas: {
+    r'LyricItem': LyricItemSchema,
+    r'LyricItemInlinePart': LyricItemInlinePartSchema
+  },
   getId: _lyricCacheGetId,
   getLinks: _lyricCacheGetLinks,
   attach: _lyricCacheAttach,
@@ -146,15 +154,16 @@ void _lyricCacheSerialize(
   writer.writeString(offsets[2], object.contributor);
   writer.writeString(offsets[3], object.copyright);
   writer.writeBool(offsets[4], object.isPureMusic);
-  writer.writeBool(offsets[5], object.isSynced);
+  writer.writeBool(offsets[5], object.isRichSync);
+  writer.writeBool(offsets[6], object.isSynced);
   writer.writeObjectList<LyricItem>(
-    offsets[6],
+    offsets[7],
     allOffsets,
     LyricItemSchema.serialize,
     object.lyrics,
   );
-  writer.writeString(offsets[7], object.source);
-  writer.writeString(offsets[8], object.writtenBy);
+  writer.writeString(offsets[8], object.source);
+  writer.writeString(offsets[9], object.writtenBy);
 }
 
 LyricCache _lyricCacheDeserialize(
@@ -170,16 +179,17 @@ LyricCache _lyricCacheDeserialize(
   object.copyright = reader.readStringOrNull(offsets[3]);
   object.id = id;
   object.isPureMusic = reader.readBool(offsets[4]);
-  object.isSynced = reader.readBool(offsets[5]);
+  object.isRichSync = reader.readBool(offsets[5]);
+  object.isSynced = reader.readBool(offsets[6]);
   object.lyrics = reader.readObjectList<LyricItem>(
-        offsets[6],
+        offsets[7],
         LyricItemSchema.deserialize,
         allOffsets,
         LyricItem(),
       ) ??
       [];
-  object.source = reader.readString(offsets[7]);
-  object.writtenBy = reader.readStringOrNull(offsets[8]);
+  object.source = reader.readString(offsets[8]);
+  object.writtenBy = reader.readStringOrNull(offsets[9]);
   return object;
 }
 
@@ -203,6 +213,8 @@ P _lyricCacheDeserializeProp<P>(
     case 5:
       return (reader.readBool(offset)) as P;
     case 6:
+      return (reader.readBool(offset)) as P;
+    case 7:
       return (reader.readObjectList<LyricItem>(
             offset,
             LyricItemSchema.deserialize,
@@ -210,9 +222,9 @@ P _lyricCacheDeserializeProp<P>(
             LyricItem(),
           ) ??
           []) as P;
-    case 7:
-      return (reader.readString(offset)) as P;
     case 8:
+      return (reader.readString(offset)) as P;
+    case 9:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1064,6 +1076,16 @@ extension LyricCacheQueryFilter
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> isRichSyncEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isRichSync',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> isSyncedEqualTo(
       bool value) {
     return QueryBuilder.apply(this, (query) {
@@ -1521,6 +1543,18 @@ extension LyricCacheQuerySortBy
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByIsRichSync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isRichSync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByIsRichSyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isRichSync', Sort.desc);
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByIsSynced() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isSynced', Sort.asc);
@@ -1632,6 +1666,18 @@ extension LyricCacheQuerySortThenBy
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByIsRichSync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isRichSync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByIsRichSyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isRichSync', Sort.desc);
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByIsSynced() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isSynced', Sort.asc);
@@ -1705,6 +1751,12 @@ extension LyricCacheQueryWhereDistinct
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QDistinct> distinctByIsRichSync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isRichSync');
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QDistinct> distinctByIsSynced() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isSynced');
@@ -1764,6 +1816,12 @@ extension LyricCacheQueryProperty
     });
   }
 
+  QueryBuilder<LyricCache, bool, QQueryOperations> isRichSyncProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isRichSync');
+    });
+  }
+
   QueryBuilder<LyricCache, bool, QQueryOperations> isSyncedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isSynced');
@@ -1800,13 +1858,24 @@ const LyricItemSchema = Schema(
   name: r'LyricItem',
   id: -6466334837918240129,
   properties: {
-    r'startTimeMs': PropertySchema(
+    r'endTimeMs': PropertySchema(
       id: 0,
+      name: r'endTimeMs',
+      type: IsarType.long,
+    ),
+    r'inlineParts': PropertySchema(
+      id: 1,
+      name: r'inlineParts',
+      type: IsarType.objectList,
+      target: r'LyricItemInlinePart',
+    ),
+    r'startTimeMs': PropertySchema(
+      id: 2,
       name: r'startTimeMs',
       type: IsarType.long,
     ),
     r'text': PropertySchema(
-      id: 1,
+      id: 3,
       name: r'text',
       type: IsarType.string,
     )
@@ -1823,6 +1892,20 @@ int _lyricItemEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final list = object.inlineParts;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        final offsets = allOffsets[LyricItemInlinePart]!;
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += LyricItemInlinePartSchema.estimateSize(
+              value, offsets, allOffsets);
+        }
+      }
+    }
+  }
   bytesCount += 3 + object.text.length * 3;
   return bytesCount;
 }
@@ -1833,8 +1916,15 @@ void _lyricItemSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.startTimeMs);
-  writer.writeString(offsets[1], object.text);
+  writer.writeLong(offsets[0], object.endTimeMs);
+  writer.writeObjectList<LyricItemInlinePart>(
+    offsets[1],
+    allOffsets,
+    LyricItemInlinePartSchema.serialize,
+    object.inlineParts,
+  );
+  writer.writeLong(offsets[2], object.startTimeMs);
+  writer.writeString(offsets[3], object.text);
 }
 
 LyricItem _lyricItemDeserialize(
@@ -1844,8 +1934,15 @@ LyricItem _lyricItemDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = LyricItem();
-  object.startTimeMs = reader.readLong(offsets[0]);
-  object.text = reader.readString(offsets[1]);
+  object.endTimeMs = reader.readLongOrNull(offsets[0]);
+  object.inlineParts = reader.readObjectList<LyricItemInlinePart>(
+    offsets[1],
+    LyricItemInlinePartSchema.deserialize,
+    allOffsets,
+    LyricItemInlinePart(),
+  );
+  object.startTimeMs = reader.readLong(offsets[2]);
+  object.text = reader.readString(offsets[3]);
   return object;
 }
 
@@ -1857,8 +1954,17 @@ P _lyricItemDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 1:
+      return (reader.readObjectList<LyricItemInlinePart>(
+        offset,
+        LyricItemInlinePartSchema.deserialize,
+        allOffsets,
+        LyricItemInlinePart(),
+      )) as P;
+    case 2:
+      return (reader.readLong(offset)) as P;
+    case 3:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1867,6 +1973,184 @@ P _lyricItemDeserializeProp<P>(
 
 extension LyricItemQueryFilter
     on QueryBuilder<LyricItem, LyricItem, QFilterCondition> {
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition> endTimeMsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'endTimeMs',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      endTimeMsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'endTimeMs',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition> endTimeMsEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'endTimeMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      endTimeMsGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'endTimeMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition> endTimeMsLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'endTimeMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition> endTimeMsBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'endTimeMs',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      inlinePartsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'inlineParts',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      inlinePartsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'inlineParts',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      inlinePartsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inlineParts',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      inlinePartsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inlineParts',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      inlinePartsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inlineParts',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      inlinePartsLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inlineParts',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      inlinePartsLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inlineParts',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition>
+      inlinePartsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inlineParts',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
   QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition> startTimeMsEqualTo(
       int value) {
     return QueryBuilder.apply(this, (query) {
@@ -2053,4 +2337,346 @@ extension LyricItemQueryFilter
 }
 
 extension LyricItemQueryObject
-    on QueryBuilder<LyricItem, LyricItem, QFilterCondition> {}
+    on QueryBuilder<LyricItem, LyricItem, QFilterCondition> {
+  QueryBuilder<LyricItem, LyricItem, QAfterFilterCondition> inlinePartsElement(
+      FilterQuery<LyricItemInlinePart> q) {
+    return QueryBuilder.apply(this, (query) {
+      return query.object(q, r'inlineParts');
+    });
+  }
+}
+
+// coverage:ignore-file
+// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
+
+const LyricItemInlinePartSchema = Schema(
+  name: r'LyricItemInlinePart',
+  id: -7656588683398414576,
+  properties: {
+    r'endTimeMs': PropertySchema(
+      id: 0,
+      name: r'endTimeMs',
+      type: IsarType.long,
+    ),
+    r'startTimeMs': PropertySchema(
+      id: 1,
+      name: r'startTimeMs',
+      type: IsarType.long,
+    ),
+    r'text': PropertySchema(
+      id: 2,
+      name: r'text',
+      type: IsarType.string,
+    )
+  },
+  estimateSize: _lyricItemInlinePartEstimateSize,
+  serialize: _lyricItemInlinePartSerialize,
+  deserialize: _lyricItemInlinePartDeserialize,
+  deserializeProp: _lyricItemInlinePartDeserializeProp,
+);
+
+int _lyricItemInlinePartEstimateSize(
+  LyricItemInlinePart object,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  var bytesCount = offsets.last;
+  bytesCount += 3 + object.text.length * 3;
+  return bytesCount;
+}
+
+void _lyricItemInlinePartSerialize(
+  LyricItemInlinePart object,
+  IsarWriter writer,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  writer.writeLong(offsets[0], object.endTimeMs);
+  writer.writeLong(offsets[1], object.startTimeMs);
+  writer.writeString(offsets[2], object.text);
+}
+
+LyricItemInlinePart _lyricItemInlinePartDeserialize(
+  Id id,
+  IsarReader reader,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  final object = LyricItemInlinePart();
+  object.endTimeMs = reader.readLong(offsets[0]);
+  object.startTimeMs = reader.readLong(offsets[1]);
+  object.text = reader.readString(offsets[2]);
+  return object;
+}
+
+P _lyricItemInlinePartDeserializeProp<P>(
+  IsarReader reader,
+  int propertyId,
+  int offset,
+  Map<Type, List<int>> allOffsets,
+) {
+  switch (propertyId) {
+    case 0:
+      return (reader.readLong(offset)) as P;
+    case 1:
+      return (reader.readLong(offset)) as P;
+    case 2:
+      return (reader.readString(offset)) as P;
+    default:
+      throw IsarError('Unknown property with id $propertyId');
+  }
+}
+
+extension LyricItemInlinePartQueryFilter on QueryBuilder<LyricItemInlinePart,
+    LyricItemInlinePart, QFilterCondition> {
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      endTimeMsEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'endTimeMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      endTimeMsGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'endTimeMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      endTimeMsLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'endTimeMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      endTimeMsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'endTimeMs',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      startTimeMsEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'startTimeMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      startTimeMsGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'startTimeMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      startTimeMsLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'startTimeMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      startTimeMsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'startTimeMs',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'text',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'text',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'text',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'text',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'text',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'text',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'text',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'text',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'text',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricItemInlinePart, LyricItemInlinePart, QAfterFilterCondition>
+      textIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'text',
+        value: '',
+      ));
+    });
+  }
+}
+
+extension LyricItemInlinePartQueryObject on QueryBuilder<LyricItemInlinePart,
+    LyricItemInlinePart, QFilterCondition> {}

@@ -12,6 +12,7 @@ class LyricCache {
 
   late String source;
   late bool isSynced;
+  late bool isRichSync;
   String? writtenBy;
   String? contributor;
   String? copyright;
@@ -26,12 +27,25 @@ class LyricCache {
           .map(
             (l) => Lyric(
               startTime: Duration(milliseconds: l.startTimeMs),
+              endTime: l.endTimeMs != null
+                  ? Duration(milliseconds: l.endTimeMs!)
+                  : null,
               text: l.text,
+              inlineParts: l.inlineParts
+                  ?.map(
+                    (p) => LyricInlinePart(
+                      startTime: Duration(milliseconds: p.startTimeMs),
+                      endTime: Duration(milliseconds: p.endTimeMs),
+                      text: p.text,
+                    ),
+                  )
+                  .toList(),
             ),
           )
           .toList(),
       source: source,
       isSynced: isSynced,
+      isRichSync: isRichSync,
       writtenBy: writtenBy,
       contributor: contributor,
       copyright: copyright,
@@ -45,6 +59,7 @@ class LyricCache {
     cache.cacheId = cacheId;
     cache.source = result.source;
     cache.isSynced = result.isSynced;
+    cache.isRichSync = result.isRichSync;
     cache.writtenBy = result.writtenBy;
     cache.contributor = result.contributor;
     cache.copyright = result.copyright;
@@ -54,7 +69,16 @@ class LyricCache {
         .map(
           (l) => LyricItem()
             ..startTimeMs = l.startTime.inMilliseconds
-            ..text = l.text,
+            ..endTimeMs = l.endTime?.inMilliseconds
+            ..text = l.text
+            ..inlineParts = l.inlineParts
+                ?.map(
+                  (p) => LyricItemInlinePart()
+                    ..startTimeMs = p.startTime.inMilliseconds
+                    ..endTimeMs = p.endTime.inMilliseconds
+                    ..text = p.text,
+                )
+                .toList(),
         )
         .toList();
     return cache;
@@ -64,5 +88,14 @@ class LyricCache {
 @embedded
 class LyricItem {
   late int startTimeMs;
+  int? endTimeMs;
+  late String text;
+  List<LyricItemInlinePart>? inlineParts;
+}
+
+@embedded
+class LyricItemInlinePart {
+  late int startTimeMs;
+  late int endTimeMs;
   late String text;
 }

@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_pkg;
 import '../../models/lyric_model.dart';
 import '../../utils/lrc_parser.dart';
+import '../../utils/rich_lrc_parser.dart';
 
 class NeteaseService {
   static const String _lyricUrl = 'https://music.163.com/api/song/lyric';
@@ -121,7 +122,17 @@ class NeteaseService {
       onStatusUpdate?.call("Fetching lyrics from Netease...");
 
       final lyricUri = Uri.parse(_lyricUrl).replace(
-        queryParameters: {'id': songId, 'lv': '1', 'kv': '1', 'tv': '-1'},
+        queryParameters: {
+          'id': songId,
+          'lv': '1', // native lyrics
+          'kv': '1',
+          'tv': '-1', // translated lyrics
+          'rv': '-1', // transliteration lyrics
+          'yv': '-1', // word lyrics
+          'ytv': '-1', // word lyrics
+          'yrv': '-1', // word lyrics
+          'csrf_token': '',
+        },
       );
 
       final lyricResponse = await http
@@ -134,6 +145,7 @@ class NeteaseService {
 
       final lyricData = jsonDecode(lyricResponse.body);
       final String? lrc = lyricData['lrc']?['lyric'];
+      final String? yrc = lyricData['yrc']?['lyric'];
       final bool isPureMusic = lyricData['pureMusic'] == true;
 
       String? contributor;
@@ -152,20 +164,35 @@ class NeteaseService {
       }
 
       if ((lrc != null && lrc.isNotEmpty) ||
+          (yrc != null && yrc.isNotEmpty) ||
           artworkUrl != null ||
           isPureMusic) {
         onStatusUpdate?.call("Processing lyrics...");
-        final parseResult = lrc != null
-            ? LrcParser.parse(lrc, trimMetadata: trimMetadata)
-            : LrcParseResult(lyrics: [], trimmedMetadata: {});
+
+        List<Lyric> lyrics = [];
+        Map<String, String> trimmedMetadata = {};
+
+        if (yrc != null && yrc.isNotEmpty) {
+          lyrics = NeteaseYrcParser.parse(yrc);
+          if (trimMetadata) {
+            final trimResult = LrcParser.trimMetadataLines(lyrics);
+            lyrics = trimResult.lyrics;
+            trimmedMetadata = trimResult.trimmedMetadata;
+          }
+        }
+
+        if (lyrics.isEmpty && lrc != null && lrc.isNotEmpty) {
+          final parseResult = LrcParser.parse(lrc, trimMetadata: trimMetadata);
+          lyrics = parseResult.lyrics;
+          trimmedMetadata = parseResult.trimmedMetadata;
+        }
+
         return LyricsResult(
-          lyrics: parseResult.lyrics,
+          lyrics: lyrics,
           source: 'Netease Music',
           contributor: contributor,
           artworkUrl: artworkUrl,
-          writtenBy:
-              parseResult.trimmedMetadata['作词'] ??
-              parseResult.trimmedMetadata['作詞'],
+          writtenBy: trimmedMetadata['作词'] ?? trimmedMetadata['作詞'],
           isPureMusic: isPureMusic,
         );
       } else {

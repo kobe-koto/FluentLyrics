@@ -25,12 +25,13 @@ class LyricsCacheService {
     String title,
     String artist,
     String? album,
-    int durationSeconds,
-  ) {
+    int durationSeconds, {
+    bool isRichSync = false,
+  }) {
     final input = '$title|$artist|${album ?? ''}|$durationSeconds';
     final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
-    return digest.toString();
+    return '${digest.toString()}_${isRichSync ? 'rich' : 'std'}';
   }
 
   Future<LyricsResult> fetchLyrics({
@@ -39,11 +40,32 @@ class LyricsCacheService {
     required String? album,
     required int durationSeconds,
   }) async {
-    final cacheId = generateCacheId(title, artist, album, durationSeconds);
-    final cached = await getCachedLyrics(cacheId);
-    if (cached != null) {
-      return cached.copyWith(source: '${cached.source} (cached)');
+    // Try rich sync first
+    final richCacheId = generateCacheId(
+      title,
+      artist,
+      album,
+      durationSeconds,
+      isRichSync: true,
+    );
+    final richCached = await getCachedLyrics(richCacheId);
+    if (richCached != null && richCached.lyrics.isNotEmpty) {
+      return richCached.copyWith(source: '${richCached.source} (cached)');
     }
+
+    // Fallback to standard sync
+    final stdCacheId = generateCacheId(
+      title,
+      artist,
+      album,
+      durationSeconds,
+      isRichSync: false,
+    );
+    final stdCached = await getCachedLyrics(stdCacheId);
+    if (stdCached != null && stdCached.lyrics.isNotEmpty) {
+      return stdCached.copyWith(source: '${stdCached.source} (cached)');
+    }
+
     return LyricsResult.empty();
   }
 
@@ -63,7 +85,20 @@ class LyricsCacheService {
     }
   }
 
-  Future<void> cacheLyrics(String cacheId, LyricsResult result) async {
+  Future<void> cacheLyrics(
+    String title,
+    String artist,
+    String? album,
+    int durationSeconds,
+    LyricsResult result,
+  ) async {
+    final cacheId = generateCacheId(
+      title,
+      artist,
+      album,
+      durationSeconds,
+      isRichSync: result.isRichSync,
+    );
     final isar = await _db;
     final cache = LyricCache.fromLyricsResult(cacheId, result);
     await isar.writeTxn(() async {
@@ -75,6 +110,37 @@ class LyricsCacheService {
     final isar = await _db;
     await isar.writeTxn(() async {
       await isar.lyricCaches.filter().cacheIdEqualTo(cacheId).deleteAll();
+    });
+  }
+
+  Future<void> clearTrackCache(
+    String title,
+    String artist,
+    String? album,
+    int durationSeconds,
+  ) async {
+    final richId = generateCacheId(
+      title,
+      artist,
+      album,
+      durationSeconds,
+      isRichSync: true,
+    );
+    final stdId = generateCacheId(
+      title,
+      artist,
+      album,
+      durationSeconds,
+      isRichSync: false,
+    );
+    final isar = await _db;
+    await isar.writeTxn(() async {
+      await isar.lyricCaches
+          .filter()
+          .cacheIdEqualTo(richId)
+          .or()
+          .cacheIdEqualTo(stdId)
+          .deleteAll();
     });
   }
 

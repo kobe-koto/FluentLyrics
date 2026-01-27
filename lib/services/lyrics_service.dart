@@ -75,13 +75,13 @@ class LyricsService {
           result.isPureMusic) {
         // Cache the raw result from other providers
         if (provider != LyricProviderType.cache) {
-          final cacheId = _cacheService.generateCacheId(
+          await _cacheService.cacheLyrics(
             title,
             artist,
             album,
             durationSeconds,
+            result,
           );
-          await _cacheService.cacheLyrics(cacheId, result);
         }
 
         if (bestResult == null) {
@@ -93,6 +93,10 @@ class LyricsService {
           if (result.isPureMusic && !bestResult.isPureMusic) {
             newBetter = true;
           } else if (result.lyrics.isNotEmpty && bestResult.lyrics.isEmpty) {
+            newBetter = true;
+          } else if (result.lyrics.isNotEmpty &&
+              result.isRichSync &&
+              !bestResult.isRichSync) {
             newBetter = true;
           } else if (result.lyrics.isNotEmpty &&
               result.isSynced &&
@@ -121,10 +125,10 @@ class LyricsService {
         yield bestResult;
       }
 
-      // If we have (synced lyrics OR pure music) AND artwork, we can stop early.
+      // If we have (rich sync lyrics OR pure music) AND artwork, we can stop early.
       if (bestResult != null &&
           (bestResult.isPureMusic ||
-              (bestResult.lyrics.isNotEmpty && bestResult.isSynced)) &&
+              (bestResult.lyrics.isNotEmpty && bestResult.isRichSync)) &&
           bestResult.artworkUrl != null) {
         return;
       }
