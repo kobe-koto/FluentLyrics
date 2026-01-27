@@ -55,15 +55,16 @@ class SettingsSliderCard extends StatelessWidget {
                 children: [
                   if (onReset != null)
                     IconButton(
-                      icon: const Icon(
-                        Icons.refresh,
-                        size: 18,
-                        color: Colors.blue,
-                      ),
+                      icon: const Icon(Icons.refresh, color: Colors.blue),
                       onPressed: onReset,
                       tooltip: resetTooltip ?? 'Reset',
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      style: IconButton.styleFrom(
+                        iconSize: 20,
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(20, 20),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
                     ),
                   if (onReset != null) const SizedBox(width: 8),
                   Text(
