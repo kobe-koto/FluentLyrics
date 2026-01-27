@@ -507,7 +507,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
     final offsetSeconds = provider.trackOffset.inMilliseconds / 1000.0;
     final offsetText =
-        "${offsetSeconds >= 0 ? '+' : ''}${offsetSeconds.toStringAsFixed(1)}s";
+        "${offsetSeconds >= 0 ? '+' : ''}${offsetSeconds.toStringAsFixed(2)}s";
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
@@ -519,7 +519,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               _OffsetButton(
                 icon: Icons.remove_circle_outline,
                 onPressed: () => provider.adjustTrackOffset(
-                  const Duration(milliseconds: -500),
+                  const Duration(milliseconds: -250),
                 ),
               ),
               const SizedBox(width: 16),
@@ -543,7 +543,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        "OFFSET: $offsetText",
+                        "$offsetText",
                         style: TextStyle(
                           color: Colors.white.withAlpha(150),
                           fontSize: 10,
@@ -559,7 +559,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               _OffsetButton(
                 icon: Icons.add_circle_outline,
                 onPressed: () => provider.adjustTrackOffset(
-                  const Duration(milliseconds: 500),
+                  const Duration(milliseconds: 250),
                 ),
               ),
             ],
