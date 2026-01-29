@@ -5,6 +5,7 @@ import '../services/settings_service.dart';
 import '../services/providers/musixmatch_service.dart';
 import '../providers/lyrics_provider.dart';
 import '../widgets/settings_slider_card.dart';
+import '../widgets/settings_toggle_card.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -340,46 +341,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               resetTooltip: 'Reset to 85%',
             ),
             const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Blur Effect',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Blur non-active lyric lines for focus.',
-                        style: TextStyle(
-                          color: Colors.white38,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Switch(
-                    value: provider.blurEnabled,
-                    activeThumbColor: Colors.blue,
-                    activeTrackColor: Colors.blue.withValues(alpha: 0.3),
-                    onChanged: (value) => provider.setBlurEnabled(value),
-                  ),
-                ],
-              ),
+            SettingsToggleCard(
+              title: 'Blur Effect',
+              subtitle: 'Blur non-active lyric lines for focus.',
+              value: provider.blurEnabled,
+              onChanged: (value) => provider.setBlurEnabled(value),
             ),
             const SizedBox(height: 24),
             SettingsSliderCard(
@@ -447,46 +413,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Rich Sync',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Enable word-level synchronization.',
-                        style: TextStyle(
-                          color: Colors.white38,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Switch(
-                    value: provider.richSyncEnabled,
-                    activeThumbColor: Colors.blue,
-                    activeTrackColor: Colors.blue.withValues(alpha: 0.3),
-                    onChanged: (value) => provider.setRichSyncEnabled(value),
-                  ),
-                ],
-              ),
+            SettingsToggleCard(
+              title: 'Rich Sync',
+              subtitle: 'Enable word-level synchronization.',
+              value: provider.richSyncEnabled,
+              onChanged: (value) => provider.setRichSyncEnabled(value),
             ),
             const SizedBox(height: 24),
             SettingsSliderCard(
