@@ -215,7 +215,7 @@ class _RichPartState extends State<_RichPart>
               Text(
                 widget.text,
                 style: widget.style.copyWith(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Colors.white.withValues(alpha: 0.55),
                 ),
               ),
               if (isLifting)
