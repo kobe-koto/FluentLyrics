@@ -414,17 +414,25 @@ class _LyricsScreenState extends State<LyricsScreen> {
             blurEnabled: provider.blurEnabled.current,
           );
 
+          Widget content = lyricLine;
+
           // Handle Interludes (empty lines, now including injected prelude)
           if (isHighlighted &&
               provider.isInterlude &&
               lyric.text.trim().isEmpty) {
-            return InterludeIndicator(
+            content = InterludeIndicator(
               progress: provider.interludeProgress,
               duration: provider.interludeDuration,
             );
           }
 
-          return lyricLine;
+          return GestureDetector(
+            onDoubleTap: provider.controlAbility.canSeek
+                ? () => provider.seek(lyric.startTime)
+                : null,
+            behavior: HitTestBehavior.translucent,
+            child: content,
+          );
         },
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).size.height / 3,
