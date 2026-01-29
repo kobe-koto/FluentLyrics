@@ -29,7 +29,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
 
       - name: Install Fastforge
         run: dart pub global activate fastforge
