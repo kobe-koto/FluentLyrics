@@ -34,6 +34,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
   String? _lastTitle;
   String? _lastArtist;
   bool _isForceReloading = false;
+  bool _isScrubbing = false;
+  double _scrubValue = 0.0;
 
   void _scrollToCurrentIndex(int index, int linesBefore) {
     if (_itemScrollController.isAttached) {
@@ -570,21 +572,48 @@ class _LyricsScreenState extends State<LyricsScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-              minHeight: 4,
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: Colors.white,
+              inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
+              disabledActiveTrackColor: Colors.white,
+              disabledInactiveTrackColor: Colors.white.withValues(alpha: 0.1),
+              thumbColor: Colors.white,
+              trackHeight: 4,
+              thumbShape: provider.controlAbility.canSeek
+                  ? const RoundSliderThumbShape(enabledThumbRadius: 6)
+                  : SliderComponentShape.noThumb,
+              overlayColor: Colors.white.withValues(alpha: 0.1),
+              trackShape: _CustomSliderTrackShape(),
+            ),
+            child: Slider(
+              value: _isScrubbing ? _scrubValue : progress,
+              onChanged: provider.controlAbility.canSeek
+                  ? (value) {
+                      setState(() {
+                        _isScrubbing = true;
+                        _scrubValue = value;
+                      });
+                    }
+                  : null,
+              onChangeEnd: (value) {
+                final ms = (value * totalMs).round();
+                provider.seek(Duration(milliseconds: ms));
+                setState(() {
+                  _isScrubbing = false;
+                });
+              },
             ),
           ),
-          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _formatDuration(provider.currentPosition),
+                _formatDuration(
+                  _isScrubbing
+                      ? Duration(milliseconds: (_scrubValue * totalMs).round())
+                      : provider.currentPosition,
+                ),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 12,
@@ -804,5 +833,22 @@ class _DelayedLoadingImageState extends State<_DelayedLoadingImage> {
         );
       },
     );
+  }
+}
+
+class _CustomSliderTrackShape extends RoundedRectSliderTrackShape {
+  @override
+  Rect getPreferredRect({
+    required RenderBox parentBox,
+    Offset offset = Offset.zero,
+    required SliderThemeData sliderTheme,
+    bool isEnabled = false,
+    bool isDiscrete = false,
+  }) {
+    final trackHeight = sliderTheme.trackHeight;
+    final trackLeft = offset.dx;
+    final trackTop = offset.dy + (parentBox.size.height - trackHeight!) / 2;
+    final trackWidth = parentBox.size.width;
+    return Rect.fromLTWH(trackLeft, trackTop, trackWidth, trackHeight);
   }
 }

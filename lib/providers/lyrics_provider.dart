@@ -349,6 +349,15 @@ class LyricsProvider with ChangeNotifier {
     await mediaService.controller.previousTrack();
   }
 
+  Future<void> seek(Duration position) async {
+    // Optimistic update
+    _currentPosition = position;
+    _updateCurrentIndex();
+    notifyListeners();
+
+    await mediaService.controller.seek(position);
+  }
+
   void _onMediaChanged() {
     if (Platform.isAndroid) {
       checkAndroidPermission();

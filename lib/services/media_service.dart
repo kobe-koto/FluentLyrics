@@ -62,17 +62,20 @@ class MediaControlAbility {
   final bool canPlayPause;
   final bool canGoNext;
   final bool canGoPrevious;
+  final bool canSeek;
 
   MediaControlAbility({
     required this.canPlayPause,
     required this.canGoNext,
     required this.canGoPrevious,
+    required this.canSeek,
   });
 
   factory MediaControlAbility.none() => MediaControlAbility(
     canPlayPause: false,
     canGoNext: false,
     canGoPrevious: false,
+    canSeek: false,
   );
 
   @override
@@ -82,11 +85,15 @@ class MediaControlAbility {
           runtimeType == other.runtimeType &&
           canPlayPause == other.canPlayPause &&
           canGoNext == other.canGoNext &&
-          canGoPrevious == other.canGoPrevious;
+          canGoPrevious == other.canGoPrevious &&
+          canSeek == other.canSeek;
 
   @override
   int get hashCode =>
-      canPlayPause.hashCode ^ canGoNext.hashCode ^ canGoPrevious.hashCode;
+      canPlayPause.hashCode ^
+      canGoNext.hashCode ^
+      canGoPrevious.hashCode ^
+      canSeek.hashCode;
 }
 
 class MediaPlaybackStatus {
@@ -116,6 +123,7 @@ abstract class MediaController {
   Future<void> playPause();
   Future<void> nextTrack();
   Future<void> previousTrack();
+  Future<void> seek(Duration position);
 }
 
 abstract class MediaService extends ChangeNotifier {
@@ -152,6 +160,7 @@ class LinuxMediaService extends MediaService implements MediaController {
   MediaMetadata? _metadata;
   MediaPlaybackStatus _status = MediaPlaybackStatus.empty();
   MediaControlAbility _controlAbility = MediaControlAbility.none();
+  String? _currentTrackId;
 
   @override
   MediaMetadata? get metadata => _metadata;
@@ -186,6 +195,7 @@ class LinuxMediaService extends MediaService implements MediaController {
           _metadata = null;
           _status = MediaPlaybackStatus.empty();
           _controlAbility = MediaControlAbility.none();
+          _currentTrackId = null;
           notifyListeners();
         }
         return;
@@ -203,6 +213,8 @@ class LinuxMediaService extends MediaService implements MediaController {
 
       final metadataValue = properties['Metadata'];
       MediaMetadata? newMetadata;
+      String? newTrackId;
+
       if (metadataValue is DBusDict) {
         final dict = metadataValue.children.map(
           (key, value) => MapEntry(key.asString(), value),
@@ -239,6 +251,8 @@ class LinuxMediaService extends MediaService implements MediaController {
         }
         final duration = Duration(microseconds: length);
 
+        newTrackId = unwrap(dict['mpris:trackid'])?.asString();
+
         newMetadata = MediaMetadata(
           title: title,
           artist: artist,
@@ -266,6 +280,7 @@ class LinuxMediaService extends MediaService implements MediaController {
       final canPause = properties['CanPause']?.asBoolean() ?? false;
       final canGoNext = properties['CanGoNext']?.asBoolean() ?? false;
       final canGoPrevious = properties['CanGoPrevious']?.asBoolean() ?? false;
+      final canSeek = properties['CanSeek']?.asBoolean() ?? false;
 
       final newStatus = MediaPlaybackStatus(
         isPlaying: isPlaying,
@@ -275,14 +290,28 @@ class LinuxMediaService extends MediaService implements MediaController {
         canPlayPause: canPlay || canPause,
         canGoNext: canGoNext,
         canGoPrevious: canGoPrevious,
+        canSeek: canSeek,
       );
 
-      if (_metadata != newMetadata ||
-          _status != newStatus ||
-          _controlAbility != newAbility) {
+      bool changed = false;
+      if (_metadata != newMetadata) {
         _metadata = newMetadata;
+        changed = true;
+      }
+      if (_status != newStatus) {
         _status = newStatus;
+        changed = true;
+      }
+      if (_controlAbility != newAbility) {
         _controlAbility = newAbility;
+        changed = true;
+      }
+      if (_currentTrackId != newTrackId) {
+        _currentTrackId = newTrackId;
+        changed = true;
+      }
+
+      if (changed) {
         notifyListeners();
       }
     } catch (e) {
@@ -455,6 +484,27 @@ class LinuxMediaService extends MediaService implements MediaController {
   }
 
   @override
+  Future<void> seek(Duration position) async {
+    final playerBusName = await _getBestPlayer();
+    if (playerBusName == null ||
+        _currentTrackId == null ||
+        _currentTrackId!.isEmpty)
+      return;
+
+    final object = DBusRemoteObject(
+      _client,
+      name: playerBusName,
+      path: DBusObjectPath('/org/mpris/MediaPlayer2'),
+    );
+    await object.callMethod(
+      'org.mpris.MediaPlayer2.Player',
+      'SetPosition',
+      [DBusObjectPath(_currentTrackId!), DBusInt64(position.inMicroseconds)],
+      replySignature: DBusSignature(''),
+    );
+  }
+
+  @override
   void dispose() {
     _pollTimer?.cancel();
     _client.close();
@@ -539,6 +589,7 @@ class AndroidMediaService extends MediaService implements MediaController {
               canPlayPause: abilityMap['canPlayPause'] ?? false,
               canGoNext: abilityMap['canGoNext'] ?? false,
               canGoPrevious: abilityMap['canGoPrevious'] ?? false,
+              canSeek: abilityMap['canSeek'] ?? false,
             )
           : MediaControlAbility.none();
 
@@ -576,6 +627,11 @@ class AndroidMediaService extends MediaService implements MediaController {
   @override
   Future<void> previousTrack() async {
     await _channel.invokeMethod('previousTrack');
+  }
+
+  @override
+  Future<void> seek(Duration position) async {
+    await _channel.invokeMethod('seek', {'position': position.inMilliseconds});
   }
 
   @override

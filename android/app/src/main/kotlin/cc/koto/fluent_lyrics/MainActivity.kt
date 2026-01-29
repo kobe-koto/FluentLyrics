@@ -62,6 +62,7 @@ class MainActivity : FlutterActivity() {
                                           ((actions and PlaybackState.ACTION_PLAY) != 0L && (actions and PlaybackState.ACTION_PAUSE) != 0L)
                     abilityMap["canGoNext"] = (actions and PlaybackState.ACTION_SKIP_TO_NEXT) != 0L
                     abilityMap["canGoPrevious"] = (actions and PlaybackState.ACTION_SKIP_TO_PREVIOUS) != 0L
+                    abilityMap["canSeek"] = (actions and PlaybackState.ACTION_SEEK_TO) != 0L
                     statusMap["controlAbility"] = abilityMap
 
                     result.success(statusMap)
@@ -107,6 +108,16 @@ class MainActivity : FlutterActivity() {
                     val controller = getActiveController()
                     controller?.transportControls?.skipToPrevious()
                     result.success(controller != null)
+                }
+                "seek" -> {
+                    val position = call.argument<Number>("position")?.toLong()
+                    if (position != null) {
+                        val controller = getActiveController()
+                        controller?.transportControls?.seekTo(position)
+                        result.success(controller != null)
+                    } else {
+                        result.error("INVALID_ARGUMENT", "Position is null", null)
+                    }
                 }
                 else -> {
                     result.notImplemented()
