@@ -53,7 +53,7 @@ class NeteaseService {
       final eapiData = {
         's': keyword,
         'type': '1', // Single song
-        'limit': '30',
+        'limit': '10',
         'offset': '0',
         'total': 'true',
         'header': jsonEncode(eapiHeader),
@@ -102,7 +102,11 @@ class NeteaseService {
           final diff = (songDurationMs / 1000 - durationSeconds)
               .abs()
               .toDouble();
-          if (diff < minDiff) {
+          if (diff < 1) {
+            // if the duration diff < 1s, we use the first result
+            bestMatch = song;
+            break;
+          } else if (diff < minDiff) {
             minDiff = diff;
             bestMatch = song;
           }
