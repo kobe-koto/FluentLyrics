@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../../models/lyric_model.dart';
 import '../../utils/lrc_parser.dart';
 import '../../utils/rich_lrc_parser.dart';
+import '../../utils/string_similarity.dart';
 
 class LrclibService {
   static const String _baseSearchUrl = 'https://lrclib.net/api/search';
@@ -32,9 +33,31 @@ class LrclibService {
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final List<dynamic> results = jsonDecode(response.body);
+        final List<dynamic> rawResults = jsonDecode(response.body);
+
+        if (rawResults.isEmpty) {
+          return LyricsResult.empty();
+        }
+
+        // Filter results based on title similarity using Jaro-Winkler algorithm
+        final results = rawResults.where((result) {
+          final trackName =
+              result['trackName'] as String? ?? result['name'] as String?;
+          if (trackName == null) return false;
+
+          final similarity = StringSimilarity.getJaroWinklerScore(
+            title.toLowerCase(),
+            trackName.toLowerCase(),
+          );
+
+          // Threshold can be adjusted. 0.7 is a reasonable starting point.
+          return similarity >= 0.7;
+        }).toList();
 
         if (results.isEmpty) {
+          debugPrint(
+            '[lyrics provider] [lrclib] search returned songs but none matched the title similarity threshold.',
+          );
           return LyricsResult.empty();
         }
 

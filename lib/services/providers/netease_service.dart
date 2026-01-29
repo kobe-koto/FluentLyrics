@@ -7,6 +7,7 @@ import 'package:encrypt/encrypt.dart' as encrypt_pkg;
 import '../../models/lyric_model.dart';
 import '../../utils/lrc_parser.dart';
 import '../../utils/rich_lrc_parser.dart';
+import '../../utils/string_similarity.dart';
 
 class NeteaseService {
   static const String _lyricUrl = 'https://music.163.com/api/song/lyric';
@@ -53,7 +54,7 @@ class NeteaseService {
       final eapiData = {
         's': keyword,
         'type': '1', // Single song
-        'limit': '10',
+        'limit': '20',
         'offset': '0',
         'total': 'true',
         'header': jsonEncode(eapiHeader),
@@ -92,11 +93,32 @@ class NeteaseService {
         return LyricsResult.empty();
       }
 
+      // Filter songs based on title similarity using Jaro-Winkler algorithm
+      final filteredSongs = songs.where((song) {
+        final songName = song['name'] as String?;
+        if (songName == null) return false;
+
+        final similarity = StringSimilarity.getJaroWinklerScore(
+          title.toLowerCase(),
+          songName.toLowerCase(),
+        );
+
+        // Threshold can be adjusted. 0.8 is a reasonable starting point.
+        return similarity >= 0.7;
+      }).toList();
+
+      if (filteredSongs.isEmpty) {
+        debugPrint(
+          'Netease search returned songs but none matched the title similarity threshold.',
+        );
+        return LyricsResult.empty();
+      }
+
       // Find the best match based on duration
-      dynamic bestMatch = songs[0];
+      dynamic bestMatch = filteredSongs[0];
       double minDiff = 1000000;
 
-      for (var song in songs) {
+      for (var song in filteredSongs) {
         final songDurationMs = song['duration'] ?? song['dt'];
         if (songDurationMs != null) {
           final diff = (songDurationMs / 1000 - durationSeconds)
@@ -105,6 +127,8 @@ class NeteaseService {
           if (diff < 1) {
             // if the duration diff < 1s, we use the first result
             bestMatch = song;
+            // set the minDiff to 0 to skip the duration check
+            minDiff = 0;
             break;
           } else if (diff < minDiff) {
             minDiff = diff;
@@ -118,7 +142,7 @@ class NeteaseService {
 
       // If the best match duration is too different, it might not be the same song
       // (Netease duration is in ms)
-      if (minDiff > 10 && durationSeconds > 0) {
+      if (minDiff > 10 && durationSeconds > 0 && minDiff != 1000000) {
         debugPrint('Netease best match duration diff too large: ${minDiff}s');
       }
 
