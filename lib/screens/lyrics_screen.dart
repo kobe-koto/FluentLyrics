@@ -608,33 +608,33 @@ class _LyricsScreenState extends State<LyricsScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.skip_previous, color: Colors.white),
+                icon: const Icon(Icons.skip_previous),
+                color: Colors.white,
                 iconSize: 32,
                 onPressed: provider.controlAbility.canGoPrevious
                     ? provider.previousTrack
                     : null,
-                disabledColor: Colors.white.withAlpha(50),
+                disabledColor: Colors.white.withValues(alpha: 0.35),
               ),
               const SizedBox(width: 24),
               IconButton(
-                icon: Icon(
-                  provider.isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                ),
+                icon: Icon(provider.isPlaying ? Icons.pause : Icons.play_arrow),
+                color: Colors.white,
                 iconSize: 48,
                 onPressed: provider.controlAbility.canPlayPause
                     ? provider.playPause
                     : null,
-                disabledColor: Colors.white.withAlpha(50),
+                disabledColor: Colors.white.withValues(alpha: 0.35),
               ),
               const SizedBox(width: 24),
               IconButton(
-                icon: const Icon(Icons.skip_next, color: Colors.white),
+                icon: const Icon(Icons.skip_next),
+                color: Colors.white,
                 iconSize: 32,
                 onPressed: provider.controlAbility.canGoNext
                     ? provider.nextTrack
                     : null,
-                disabledColor: Colors.white.withAlpha(50),
+                disabledColor: Colors.white.withValues(alpha: 0.35),
               ),
             ],
           ),
