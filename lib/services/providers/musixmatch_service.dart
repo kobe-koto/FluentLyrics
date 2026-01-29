@@ -25,7 +25,7 @@ class MusixmatchService {
     Function(String)? onStatusUpdate,
   }) async {
     try {
-      String? token = await _settingsService.getMusixmatchToken();
+      String? token = (await _settingsService.getMusixmatchToken()).current;
       if (token == null || token.isEmpty) {
         onStatusUpdate?.call('Getting Musixmatch token...');
         token = await fetchNewToken();

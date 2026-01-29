@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/lyric_model.dart';
+import '../models/setting.dart';
+import '../models/lyric_provider_type.dart';
+import '../constants/app_defaults.dart';
 import '../services/media_service.dart';
 import '../services/lyrics_service.dart';
 import '../services/settings_service.dart';
@@ -17,20 +20,55 @@ class LyricsProvider with ChangeNotifier {
   Timer? _permissionTimer;
   LyricsResult _lyricsResult = LyricsResult.empty();
   Duration _currentPosition = Duration.zero;
-  Duration _globalOffset = Duration.zero;
+
+  // Settings
+  Setting<int> _linesBefore = const Setting(
+    current: AppDefaults.linesBefore,
+    defaultValue: AppDefaults.linesBefore,
+    changed: false,
+  );
+  Setting<int> _globalOffsetMs = const Setting(
+    current: AppDefaults.globalOffsetMs,
+    defaultValue: AppDefaults.globalOffsetMs,
+    changed: false,
+  );
+  Setting<int> _scrollAutoResumeDelay = const Setting(
+    current: AppDefaults.scrollAutoResumeDelay,
+    defaultValue: AppDefaults.scrollAutoResumeDelay,
+    changed: false,
+  );
+  Setting<bool> _blurEnabled = const Setting(
+    current: AppDefaults.blurEnabled,
+    defaultValue: AppDefaults.blurEnabled,
+    changed: false,
+  );
+  Setting<bool> _richSyncEnabled = const Setting(
+    current: AppDefaults.richSyncEnabled,
+    defaultValue: AppDefaults.richSyncEnabled,
+    changed: false,
+  );
+  Setting<List<LyricProviderType>> _trimMetadataProviders = const Setting(
+    current: AppDefaults.trimMetadataProviders,
+    defaultValue: AppDefaults.trimMetadataProviders,
+    changed: false,
+  );
+  Setting<double> _fontSize = const Setting(
+    current: AppDefaults.fontSize,
+    defaultValue: AppDefaults.fontSize,
+    changed: false,
+  );
+  Setting<double> _inactiveScale = const Setting(
+    current: AppDefaults.inactiveScale,
+    defaultValue: AppDefaults.inactiveScale,
+    changed: false,
+  );
+
   Duration _trackOffset = Duration.zero;
   int _currentIndex = -1;
-  int _linesBefore = 2;
-  int _scrollAutoResumeDelay = 5;
-  bool _blurEnabled = true;
-  bool _richSyncEnabled = true;
-  List<LyricProviderType> _trimMetadataProviders = [LyricProviderType.netease];
   bool _isPlaying = false;
   bool _isLoading = false;
   bool _androidPermissionGranted = !Platform.isAndroid;
   String _loadingStatus = '';
-  double _fontSize = 36.0;
-  double _inactiveScale = 0.85;
 
   MediaControlAbility _controlAbility = MediaControlAbility.none();
   DateTime? _playbackToggleLockedUntil;
@@ -55,7 +93,7 @@ class LyricsProvider with ChangeNotifier {
   MediaMetadata? get currentMetadata => _currentMetadata;
 
   List<Lyric> get lyrics {
-    if (!_richSyncEnabled && _lyricsResult.isRichSync) {
+    if (!_richSyncEnabled.current && _lyricsResult.isRichSync) {
       // Return a processed list where lyrics don't have inline parts
       return _lyricsResult.lyrics.map((l) {
         if (l.inlineParts != null && l.inlineParts!.isNotEmpty) {
@@ -73,7 +111,7 @@ class LyricsProvider with ChangeNotifier {
   }
 
   LyricsResult get lyricsResult {
-    if (!_richSyncEnabled && _lyricsResult.isRichSync) {
+    if (!_richSyncEnabled.current && _lyricsResult.isRichSync) {
       return _lyricsResult.copyWith(
         isRichSync: false,
         lyrics: lyrics, // Uses the getter above which strips inline parts
@@ -83,20 +121,25 @@ class LyricsProvider with ChangeNotifier {
   }
 
   Duration get currentPosition => _currentPosition;
-  Duration get globalOffset => _globalOffset;
+  Duration get globalOffset => Duration(milliseconds: _globalOffsetMs.current);
   Duration get trackOffset => _trackOffset;
   int get currentIndex => _currentIndex;
-  int get linesBefore => _linesBefore;
-  int get scrollAutoResumeDelay => _scrollAutoResumeDelay;
-  bool get blurEnabled => _blurEnabled;
-  bool get richSyncEnabled => _richSyncEnabled;
-  List<LyricProviderType> get trimMetadataProviders => _trimMetadataProviders;
+
+  // Setting getters
+  Setting<int> get linesBefore => _linesBefore;
+  Setting<int> get scrollAutoResumeDelay => _scrollAutoResumeDelay;
+  Setting<bool> get blurEnabled => _blurEnabled;
+  Setting<bool> get richSyncEnabled => _richSyncEnabled;
+  Setting<List<LyricProviderType>> get trimMetadataProviders =>
+      _trimMetadataProviders;
+  Setting<double> get fontSize => _fontSize;
+  Setting<double> get inactiveScale => _inactiveScale;
+  Setting<int> get globalOffsetSetting => _globalOffsetMs;
+
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
   bool get androidPermissionGranted => _androidPermissionGranted;
   String get loadingStatus => _loadingStatus;
-  double get fontSize => _fontSize;
-  double get inactiveScale => _inactiveScale;
   MediaControlAbility get controlAbility => _controlAbility;
 
   String? get currentCacheId {
@@ -125,7 +168,7 @@ class LyricsProvider with ChangeNotifier {
 
   double get interludeProgress {
     if (!isInterlude || lyrics.isEmpty) return 0.0;
-    final adjustedPosition = _currentPosition + _globalOffset + _trackOffset;
+    final adjustedPosition = _currentPosition + globalOffset + _trackOffset;
 
     // Empty line progress (works for prelude too)
     if (_currentIndex >= 0 && _currentIndex < lyrics.length - 1) {
@@ -162,11 +205,10 @@ class LyricsProvider with ChangeNotifier {
 
   Future<void> _loadSettings() async {
     _linesBefore = await _settingsService.getLinesBefore();
-    final globalOffsetMs = await _settingsService.getGlobalOffset();
-    _globalOffset = Duration(milliseconds: globalOffsetMs);
+    _globalOffsetMs = await _settingsService.getGlobalOffset();
     _scrollAutoResumeDelay = await _settingsService.getScrollAutoResumeDelay();
     _blurEnabled = await _settingsService.getBlurEnabled();
-    _richSyncEnabled = await _settingsService.isRichSyncEnabled();
+    _richSyncEnabled = await _settingsService.getRichSyncEnabled();
     _trimMetadataProviders = await _settingsService.getTrimMetadataProviders();
     _fontSize = await _settingsService.getFontSize();
     _inactiveScale = await _settingsService.getInactiveScale();
@@ -174,26 +216,45 @@ class LyricsProvider with ChangeNotifier {
   }
 
   void setLinesBefore(int lines) {
-    _linesBefore = lines;
+    if (_linesBefore.current == lines) return;
+    _linesBefore = Setting(
+      current: lines,
+      defaultValue: _linesBefore.defaultValue,
+      changed: lines != _linesBefore.defaultValue,
+    );
     _settingsService.setLinesBefore(lines);
     notifyListeners();
   }
 
   void setScrollAutoResumeDelay(int seconds) {
-    _scrollAutoResumeDelay = seconds;
+    if (_scrollAutoResumeDelay.current == seconds) return;
+    _scrollAutoResumeDelay = Setting(
+      current: seconds,
+      defaultValue: _scrollAutoResumeDelay.defaultValue,
+      changed: seconds != _scrollAutoResumeDelay.defaultValue,
+    );
     _settingsService.setScrollAutoResumeDelay(seconds);
     notifyListeners();
   }
 
   void setBlurEnabled(bool enabled) {
-    _blurEnabled = enabled;
+    if (_blurEnabled.current == enabled) return;
+    _blurEnabled = Setting(
+      current: enabled,
+      defaultValue: _blurEnabled.defaultValue,
+      changed: enabled != _blurEnabled.defaultValue,
+    );
     _settingsService.setBlurEnabled(enabled);
     notifyListeners();
   }
 
   void setRichSyncEnabled(bool enabled) {
-    if (_richSyncEnabled == enabled) return;
-    _richSyncEnabled = enabled;
+    if (_richSyncEnabled.current == enabled) return;
+    _richSyncEnabled = Setting(
+      current: enabled,
+      defaultValue: _richSyncEnabled.defaultValue,
+      changed: enabled != _richSyncEnabled.defaultValue,
+    );
     _settingsService.setRichSyncEnabled(enabled);
     notifyListeners();
 
@@ -203,30 +264,51 @@ class LyricsProvider with ChangeNotifier {
   }
 
   void setTrimMetadataProviders(List<LyricProviderType> providers) {
-    _trimMetadataProviders = providers;
+    bool changed = !listEquals(providers, _trimMetadataProviders.defaultValue);
+    _trimMetadataProviders = Setting(
+      current: providers,
+      defaultValue: _trimMetadataProviders.defaultValue,
+      changed: changed,
+    );
     _settingsService.setTrimMetadataProviders(providers);
     notifyListeners();
   }
 
   bool shouldTrimMetadata(LyricProviderType provider) {
-    return _trimMetadataProviders.contains(provider);
+    return _trimMetadataProviders.current.contains(provider);
   }
 
   void setFontSize(double size) {
-    _fontSize = size;
+    if (_fontSize.current == size) return;
+    _fontSize = Setting(
+      current: size,
+      defaultValue: _fontSize.defaultValue,
+      changed: size != _fontSize.defaultValue,
+    );
     _settingsService.setFontSize(size);
     notifyListeners();
   }
 
   void setInactiveScale(double scale) {
-    _inactiveScale = scale;
+    if (_inactiveScale.current == scale) return;
+    _inactiveScale = Setting(
+      current: scale,
+      defaultValue: _inactiveScale.defaultValue,
+      changed: scale != _inactiveScale.defaultValue,
+    );
     _settingsService.setInactiveScale(scale);
     notifyListeners();
   }
 
   void setGlobalOffset(Duration offset) {
-    _globalOffset = offset;
-    _settingsService.setGlobalOffset(offset.inMilliseconds);
+    final ms = offset.inMilliseconds;
+    if (_globalOffsetMs.current == ms) return;
+    _globalOffsetMs = Setting(
+      current: ms,
+      defaultValue: _globalOffsetMs.defaultValue,
+      changed: ms != _globalOffsetMs.defaultValue,
+    );
+    _settingsService.setGlobalOffset(ms);
     _updateCurrentIndex();
     notifyListeners();
   }
@@ -295,7 +377,6 @@ class LyricsProvider with ChangeNotifier {
       );
       if (_currentMetadata != null) {
         // Force the fetching logic to re-search for artwork by resetting to 'fallback'.
-        // This is only necessary if the system art was 'fallback' (i.e. no local art).
         final systemMetadata = mediaService.metadata;
         if (systemMetadata?.artUrl == '' ||
             systemMetadata?.artUrl == 'fallback') {
@@ -331,7 +412,6 @@ class LyricsProvider with ChangeNotifier {
         _currentMetadata != null &&
         _currentMetadata!.artUrl != 'fallback' &&
         _currentMetadata!.isSameTrack(metadata)) {
-      // Keep our existing artUrl if the fresh metadata is still reporting 'fallback'
       processedMetadata = metadata.copyWith(artUrl: _currentMetadata!.artUrl);
     }
 
@@ -347,7 +427,7 @@ class LyricsProvider with ChangeNotifier {
     if (trackChanged || durationBecameValid) {
       _currentMetadata = processedMetadata;
       metadataChanged = true;
-      _trackOffset = Duration.zero; // Reset offset for new song
+      _trackOffset = Duration.zero;
 
       if (_currentMetadata != null) {
         if (_currentMetadata!.duration.inSeconds > 0) {
@@ -363,21 +443,18 @@ class LyricsProvider with ChangeNotifier {
         notifyListeners();
       }
     } else if (processedMetadata != _currentMetadata) {
-      // Only artUrl or something else minor changed
       _currentMetadata = processedMetadata;
       metadataChanged = true;
     }
 
     bool capabilitiesChanged = _controlAbility != controlAbility;
 
-    // Update playback state if not locked
     final now = DateTime.now();
     if (_playbackToggleLockedUntil == null ||
         now.isAfter(_playbackToggleLockedUntil!)) {
       _isPlaying = isPlaying;
       _playbackToggleLockedUntil = null;
     } else if (_isPlaying == isPlaying) {
-      // Unlock early if system caught up
       _playbackToggleLockedUntil = null;
     }
 
@@ -414,11 +491,10 @@ class LyricsProvider with ChangeNotifier {
           notifyListeners();
         },
         isCancelled: () => !metadata.isSameTrack(_currentMetadata),
-        trimMetadataProviders: _trimMetadataProviders,
-        richSyncEnabled: _richSyncEnabled,
+        trimMetadataProviders: _trimMetadataProviders.current,
+        richSyncEnabled: _richSyncEnabled.current,
       );
 
-      // Insert the prelude indication line if needed
       await for (var result in stream) {
         if (!metadata.isSameTrack(_currentMetadata)) return;
 
@@ -426,7 +502,6 @@ class LyricsProvider with ChangeNotifier {
 
         if (result.lyrics.isNotEmpty &&
             result.lyrics[0].startTime > const Duration(seconds: 3)) {
-          // Ensure we don't modify the same list if it's shared
           final newLyrics = List<Lyric>.from(result.lyrics);
           newLyrics.insert(
             0,
@@ -471,7 +546,7 @@ class LyricsProvider with ChangeNotifier {
       return;
     }
 
-    final adjustedPosition = _currentPosition + _globalOffset + _trackOffset;
+    final adjustedPosition = _currentPosition + globalOffset + _trackOffset;
 
     if (adjustedPosition < _lyricsResult.lyrics[0].startTime) {
       if (_currentIndex != -1) {

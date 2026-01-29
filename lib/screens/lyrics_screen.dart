@@ -58,7 +58,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             if (!_isManualScrolling) {
               _scrollToCurrentIndex(
                 provider.currentIndex,
-                provider.linesBefore,
+                provider.linesBefore.current,
               );
             }
             _previousIndex = provider.currentIndex;
@@ -385,7 +385,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
       onNotification: (notification) {
         if (notification is UserScrollNotification &&
             notification.direction != ScrollDirection.idle) {
-          _handleUserInteraction(provider.scrollAutoResumeDelay);
+          _handleUserInteraction(provider.scrollAutoResumeDelay.current);
         }
         return false;
       },
@@ -409,7 +409,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             isHighlighted: isHighlighted,
             distance: distance,
             isManualScrolling: _isManualScrolling,
-            blurEnabled: provider.blurEnabled,
+            blurEnabled: provider.blurEnabled.current,
           );
 
           // Handle Interludes (empty lines, now including injected prelude)
@@ -488,7 +488,10 @@ class _LyricsScreenState extends State<LyricsScreen> {
           _isManualScrolling = false;
         });
         final provider = Provider.of<LyricsProvider>(context, listen: false);
-        _scrollToCurrentIndex(provider.currentIndex, provider.linesBefore);
+        _scrollToCurrentIndex(
+          provider.currentIndex,
+          provider.linesBefore.current,
+        );
       }
     });
   }

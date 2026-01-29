@@ -23,8 +23,8 @@ class LyricLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lyricsProvider = context.watch<LyricsProvider>();
-    final fontSize = lyricsProvider.fontSize;
-    final inactiveScale = lyricsProvider.inactiveScale;
+    final fontSize = lyricsProvider.fontSize.current;
+    final inactiveScale = lyricsProvider.inactiveScale.current;
 
     // Calculate opacity and blur based on distance
     // Current line (distance 0) has full opacity and no blur.

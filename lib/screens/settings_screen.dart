@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
+import '../models/lyric_provider_type.dart';
 import '../services/providers/musixmatch_service.dart';
 import '../providers/lyrics_provider.dart';
 import '../widgets/settings_slider_card.dart';
@@ -40,10 +41,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
-    final allProviders = await _settingsService.getAllProvidersOrdered();
-    final enabledCount = await _settingsService.getEnabledCount();
-    final cacheEnabled = await _settingsService.isCacheEnabled();
-    final token = await _settingsService.getMusixmatchToken();
+    final allProviders =
+        (await _settingsService.getAllProvidersOrdered()).current;
+    final enabledCount = (await _settingsService.getEnabledCount()).current;
+    final cacheEnabled = (await _settingsService.getCacheEnabled()).current;
+    final token = (await _settingsService.getMusixmatchToken()).current;
     final packageInfo = await PackageInfo.fromPlatform();
     setState(() {
       _allProviders = allProviders;
@@ -312,15 +314,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SettingsSliderCard(
               title: 'Font Size',
               subtitle: 'Size of the lyric text in pixels.',
-              value: provider.fontSize,
+              value: provider.fontSize.current,
               min: 12,
               max: 64,
               divisions: 52,
-              label: provider.fontSize.toInt().toString(),
-              valueText: '${provider.fontSize.toInt()}',
+              label: provider.fontSize.current.toInt().toString(),
+              valueText: '${provider.fontSize.current.toInt()}',
               onChanged: (value) => provider.setFontSize(value),
-              onReset: provider.fontSize != 36.0
-                  ? () => provider.setFontSize(36.0)
+              onReset: provider.fontSize.changed
+                  ? () => provider.setFontSize(provider.fontSize.defaultValue)
                   : null,
               resetTooltip: 'Reset to 36px',
             ),
@@ -328,15 +330,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SettingsSliderCard(
               title: 'Inactive Line Scale',
               subtitle: 'Scale factor for non-highlighted lines.',
-              value: provider.inactiveScale,
+              value: provider.inactiveScale.current,
               min: 0.5,
               max: 1.0,
               divisions: 50,
-              label: '${(provider.inactiveScale * 100).toInt()}%',
-              valueText: '${(provider.inactiveScale * 100).toInt()}%',
+              label: '${(provider.inactiveScale.current * 100).toInt()}%',
+              valueText: '${(provider.inactiveScale.current * 100).toInt()}%',
               onChanged: (value) => provider.setInactiveScale(value),
-              onReset: provider.inactiveScale != 0.85
-                  ? () => provider.setInactiveScale(0.85)
+              onReset: provider.inactiveScale.changed
+                  ? () => provider.setInactiveScale(
+                      provider.inactiveScale.defaultValue,
+                    )
                   : null,
               resetTooltip: 'Reset to 85%',
             ),
@@ -344,7 +348,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SettingsToggleCard(
               title: 'Blur Effect',
               subtitle: 'Blur non-active lyric lines for focus.',
-              value: provider.blurEnabled,
+              value: provider.blurEnabled.current,
               onChanged: (value) => provider.setBlurEnabled(value),
             ),
             const SizedBox(height: 24),
@@ -352,15 +356,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Lines Before Active',
               subtitle:
                   'Number of preceding lines to show when auto-scrolling.',
-              value: provider.linesBefore.toDouble(),
+              value: provider.linesBefore.current.toDouble(),
               min: 0,
               max: 5,
               divisions: 5,
-              label: provider.linesBefore.toString(),
-              valueText: '${provider.linesBefore}',
+              label: provider.linesBefore.current.toString(),
+              valueText: '${provider.linesBefore.current}',
               onChanged: (value) => provider.setLinesBefore(value.toInt()),
-              onReset: provider.linesBefore != 2
-                  ? () => provider.setLinesBefore(2)
+              onReset: provider.linesBefore.changed
+                  ? () => provider.setLinesBefore(
+                      provider.linesBefore.defaultValue,
+                    )
                   : null,
               resetTooltip: 'Reset to 2',
             ),
@@ -369,16 +375,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Auto-Resume Delay',
               subtitle:
                   'Time to wait before auto-scrolling resumes after you manual scroll.',
-              value: provider.scrollAutoResumeDelay.toDouble(),
+              value: provider.scrollAutoResumeDelay.current.toDouble(),
               min: 0,
               max: 30,
               divisions: 30,
-              label: '${provider.scrollAutoResumeDelay}s',
-              valueText: '${provider.scrollAutoResumeDelay}s',
+              label: '${provider.scrollAutoResumeDelay.current}s',
+              valueText: '${provider.scrollAutoResumeDelay.current}s',
               onChanged: (value) =>
                   provider.setScrollAutoResumeDelay(value.toInt()),
-              onReset: provider.scrollAutoResumeDelay != 5
-                  ? () => provider.setScrollAutoResumeDelay(5)
+              onReset: provider.scrollAutoResumeDelay.changed
+                  ? () => provider.setScrollAutoResumeDelay(
+                      provider.scrollAutoResumeDelay.defaultValue,
+                    )
                   : null,
               resetTooltip: 'Reset to 5s',
             ),
@@ -416,7 +424,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SettingsToggleCard(
               title: 'Rich Sync',
               subtitle: 'Enable word-level synchronization.',
-              value: provider.richSyncEnabled,
+              value: provider.richSyncEnabled.current,
               onChanged: (value) => provider.setRichSyncEnabled(value),
             ),
             const SizedBox(height: 24),
@@ -437,7 +445,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Duration(milliseconds: (value * 100).toInt()),
                 );
               },
-              onReset: provider.globalOffset != Duration.zero
+              onReset: provider.globalOffsetSetting.changed
                   ? () => provider.setGlobalOffset(Duration.zero)
                   : null,
               resetTooltip: 'Reset to 0s',
@@ -475,14 +483,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: LyricProviderType.values
                         .where((v) => v != LyricProviderType.cache)
                         .map((providerType) {
-                          final isSelected = provider.trimMetadataProviders
+                          final isSelected = provider
+                              .trimMetadataProviders
+                              .current
                               .contains(providerType);
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: GestureDetector(
                               onTap: () {
                                 final updated = List<LyricProviderType>.from(
-                                  provider.trimMetadataProviders,
+                                  provider.trimMetadataProviders.current,
                                 );
                                 if (isSelected) {
                                   updated.remove(providerType);
@@ -498,7 +508,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     onChanged: (value) {
                                       final updated =
                                           List<LyricProviderType>.from(
-                                            provider.trimMetadataProviders,
+                                            provider
+                                                .trimMetadataProviders
+                                                .current,
                                           );
                                       if (value == true) {
                                         updated.add(providerType);

@@ -1,4 +1,5 @@
 import '../models/lyric_model.dart';
+import '../models/lyric_provider_type.dart';
 import 'settings_service.dart';
 import 'providers/lrclib_service.dart';
 import 'providers/musixmatch_service.dart';
@@ -24,7 +25,8 @@ class LyricsService {
     bool richSyncEnabled = true,
   }) async* {
     final priority = await _settingsService.getPriority();
-    final cacheEnabled = await _settingsService.isCacheEnabled();
+    final cacheEnabledSetting = await _settingsService.getCacheEnabled();
+    final cacheEnabled = cacheEnabledSetting.current;
     // Always prioritize cache first
     final fullPriority = [LyricProviderType.cache, ...priority];
 
