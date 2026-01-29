@@ -219,14 +219,13 @@ class _RichPartState extends State<_RichPart>
                 ),
               ),
               if (isLifting)
-                ClipRect(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: isShort ? 1.0 : progress,
-                    child: Text(
-                      widget.text,
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _KaraokeTextPainter(
+                      text: widget.text,
                       style: widget.style,
-                      softWrap: false,
+                      progress: isShort ? 1.0 : progress,
+                      textScaler: MediaQuery.textScalerOf(context),
                     ),
                   ),
                 ),
@@ -235,5 +234,64 @@ class _RichPartState extends State<_RichPart>
         );
       },
     );
+  }
+}
+
+class _KaraokeTextPainter extends CustomPainter {
+  final String text;
+  final TextStyle style;
+  final double progress;
+  final TextScaler textScaler;
+
+  _KaraokeTextPainter({
+    required this.text,
+    required this.style,
+    required this.progress,
+    required this.textScaler,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+    );
+
+    textPainter.layout(maxWidth: size.width);
+
+    final lines = textPainter.computeLineMetrics();
+    final totalWidth = lines.fold(0.0, (sum, line) => sum + line.width);
+    double currentTargetWidth = totalWidth * progress;
+
+    final path = Path();
+    double y = 0;
+
+    for (final line in lines) {
+      if (currentTargetWidth <= 0) break;
+
+      final lineWidth = line.width;
+      final fillWidth = currentTargetWidth >= lineWidth
+          ? lineWidth
+          : currentTargetWidth;
+
+      path.addRect(Rect.fromLTWH(0, y, fillWidth, line.height));
+
+      currentTargetWidth -= lineWidth;
+      y += line.height;
+    }
+
+    canvas.save();
+    canvas.clipPath(path);
+    textPainter.paint(canvas, Offset.zero);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_KaraokeTextPainter oldDelegate) {
+    return oldDelegate.text != text ||
+        oldDelegate.style != style ||
+        oldDelegate.progress != progress ||
+        oldDelegate.textScaler != textScaler;
   }
 }
