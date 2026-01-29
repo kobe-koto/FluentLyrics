@@ -25,8 +25,8 @@ class NeteaseService {
     bool trimMetadata = false,
   }) async {
     try {
-      onStatusUpdate?.call("Searching lyrics on Netease...");
-      final keyword = "$title - $artist";
+      onStatusUpdate?.call('Searching lyrics on Netease...');
+      final keyword = '$title - $artist';
       const eapiSearchUrl =
           'https://interface.music.163.com/eapi/cloudsearch/pc';
 
@@ -119,7 +119,7 @@ class NeteaseService {
       }
 
       final songId = bestMatch['id'].toString();
-      onStatusUpdate?.call("Fetching lyrics from Netease...");
+      onStatusUpdate?.call('Fetching lyrics from Netease...');
 
       final lyricUri = Uri.parse(_lyricUrl).replace(
         queryParameters: {
@@ -167,7 +167,7 @@ class NeteaseService {
           (yrc != null && yrc.isNotEmpty) ||
           artworkUrl != null ||
           isPureMusic) {
-        onStatusUpdate?.call("Processing lyrics...");
+        onStatusUpdate?.call('Processing lyrics...');
 
         List<Lyric> lyrics = [];
         Map<String, String> trimmedMetadata = {};

@@ -27,7 +27,7 @@ class LyricsProvider with ChangeNotifier {
   bool _isPlaying = false;
   bool _isLoading = false;
   bool _androidPermissionGranted = !Platform.isAndroid;
-  String _loadingStatus = "";
+  String _loadingStatus = '';
   double _fontSize = 36.0;
   double _inactiveScale = 0.85;
 
@@ -358,7 +358,7 @@ class LyricsProvider with ChangeNotifier {
 
   Future<void> _fetchLyrics(MediaMetadata metadata) async {
     _isLoading = true;
-    _loadingStatus = "Starting search...";
+    _loadingStatus = 'Starting search...';
     _lyricsResult = LyricsResult.empty();
     notifyListeners();
 
@@ -414,7 +414,7 @@ class LyricsProvider with ChangeNotifier {
       }
     } catch (e) {
       if (!metadata.isSameTrack(_currentMetadata)) return;
-      _loadingStatus = "Error: $e";
+      _loadingStatus = 'Error: $e';
     } finally {
       if (metadata.isSameTrack(_currentMetadata)) {
         _isLoading = false;

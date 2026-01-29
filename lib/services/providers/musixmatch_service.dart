@@ -27,16 +27,16 @@ class MusixmatchService {
     try {
       String? token = await _settingsService.getMusixmatchToken();
       if (token == null || token.isEmpty) {
-        onStatusUpdate?.call("Getting Musixmatch token...");
+        onStatusUpdate?.call('Getting Musixmatch token...');
         token = await fetchNewToken();
         if (token != null) {
           await _settingsService.setMusixmatchToken(token);
         } else {
-          throw Exception("Failed to get Musixmatch token");
+          throw Exception('Failed to get Musixmatch token');
         }
       }
 
-      onStatusUpdate?.call("Searching lyrics on Musixmatch...");
+      onStatusUpdate?.call('Searching lyrics on Musixmatch...');
       final result = await _getLyricsResult(
         title,
         artist,

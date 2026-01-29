@@ -77,7 +77,7 @@ class NeteaseYrcParser {
         final List<LyricInlinePart> inlineParts = [];
         final Iterable<Match> wordMatches = wordRegex.allMatches(wordsContent);
 
-        String fullText = "";
+        String fullText = '';
         for (final wordMatch in wordMatches) {
           final int wordStart = int.parse(wordMatch.group(1)!);
           final int wordDuration = int.parse(wordMatch.group(2)!);
@@ -139,7 +139,7 @@ class EnhancedLrcParser {
         final List<LyricInlinePart> inlineParts = [];
         final Iterable<Match> wordMatches = wordRegex.allMatches(wordsContent);
 
-        String fullText = "";
+        String fullText = '';
         List<Match> matches = wordMatches.toList();
         for (int i = 0; i < matches.length; i++) {
           final match = matches[i];

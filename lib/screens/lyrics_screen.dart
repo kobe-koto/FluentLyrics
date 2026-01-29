@@ -245,7 +245,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  metadata?.title ?? "No Media Playing",
+                  metadata?.title ?? 'No Media Playing',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -255,7 +255,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  metadata?.artist ?? "Wait for music...",
+                  metadata?.artist ?? 'Wait for music...',
                   style: TextStyle(
                     color: Colors.white.withAlpha(136),
                     fontSize: 14,
@@ -358,11 +358,11 @@ class _LyricsScreenState extends State<LyricsScreen> {
     }
 
     if (provider.lyrics.isEmpty) {
-      String message = "No lyrics found for this track";
+      String message = 'No lyrics found for this track';
       if (provider.currentMetadata == null) {
-        message = "Start playing music";
+        message = 'Start playing music';
       } else if (provider.lyricsResult.isPureMusic) {
-        message = "Pure Music / Instrumental";
+        message = 'Pure Music / Instrumental';
       }
 
       return Center(
@@ -434,16 +434,16 @@ class _LyricsScreenState extends State<LyricsScreen> {
   Widget _buildLyricsInfoLine(LyricsResult result) {
     final List<String> infoParts = [];
     if (result.source.isNotEmpty) {
-      infoParts.add("Source: ${result.source}");
+      infoParts.add('Source: ${result.source}');
     }
     if (result.writtenBy != null && result.writtenBy!.isNotEmpty) {
-      infoParts.add("Written by: ${result.writtenBy}");
+      infoParts.add('Written by: ${result.writtenBy}');
     }
     if (result.contributor != null && result.contributor!.isNotEmpty) {
-      infoParts.add("Contributor: ${result.contributor}");
+      infoParts.add('Contributor: ${result.contributor}');
     }
     if (result.copyright != null && result.copyright!.isNotEmpty) {
-      infoParts.add("Copyright: ${result.copyright}");
+      infoParts.add('Copyright: ${result.copyright}');
     }
 
     if (infoParts.isEmpty) return const SizedBox.shrink();
@@ -545,7 +545,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        "$offsetText",
+                        '$offsetText',
                         style: TextStyle(
                           color: Colors.white.withAlpha(150),
                           fontSize: 10,
@@ -641,10 +641,10 @@ class _LyricsScreenState extends State<LyricsScreen> {
   }
 
   String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
     String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$twoDigitMinutes:$twoDigitSeconds";
+    return '$twoDigitMinutes:$twoDigitSeconds';
   }
 
   Widget _buildPermissionOverlay(LyricsProvider provider) {
@@ -660,7 +660,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             const Icon(Icons.security, color: Colors.white, size: 64),
             const SizedBox(height: 24),
             const Text(
-              "Notification Access Required",
+              'Notification Access Required',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -670,7 +670,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              "Fluent Lyrics needs notification access to read media metadata from other apps.",
+              'Fluent Lyrics needs notification access to read media metadata from other apps.',
               style: TextStyle(color: Colors.white70, fontSize: 16),
               textAlign: TextAlign.center,
             ),
@@ -685,13 +685,13 @@ class _LyricsScreenState extends State<LyricsScreen> {
                   vertical: 16,
                 ),
               ),
-              child: const Text("GRANT ACCESS"),
+              child: const Text('GRANT ACCESS'),
             ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => provider.checkAndroidPermission(),
               child: const Text(
-                "Already granted? Tap to check now.",
+                'Already granted? Tap to check now.',
                 style: TextStyle(color: Colors.white38, fontSize: 12),
               ),
             ),

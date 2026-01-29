@@ -27,7 +27,7 @@ class LrclibService {
         _baseSearchUrl,
       ).replace(queryParameters: queryParams);
 
-      onStatusUpdate?.call("Searching lyrics on LRCLIB...");
+      onStatusUpdate?.call('Searching lyrics on LRCLIB...');
 
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
@@ -80,7 +80,7 @@ class LrclibService {
         final String? plainLyrics = selectedResult['plainLyrics'];
         final bool isInstrumental = selectedResult['instrumental'] == true;
 
-        onStatusUpdate?.call("Processing lyrics...");
+        onStatusUpdate?.call('Processing lyrics...');
         List<Lyric> lyrics = [];
 
         if (enhancedLyrics != null && enhancedLyrics.isNotEmpty) {

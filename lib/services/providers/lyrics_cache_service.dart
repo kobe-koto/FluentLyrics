@@ -16,7 +16,7 @@ class LyricsCacheService {
         await Isar.open(
           [LyricCacheSchema],
           directory: dir.path,
-          name: "lyrics_cache",
+          name: 'lyrics_cache',
         );
     return _isar!;
   }
