@@ -191,4 +191,16 @@ class SettingsService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_inactiveScaleKey, scale);
   }
+
+  static const String _richSyncEnabledKey = 'rich_sync_enabled';
+
+  Future<bool> isRichSyncEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_richSyncEnabledKey) ?? true;
+  }
+
+  Future<void> setRichSyncEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_richSyncEnabledKey, enabled);
+  }
 }

@@ -23,6 +23,7 @@ class LyricsProvider with ChangeNotifier {
   int _linesBefore = 2;
   int _scrollAutoResumeDelay = 5;
   bool _blurEnabled = true;
+  bool _richSyncEnabled = true;
   List<LyricProviderType> _trimMetadataProviders = [LyricProviderType.netease];
   bool _isPlaying = false;
   bool _isLoading = false;
@@ -52,8 +53,35 @@ class LyricsProvider with ChangeNotifier {
   }
 
   MediaMetadata? get currentMetadata => _currentMetadata;
-  List<Lyric> get lyrics => _lyricsResult.lyrics;
-  LyricsResult get lyricsResult => _lyricsResult;
+
+  List<Lyric> get lyrics {
+    if (!_richSyncEnabled && _lyricsResult.isRichSync) {
+      // Return a processed list where lyrics don't have inline parts
+      return _lyricsResult.lyrics.map((l) {
+        if (l.inlineParts != null && l.inlineParts!.isNotEmpty) {
+          return Lyric(
+            startTime: l.startTime,
+            endTime: l.endTime,
+            text: l.text,
+            inlineParts: null,
+          );
+        }
+        return l;
+      }).toList();
+    }
+    return _lyricsResult.lyrics;
+  }
+
+  LyricsResult get lyricsResult {
+    if (!_richSyncEnabled && _lyricsResult.isRichSync) {
+      return _lyricsResult.copyWith(
+        isRichSync: false,
+        lyrics: lyrics, // Uses the getter above which strips inline parts
+      );
+    }
+    return _lyricsResult;
+  }
+
   Duration get currentPosition => _currentPosition;
   Duration get globalOffset => _globalOffset;
   Duration get trackOffset => _trackOffset;
@@ -61,6 +89,7 @@ class LyricsProvider with ChangeNotifier {
   int get linesBefore => _linesBefore;
   int get scrollAutoResumeDelay => _scrollAutoResumeDelay;
   bool get blurEnabled => _blurEnabled;
+  bool get richSyncEnabled => _richSyncEnabled;
   List<LyricProviderType> get trimMetadataProviders => _trimMetadataProviders;
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
@@ -137,6 +166,7 @@ class LyricsProvider with ChangeNotifier {
     _globalOffset = Duration(milliseconds: globalOffsetMs);
     _scrollAutoResumeDelay = await _settingsService.getScrollAutoResumeDelay();
     _blurEnabled = await _settingsService.getBlurEnabled();
+    _richSyncEnabled = await _settingsService.isRichSyncEnabled();
     _trimMetadataProviders = await _settingsService.getTrimMetadataProviders();
     _fontSize = await _settingsService.getFontSize();
     _inactiveScale = await _settingsService.getInactiveScale();
@@ -159,6 +189,17 @@ class LyricsProvider with ChangeNotifier {
     _blurEnabled = enabled;
     _settingsService.setBlurEnabled(enabled);
     notifyListeners();
+  }
+
+  void setRichSyncEnabled(bool enabled) {
+    if (_richSyncEnabled == enabled) return;
+    _richSyncEnabled = enabled;
+    _settingsService.setRichSyncEnabled(enabled);
+    notifyListeners();
+
+    if (_currentMetadata != null) {
+      _fetchLyrics(_currentMetadata!);
+    }
   }
 
   void setTrimMetadataProviders(List<LyricProviderType> providers) {
@@ -374,6 +415,7 @@ class LyricsProvider with ChangeNotifier {
         },
         isCancelled: () => !metadata.isSameTrack(_currentMetadata),
         trimMetadataProviders: _trimMetadataProviders,
+        richSyncEnabled: _richSyncEnabled,
       );
 
       // Insert the prelude indication line if needed

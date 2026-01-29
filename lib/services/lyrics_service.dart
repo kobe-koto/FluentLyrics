@@ -21,6 +21,7 @@ class LyricsService {
     Function(String)? onStatusUpdate,
     bool Function()? isCancelled,
     List<LyricProviderType> trimMetadataProviders = const [],
+    bool richSyncEnabled = true,
   }) async* {
     final priority = await _settingsService.getPriority();
     final cacheEnabled = await _settingsService.isCacheEnabled();
@@ -97,6 +98,7 @@ class LyricsService {
             newBetter = true;
           } else if (result.lyrics.isNotEmpty &&
               result.isRichSync &&
+              richSyncEnabled &&
               !bestResult.isRichSync) {
             newBetter = true;
           } else if (result.lyrics.isNotEmpty &&
@@ -129,7 +131,9 @@ class LyricsService {
       // If we have (rich sync lyrics OR pure music) AND artwork, we can stop early.
       if (bestResult != null &&
           (bestResult.isPureMusic ||
-              (bestResult.lyrics.isNotEmpty && bestResult.isRichSync)) &&
+              (bestResult.lyrics.isNotEmpty &&
+                  ((bestResult.isRichSync && richSyncEnabled) ||
+                      (!richSyncEnabled && bestResult.isSynced)))) &&
           bestResult.artworkUrl != null) {
         return;
       }
