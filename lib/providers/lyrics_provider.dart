@@ -142,6 +142,12 @@ class LyricsProvider with ChangeNotifier {
   String get loadingStatus => _loadingStatus;
   MediaControlAbility get controlAbility => _controlAbility;
 
+  final Duration _interludeOffset = Duration(
+    milliseconds:
+        500 + // auto scroll takes 500ms
+        250, // shrink animation takes 250ms
+  );
+
   String? get currentCacheId {
     if (_currentMetadata == null) return null;
     return _cacheService.generateCacheId(
@@ -173,12 +179,10 @@ class LyricsProvider with ChangeNotifier {
     // Empty line progress (works for prelude too)
     if (_currentIndex >= 0 && _currentIndex < lyrics.length - 1) {
       final currentStartTime = lyrics[_currentIndex].startTime;
-      final nextStartTime = lyrics[_currentIndex + 1].startTime;
+      final nextStartTime =
+          lyrics[_currentIndex + 1].startTime - _interludeOffset;
       final duration =
-          nextStartTime.inMilliseconds -
-          currentStartTime.inMilliseconds -
-          500 - // auto scroll takes 500ms
-          250; // shrink animation takes 250ms
+          nextStartTime.inMilliseconds - currentStartTime.inMilliseconds;
       if (duration > 0) {
         return ((adjustedPosition.inMilliseconds -
                     currentStartTime.inMilliseconds) /
@@ -195,10 +199,7 @@ class LyricsProvider with ChangeNotifier {
     if (_currentIndex >= 0 && _currentIndex < lyrics.length - 1) {
       final currentStartTime = lyrics[_currentIndex].startTime;
       final nextStartTime = lyrics[_currentIndex + 1].startTime;
-      return nextStartTime -
-          currentStartTime -
-          Duration(milliseconds: 500) - // auto scroll takes 500ms
-          Duration(milliseconds: 250); // shrink animation takes 250ms
+      return nextStartTime - currentStartTime - _interludeOffset;
     }
     return Duration.zero;
   }
