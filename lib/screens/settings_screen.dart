@@ -892,6 +892,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         name = 'Netease Music';
         description = 'Chinese music service, community driven lyrics catalog';
         break;
+      case LyricProviderType.qqmusic:
+        color = Colors.green;
+        name = 'QQ Music';
+        description = 'Chinese music streaming service by Tencent';
+        break;
       case LyricProviderType.cache:
         color = Colors.grey;
         name = 'Cache';

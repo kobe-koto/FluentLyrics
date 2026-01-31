@@ -1,1 +1,1 @@
-enum LyricProviderType { lrclib, musixmatch, netease, cache }
+enum LyricProviderType { lrclib, musixmatch, netease, qqmusic, cache }

@@ -4,6 +4,7 @@ import 'settings_service.dart';
 import 'providers/lrclib_service.dart';
 import 'providers/musixmatch_service.dart';
 import 'providers/netease_service.dart';
+import 'providers/qqmusic_service.dart';
 import 'providers/lyrics_cache_service.dart';
 
 class LyricsService {
@@ -12,6 +13,7 @@ class LyricsService {
   final LrclibService _lrclibService = LrclibService();
   final MusixmatchService _musixmatchService = MusixmatchService();
   final NeteaseService _neteaseService = NeteaseService();
+  final QQMusicService _qqMusicService = QQMusicService();
   final LyricsCacheService _cacheService = LyricsCacheService();
 
   Stream<LyricsResult> fetchLyrics({
@@ -65,6 +67,15 @@ class LyricsService {
         );
       } else if (provider == LyricProviderType.netease) {
         result = await _neteaseService.fetchLyrics(
+          title: title,
+          artist: artist,
+          album: album,
+          durationSeconds: durationSeconds,
+          onStatusUpdate: onStatusUpdate,
+          trimMetadata: shouldTrimMetadata,
+        );
+      } else if (provider == LyricProviderType.qqmusic) {
+        result = await _qqMusicService.fetchLyrics(
           title: title,
           artist: artist,
           album: album,

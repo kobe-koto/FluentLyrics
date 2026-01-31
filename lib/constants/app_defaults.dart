@@ -15,6 +15,7 @@ class AppDefaults {
     LyricProviderType.lrclib,
     LyricProviderType.musixmatch,
     LyricProviderType.netease,
+    LyricProviderType.qqmusic,
   ];
   static const int enabledProviderCount = 3;
   static const bool cacheEnabled = true;
