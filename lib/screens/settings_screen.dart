@@ -115,6 +115,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Map<String, dynamic> _getLyricProviderMetadata(LyricProviderType type) {
+    switch (type) {
+      case LyricProviderType.lrclib:
+        return {
+          'color': Colors.blue,
+          'name': 'LRCLIB',
+          'description': 'Open-source lyrics database',
+        };
+      case LyricProviderType.musixmatch:
+        return {
+          'color': Colors.orange,
+          'name': 'Musixmatch',
+          'description': 'World\'s largest lyrics catalog',
+        };
+      case LyricProviderType.netease:
+        return {
+          'color': Colors.red,
+          'name': 'Netease Music',
+          'description':
+              'Chinese music service, community driven lyrics catalog',
+        };
+      case LyricProviderType.qqmusic:
+        return {
+          'color': Colors.green,
+          'name': 'QQ Music',
+          'description': 'Chinese music streaming service by Tencent',
+        };
+      case LyricProviderType.cache:
+        return {
+          'color': Colors.grey,
+          'name': 'Cache',
+          'description': 'Cached lyrics',
+        };
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -526,8 +562,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    providerType.name[0].toUpperCase() +
-                                        providerType.name.substring(1),
+                                    _getLyricProviderMetadata(
+                                      providerType,
+                                    )['name'],
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 14,
@@ -876,33 +913,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String name;
     String description;
 
-    switch (type) {
-      case LyricProviderType.lrclib:
-        color = Colors.blue;
-        name = 'LRCLIB';
-        description = 'Open-source lyrics database';
-        break;
-      case LyricProviderType.musixmatch:
-        color = Colors.orange;
-        name = 'Musixmatch';
-        description = 'World\'s largest lyrics catalog';
-        break;
-      case LyricProviderType.netease:
-        color = Colors.red;
-        name = 'Netease Music';
-        description = 'Chinese music service, community driven lyrics catalog';
-        break;
-      case LyricProviderType.qqmusic:
-        color = Colors.green;
-        name = 'QQ Music';
-        description = 'Chinese music streaming service by Tencent';
-        break;
-      case LyricProviderType.cache:
-        color = Colors.grey;
-        name = 'Cache';
-        description = 'Cached lyrics';
-        break;
-    }
+    final metadata = _getLyricProviderMetadata(type);
+    color = metadata['color'];
+    name = metadata['name'];
+    description = metadata['description'];
 
     return Opacity(
       opacity: isEnabled ? 1.0 : 0.4,
