@@ -155,6 +155,10 @@ class QQMusicService {
               parseResult.trimmedMetadata['作词'] ??
               parseResult.trimmedMetadata['作詞'],
           isPureMusic: false,
+          metadata: {
+            ...parseResult.lrcMetadata,
+            ...parseResult.trimmedMetadata,
+          },
         );
       }
 
@@ -185,7 +189,6 @@ class QQMusicService {
         'needNewCode': '0',
       };
 
-      // The C# code sends these as form fields / body
       final response = await http
           .post(uri, headers: headers, body: body)
           .timeout(const Duration(seconds: 10));
