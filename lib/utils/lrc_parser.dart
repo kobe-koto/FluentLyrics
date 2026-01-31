@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import '../models/lyric_model.dart';
+import '../../utils/string_similarity.dart';
 
 /// Result of parsing LRC content with optional metadata trimming.
 class LrcParseResult {
@@ -9,8 +11,13 @@ class LrcParseResult {
   /// Key: position (e.g., "作词", "作曲"), Value: staff names
   /// Empty if trimMetadata was false or no metadata was found.
   final Map<String, String> trimmedMetadata;
+  final Map<String, String> lrcMetadata;
 
-  LrcParseResult({required this.lyrics, this.trimmedMetadata = const {}});
+  LrcParseResult({
+    required this.lyrics,
+    this.trimmedMetadata = const {},
+    this.lrcMetadata = const {},
+  });
 }
 
 class LrcParser {
@@ -18,8 +25,12 @@ class LrcParser {
     final List<Lyric> lyrics = [];
     final RegExp regExp = RegExp(r'\[(\d+):(\d+\.\d+)\](.*)');
 
+    final Map<String, String> lrcMetadata = {};
+
     for (final line in lrcContent.split('\n')) {
       final match = regExp.firstMatch(line);
+      final tagMatch = RegExp(r'\[([a-zA-Z]+):(.*)\]').firstMatch(line);
+
       if (match != null) {
         final minutes = int.parse(match.group(1)!);
         final seconds = double.parse(match.group(2)!);
@@ -31,6 +42,10 @@ class LrcParser {
         );
 
         lyrics.add(Lyric(startTime: duration, text: text));
+      } else if (tagMatch != null) {
+        final key = tagMatch.group(1)!.trim();
+        final value = tagMatch.group(2)!.trim();
+        lrcMetadata[key] = value;
       } else if (line.trim().isNotEmpty && !line.startsWith('[')) {
         // Plain text lines without timestamps (rare in LRC but possible)
         lyrics.add(Lyric(startTime: Duration.zero, text: line.trim()));
@@ -58,10 +73,22 @@ class LrcParser {
     }
 
     if (trimMetadata) {
-      return trimMetadataLines(lyricsWithEndTime);
+      final trimmedResult = trimMetadataLines(
+        lyricsWithEndTime,
+        lrcMetadata: lrcMetadata,
+      );
+      return LrcParseResult(
+        lyrics: trimmedResult.lyrics,
+        trimmedMetadata: trimmedResult.trimmedMetadata,
+        lrcMetadata: lrcMetadata,
+      );
     }
 
-    return LrcParseResult(lyrics: lyricsWithEndTime);
+    return LrcParseResult(
+      lyrics: lyricsWithEndTime,
+      trimmedMetadata: {},
+      lrcMetadata: lrcMetadata,
+    );
   }
 
   /// Trims metadata lines from lyrics (head and tail).
@@ -73,11 +100,33 @@ class LrcParser {
   /// Returns a LrcParseResult with:
   /// - lyrics: the trimmed lyric lines
   /// - trimmedMetadata: map of removed metadata with position as key and staff names as value
-  static LrcParseResult trimMetadataLines(List<Lyric> lyrics) {
+  static LrcParseResult trimMetadataLines(
+    List<Lyric> lyrics, {
+    Map<String, String> lrcMetadata = const {},
+  }) {
     if (lyrics.isEmpty) return LrcParseResult(lyrics: lyrics);
 
     final List<Lyric> result = List<Lyric>.from(lyrics);
     final Map<String, String> trimmedMetadata = {};
+
+    // attempt to remove the 'title - artist' line
+    String trimTitleKeyword = '';
+    if (lrcMetadata.isNotEmpty) {
+      trimTitleKeyword =
+          '${lrcMetadata['title'] ?? lrcMetadata['ti'] ?? ''} - ${lrcMetadata['artist'] ?? lrcMetadata['ar'] ?? ''}';
+      // check the similarity of the first line with the title keyword
+      final firstLine = lyrics.first.text.trim();
+      final similarity = StringSimilarity.getJaroWinklerScore(
+        firstLine,
+        trimTitleKeyword,
+      );
+      debugPrint(
+        '[trimMetadataLines] similarity for first line "$firstLine" with keyword "$trimTitleKeyword": $similarity',
+      );
+      if (similarity > 0.95) {
+        result.removeAt(0);
+      }
+    }
 
     // Pattern for metadata: text contains full-width colon ： followed by names
     // Common metadata positions: 作词, 作曲, 编曲, 制作, 混音, 母带

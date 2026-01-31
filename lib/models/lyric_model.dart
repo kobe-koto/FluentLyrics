@@ -68,6 +68,7 @@ class LyricsResult {
   final String? copyright;
   final String? artworkUrl;
   final bool isPureMusic;
+  final Map<String, String>? metadata;
 
   LyricsResult({
     required this.lyrics,
@@ -79,6 +80,7 @@ class LyricsResult {
     this.copyright,
     this.artworkUrl,
     this.isPureMusic = false,
+    this.metadata,
   }) : isSynced = isSynced ?? _checkIfSynced(lyrics),
        isRichSync = isRichSync ?? _checkIfRichSynced(lyrics);
 
@@ -138,6 +140,7 @@ class LyricsResult {
     String? copyright,
     String? artworkUrl,
     bool? isPureMusic,
+    Map<String, String>? metadata,
   }) {
     return LyricsResult(
       lyrics: lyrics ?? this.lyrics,
@@ -149,6 +152,7 @@ class LyricsResult {
       copyright: copyright ?? this.copyright,
       artworkUrl: artworkUrl ?? this.artworkUrl,
       isPureMusic: isPureMusic ?? this.isPureMusic,
+      metadata: metadata ?? this.metadata,
     );
   }
 
@@ -184,6 +188,7 @@ class LyricsResult {
     'copyright': copyright,
     'artworkUrl': artworkUrl,
     'isPureMusic': isPureMusic,
+    if (metadata != null) 'metadata': metadata,
   };
 
   factory LyricsResult.fromJson(Map<String, dynamic> json) => LyricsResult(
@@ -198,5 +203,8 @@ class LyricsResult {
     copyright: json['copyright'] as String?,
     artworkUrl: json['artworkUrl'] as String?,
     isPureMusic: json['isPureMusic'] as bool? ?? false,
+    metadata: json['metadata'] != null
+        ? Map<String, String>.from(json['metadata'])
+        : null,
   );
 }
