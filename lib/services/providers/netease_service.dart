@@ -221,6 +221,7 @@ class NeteaseService {
           contributor: contributor,
           artworkUrl: artworkUrl,
           writtenBy: trimmedMetadata['作词'] ?? trimmedMetadata['作詞'],
+          composer: trimmedMetadata['作曲'],
           isPureMusic: isPureMusic,
         );
       } else {

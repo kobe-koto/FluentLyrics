@@ -27,44 +27,49 @@ const LyricCacheSchema = CollectionSchema(
       name: r'cacheId',
       type: IsarType.string,
     ),
-    r'contributor': PropertySchema(
+    r'composer': PropertySchema(
       id: 2,
+      name: r'composer',
+      type: IsarType.string,
+    ),
+    r'contributor': PropertySchema(
+      id: 3,
       name: r'contributor',
       type: IsarType.string,
     ),
     r'copyright': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'copyright',
       type: IsarType.string,
     ),
     r'isPureMusic': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'isPureMusic',
       type: IsarType.bool,
     ),
     r'isRichSync': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'isRichSync',
       type: IsarType.bool,
     ),
     r'isSynced': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'isSynced',
       type: IsarType.bool,
     ),
     r'lyrics': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'lyrics',
       type: IsarType.objectList,
       target: r'LyricItem',
     ),
     r'source': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'source',
       type: IsarType.string,
     ),
     r'writtenBy': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'writtenBy',
       type: IsarType.string,
     )
@@ -114,6 +119,12 @@ int _lyricCacheEstimateSize(
   }
   bytesCount += 3 + object.cacheId.length * 3;
   {
+    final value = object.composer;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.contributor;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -151,19 +162,20 @@ void _lyricCacheSerialize(
 ) {
   writer.writeString(offsets[0], object.artworkUrl);
   writer.writeString(offsets[1], object.cacheId);
-  writer.writeString(offsets[2], object.contributor);
-  writer.writeString(offsets[3], object.copyright);
-  writer.writeBool(offsets[4], object.isPureMusic);
-  writer.writeBool(offsets[5], object.isRichSync);
-  writer.writeBool(offsets[6], object.isSynced);
+  writer.writeString(offsets[2], object.composer);
+  writer.writeString(offsets[3], object.contributor);
+  writer.writeString(offsets[4], object.copyright);
+  writer.writeBool(offsets[5], object.isPureMusic);
+  writer.writeBool(offsets[6], object.isRichSync);
+  writer.writeBool(offsets[7], object.isSynced);
   writer.writeObjectList<LyricItem>(
-    offsets[7],
+    offsets[8],
     allOffsets,
     LyricItemSchema.serialize,
     object.lyrics,
   );
-  writer.writeString(offsets[8], object.source);
-  writer.writeString(offsets[9], object.writtenBy);
+  writer.writeString(offsets[9], object.source);
+  writer.writeString(offsets[10], object.writtenBy);
 }
 
 LyricCache _lyricCacheDeserialize(
@@ -175,21 +187,22 @@ LyricCache _lyricCacheDeserialize(
   final object = LyricCache();
   object.artworkUrl = reader.readStringOrNull(offsets[0]);
   object.cacheId = reader.readString(offsets[1]);
-  object.contributor = reader.readStringOrNull(offsets[2]);
-  object.copyright = reader.readStringOrNull(offsets[3]);
+  object.composer = reader.readStringOrNull(offsets[2]);
+  object.contributor = reader.readStringOrNull(offsets[3]);
+  object.copyright = reader.readStringOrNull(offsets[4]);
   object.id = id;
-  object.isPureMusic = reader.readBool(offsets[4]);
-  object.isRichSync = reader.readBool(offsets[5]);
-  object.isSynced = reader.readBool(offsets[6]);
+  object.isPureMusic = reader.readBool(offsets[5]);
+  object.isRichSync = reader.readBool(offsets[6]);
+  object.isSynced = reader.readBool(offsets[7]);
   object.lyrics = reader.readObjectList<LyricItem>(
-        offsets[7],
+        offsets[8],
         LyricItemSchema.deserialize,
         allOffsets,
         LyricItem(),
       ) ??
       [];
-  object.source = reader.readString(offsets[8]);
-  object.writtenBy = reader.readStringOrNull(offsets[9]);
+  object.source = reader.readString(offsets[9]);
+  object.writtenBy = reader.readStringOrNull(offsets[10]);
   return object;
 }
 
@@ -209,12 +222,14 @@ P _lyricCacheDeserializeProp<P>(
     case 3:
       return (reader.readStringOrNull(offset)) as P;
     case 4:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 5:
       return (reader.readBool(offset)) as P;
     case 6:
       return (reader.readBool(offset)) as P;
     case 7:
+      return (reader.readBool(offset)) as P;
+    case 8:
       return (reader.readObjectList<LyricItem>(
             offset,
             LyricItemSchema.deserialize,
@@ -222,9 +237,9 @@ P _lyricCacheDeserializeProp<P>(
             LyricItem(),
           ) ??
           []) as P;
-    case 8:
-      return (reader.readString(offset)) as P;
     case 9:
+      return (reader.readString(offset)) as P;
+    case 10:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -702,6 +717,157 @@ extension LyricCacheQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'cacheId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> composerIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'composer',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      composerIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'composer',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> composerEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'composer',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      composerGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'composer',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> composerLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'composer',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> composerBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'composer',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      composerStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'composer',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> composerEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'composer',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> composerContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'composer',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition> composerMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'composer',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      composerIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'composer',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterFilterCondition>
+      composerIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'composer',
         value: '',
       ));
     });
@@ -1507,6 +1673,18 @@ extension LyricCacheQuerySortBy
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByComposer() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'composer', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByComposerDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'composer', Sort.desc);
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QAfterSortBy> sortByContributor() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'contributor', Sort.asc);
@@ -1615,6 +1793,18 @@ extension LyricCacheQuerySortThenBy
   QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByCacheIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'cacheId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByComposer() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'composer', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LyricCache, LyricCache, QAfterSortBy> thenByComposerDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'composer', Sort.desc);
     });
   }
 
@@ -1731,6 +1921,13 @@ extension LyricCacheQueryWhereDistinct
     });
   }
 
+  QueryBuilder<LyricCache, LyricCache, QDistinct> distinctByComposer(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'composer', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<LyricCache, LyricCache, QDistinct> distinctByContributor(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1795,6 +1992,12 @@ extension LyricCacheQueryProperty
   QueryBuilder<LyricCache, String, QQueryOperations> cacheIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'cacheId');
+    });
+  }
+
+  QueryBuilder<LyricCache, String?, QQueryOperations> composerProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'composer');
     });
   }
 

@@ -14,6 +14,7 @@ class LyricCache {
   late bool isSynced;
   late bool isRichSync;
   String? writtenBy;
+  String? composer;
   String? contributor;
   String? copyright;
   String? artworkUrl;
@@ -47,6 +48,7 @@ class LyricCache {
       isSynced: isSynced,
       isRichSync: isRichSync,
       writtenBy: writtenBy,
+      composer: composer,
       contributor: contributor,
       copyright: copyright,
       artworkUrl: artworkUrl,
@@ -61,6 +63,7 @@ class LyricCache {
     cache.isSynced = result.isSynced;
     cache.isRichSync = result.isRichSync;
     cache.writtenBy = result.writtenBy;
+    cache.composer = result.composer;
     cache.contributor = result.contributor;
     cache.copyright = result.copyright;
     cache.artworkUrl = result.artworkUrl;

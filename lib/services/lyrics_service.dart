@@ -126,6 +126,7 @@ class LyricsService {
               source: result.source,
               isSynced: result.isSynced,
               writtenBy: result.writtenBy,
+              composer: result.composer,
               contributor: result.contributor,
               copyright: result.copyright,
               artworkUrl: result.artworkUrl ?? bestResult.artworkUrl,

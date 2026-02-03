@@ -64,6 +64,7 @@ class LyricsResult {
   final bool isSynced;
   final bool isRichSync;
   final String? writtenBy;
+  final String? composer;
   final String? contributor;
   final String? copyright;
   final String? artworkUrl;
@@ -76,6 +77,7 @@ class LyricsResult {
     bool? isSynced,
     bool? isRichSync,
     this.writtenBy,
+    this.composer,
     this.contributor,
     this.copyright,
     this.artworkUrl,
@@ -136,6 +138,7 @@ class LyricsResult {
     bool? isSynced,
     bool? isRichSync,
     String? writtenBy,
+    String? composer,
     String? contributor,
     String? copyright,
     String? artworkUrl,
@@ -148,6 +151,7 @@ class LyricsResult {
       isSynced: isSynced ?? this.isSynced,
       isRichSync: isRichSync ?? this.isRichSync,
       writtenBy: writtenBy ?? this.writtenBy,
+      composer: composer ?? this.composer,
       contributor: contributor ?? this.contributor,
       copyright: copyright ?? this.copyright,
       artworkUrl: artworkUrl ?? this.artworkUrl,
@@ -184,6 +188,7 @@ class LyricsResult {
     'isSynced': isSynced,
     'isRichSync': isRichSync,
     'writtenBy': writtenBy,
+    'composer': composer,
     'contributor': contributor,
     'copyright': copyright,
     'artworkUrl': artworkUrl,
@@ -199,6 +204,7 @@ class LyricsResult {
     isSynced: json['isSynced'] as bool? ?? true,
     isRichSync: json['isRichSync'] as bool? ?? false,
     writtenBy: json['writtenBy'] as String?,
+    composer: json['composer'] as String?,
     contributor: json['contributor'] as String?,
     copyright: json['copyright'] as String?,
     artworkUrl: json['artworkUrl'] as String?,

@@ -153,7 +153,12 @@ class QQMusicService {
           artworkUrl: artworkUrl,
           writtenBy:
               parseResult.trimmedMetadata['作词'] ??
-              parseResult.trimmedMetadata['作詞'],
+              parseResult.trimmedMetadata['作詞'] ??
+              parseResult.trimmedMetadata['Lyrics by'],
+          composer:
+              parseResult.trimmedMetadata['作曲'] ??
+              parseResult.trimmedMetadata['Composer'] ??
+              parseResult.trimmedMetadata['Composed by'],
           isPureMusic: false,
           metadata: {
             ...parseResult.lrcMetadata,

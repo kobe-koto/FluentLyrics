@@ -449,6 +449,9 @@ class _LyricsScreenState extends State<LyricsScreen> {
     if (result.writtenBy != null && result.writtenBy!.isNotEmpty) {
       infoParts.add('Written by: ${result.writtenBy}');
     }
+    if (result.composer != null && result.composer!.isNotEmpty) {
+      infoParts.add('Composer: ${result.composer}');
+    }
     if (result.contributor != null && result.contributor!.isNotEmpty) {
       infoParts.add('Contributor: ${result.contributor}');
     }
