@@ -110,20 +110,28 @@ class LrcParser {
     final Map<String, String> trimmedMetadata = {};
 
     // attempt to remove the 'title - artist' line
-    String trimTitleKeyword = '';
     if (lrcMetadata.isNotEmpty) {
-      trimTitleKeyword =
-          '${lrcMetadata['title'] ?? lrcMetadata['ti'] ?? ''} - ${lrcMetadata['artist'] ?? lrcMetadata['ar'] ?? ''}';
+      String title = lrcMetadata['title'] ?? lrcMetadata['ti'] ?? '';
+      String artist = lrcMetadata['artist'] ?? lrcMetadata['ar'] ?? '';
+      String trimTitleKeyword_1 = '$title - $artist';
+      String trimTitleKeyword_2 = '$artist - $title';
       // check the similarity of the first line with the title keyword
       final firstLine = lyrics.first.text.trim();
-      final similarity = StringSimilarity.getJaroWinklerScore(
+      final similarity_1 = StringSimilarity.getJaroWinklerScore(
         firstLine,
-        trimTitleKeyword,
+        trimTitleKeyword_1,
+      );
+      final similarity_2 = StringSimilarity.getJaroWinklerScore(
+        firstLine,
+        trimTitleKeyword_2,
       );
       debugPrint(
-        '[trimMetadataLines] similarity for first line "$firstLine" with keyword "$trimTitleKeyword": $similarity',
+        '[trimMetadataLines] similarity for first line "$firstLine" with keyword "$trimTitleKeyword_1": $similarity_1',
       );
-      if (similarity > 0.95) {
+      debugPrint(
+        '[trimMetadataLines] similarity for first line "$firstLine" with keyword "$trimTitleKeyword_2": $similarity_2',
+      );
+      if (similarity_1 >= 0.75 || similarity_2 >= 0.75) {
         result.removeAt(0);
       }
     }
