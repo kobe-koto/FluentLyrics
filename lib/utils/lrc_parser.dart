@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/lyric_model.dart';
 import '../../utils/string_similarity.dart';
+import 'package:html_unescape/html_unescape.dart';
 
 /// Result of parsing LRC content with optional metadata trimming.
 class LrcParseResult {
@@ -72,21 +73,49 @@ class LrcParser {
       );
     }
 
+    List<Lyric> lyricsResult = lyricsWithEndTime;
+    Map<String, String> trimmedMetadataResult = {};
+
     if (trimMetadata) {
       final trimmedResult = trimMetadataLines(
         lyricsWithEndTime,
         lrcMetadata: lrcMetadata,
       );
-      return LrcParseResult(
-        lyrics: trimmedResult.lyrics,
-        trimmedMetadata: trimmedResult.trimmedMetadata,
-        lrcMetadata: lrcMetadata,
-      );
+      lyricsResult = trimmedResult.lyrics;
+      trimmedMetadataResult = trimmedResult.trimmedMetadata;
     }
 
+    // escape all lyric text
+    var unescape = HtmlUnescape();
+    List<Lyric> lyricsResultEscaped = [];
+    for (var lyric in lyricsResult) {
+      // escape all inline parts (if any)
+      List<LyricInlinePart> inlinePartsEscaped = [];
+      if (lyric.inlineParts != null) {
+        for (var part in lyric.inlineParts!) {
+          inlinePartsEscaped.add(
+            LyricInlinePart(
+              startTime: part.startTime,
+              endTime: part.endTime,
+              text: unescape.convert(part.text),
+            ),
+          );
+        }
+      }
+      lyricsResultEscaped.add(
+        Lyric(
+          startTime: lyric.startTime,
+          endTime: lyric.endTime,
+          text: unescape.convert(lyric.text),
+          inlineParts: inlinePartsEscaped,
+        ),
+      );
+    }
+    lyricsResult = lyricsResultEscaped;
+
     return LrcParseResult(
-      lyrics: lyricsWithEndTime,
-      trimmedMetadata: {},
+      lyrics: lyricsResult,
+      trimmedMetadata: trimmedMetadataResult,
       lrcMetadata: lrcMetadata,
     );
   }
