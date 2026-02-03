@@ -8,6 +8,7 @@ class AppDefaults {
   static const bool richSyncEnabled = true;
   static const List<LyricProviderType> trimMetadataProviders = [
     LyricProviderType.netease,
+    LyricProviderType.qqmusic,
   ];
   static const double fontSize = 36.0;
   static const double inactiveScale = 0.85;
