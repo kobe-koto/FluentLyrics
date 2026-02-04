@@ -42,24 +42,37 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
 
   @override
   Widget build(BuildContext context) {
+    const int shrinkDuration = 200;
     const double overlap = 0.3; // How much the next dot overlaps (0.0 to 1.0)
-    const double totalDotWindow = 0.97; // Completion point before exit scale
+    final double totalDotWindow =
+        1 - ((shrinkDuration + 150) / widget.duration.inMilliseconds);
 
     final double step = 1 - overlap;
     final double d = totalDotWindow / (2 * step + 1);
 
     // Calculate duration for each dot's animation
     final dotDuration = Duration(
-      milliseconds: (d * widget.duration.inMilliseconds).round(),
+      milliseconds: (d * totalDotWindow * widget.duration.inMilliseconds)
+          .round(),
     );
 
     // Target scale for the entire widget
     double targetScale = 1.0;
+    const double swellScale = 1.15;
+    const int swellDuration = 250;
+    final double swellStart =
+        totalDotWindow - (swellDuration / widget.duration.inMilliseconds);
+
     if (widget.progress >= totalDotWindow) {
-      targetScale = ((1.0 - widget.progress) / (1.0 - totalDotWindow)).clamp(
-        0.0,
-        1.0,
-      );
+      targetScale =
+          ((1.0 - widget.progress) / (1.0 - totalDotWindow)).clamp(0.0, 1.0) *
+          swellScale;
+    } else if (widget.progress >= swellStart) {
+      // stop breathing animation when swell
+      _breathingController.stop();
+      final double swellProgress =
+          (widget.progress - swellStart) / (totalDotWindow - swellStart);
+      targetScale = 1.0 + (swellScale - 1.0) * swellProgress.clamp(0.0, 1.0);
     }
 
     return Container(
@@ -67,12 +80,12 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
       alignment: Alignment.centerLeft,
       child: AnimatedScale(
         scale: targetScale,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInCubic,
+        duration: const Duration(milliseconds: shrinkDuration),
+        curve: Curves.easeInCirc,
         alignment: Alignment.centerLeft,
         child: AnimatedOpacity(
-          opacity: targetScale,
-          duration: const Duration(milliseconds: 250),
+          opacity: targetScale.clamp(0.0, 1.0),
+          duration: const Duration(milliseconds: shrinkDuration),
           child: AnimatedBuilder(
             animation: _breathingAnimation,
             builder: (context, child) {
@@ -136,7 +149,7 @@ class _AnimatedDot extends StatelessWidget {
         child: Center(
           child: AnimatedContainer(
             duration: duration,
-            curve: Curves.linear, // Tracking real progress linearly
+            curve: Curves.easeOutCubic, // slow to fast
             width: size,
             height: size,
             decoration: BoxDecoration(

@@ -143,9 +143,7 @@ class LyricsProvider with ChangeNotifier {
   MediaControlAbility get controlAbility => _controlAbility;
 
   final Duration _interludeOffset = Duration(
-    milliseconds:
-        500 + // auto scroll takes 500ms
-        250, // shrink animation takes 250ms
+    milliseconds: 500, // auto scroll takes 500ms
   );
 
   String? get currentCacheId {
@@ -179,10 +177,11 @@ class LyricsProvider with ChangeNotifier {
     // Empty line progress (works for prelude too)
     if (_currentIndex >= 0 && _currentIndex < lyrics.length - 1) {
       final currentStartTime = lyrics[_currentIndex].startTime;
-      final nextStartTime =
-          lyrics[_currentIndex + 1].startTime - _interludeOffset;
+      final nextStartTime = lyrics[_currentIndex + 1].startTime;
       final duration =
-          nextStartTime.inMilliseconds - currentStartTime.inMilliseconds;
+          nextStartTime.inMilliseconds -
+          currentStartTime.inMilliseconds -
+          _interludeOffset.inMilliseconds;
       if (duration > 0) {
         return ((adjustedPosition.inMilliseconds -
                     currentStartTime.inMilliseconds) /
