@@ -45,6 +45,12 @@ Please use the AppImage or kindly package it yourself :3
 
 see Releases
 
+### macOS
+
+see Release, 
+
+HUGE thanks to [@watchdogexd](https://github.com/watchdogexd) and https://gist.github.com/SKaplanOfficial/f9f5bdd6455436203d0d318c078358de
+
 ## Quick start (developer)
 
 Requirements:
