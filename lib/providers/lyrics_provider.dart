@@ -132,6 +132,7 @@ class LyricsProvider with ChangeNotifier {
   List<LyricsResult> _candidates = [];
   bool _isPausedForCandidates = false;
   Completer<bool>? _candidatePauseCompleter;
+  int _lyricsRequestVersion = 0;
 
   /// Set to true when the sheet is opened before the stream reaches the pause
   /// point, so the pause skips waiting and continues immediately.
@@ -336,6 +337,20 @@ class LyricsProvider with ChangeNotifier {
     return _translationRequestVersion;
   }
 
+  int _beginLyricsRequest() {
+    _lyricsRequestVersion++;
+    return _lyricsRequestVersion;
+  }
+
+  void _invalidateLyricsRequests() {
+    _lyricsRequestVersion++;
+  }
+
+  bool _canAcceptLyricsResult(MediaMetadata metadata, int requestVersion) {
+    return requestVersion == _lyricsRequestVersion &&
+        metadata.isSameTrack(_currentMetadata);
+  }
+
   bool _canAcceptTranslationResult(MediaMetadata metadata, int requestVersion) {
     return _translationEnabled.current &&
         requestVersion == _translationRequestVersion &&
@@ -422,8 +437,8 @@ class LyricsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void _finishLyricsFetchState(MediaMetadata metadata) {
-    if (!metadata.isSameTrack(_currentMetadata)) return;
+  void _finishLyricsFetchState(MediaMetadata metadata, int requestVersion) {
+    if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
     _isPausedForCandidates = false;
     _candidatePauseCompleter?.complete(false);
     _candidatePauseCompleter = null;
@@ -984,6 +999,7 @@ class LyricsProvider with ChangeNotifier {
     MediaMetadata metadata, {
     bool skipFetchTranslations = false,
   }) async {
+    final requestVersion = _beginLyricsRequest();
     _beginLyricsFetchState();
 
     try {
@@ -993,20 +1009,22 @@ class LyricsProvider with ChangeNotifier {
         album: metadata.album,
         durationSeconds: metadata.duration.inSeconds,
         onStatusUpdate: (status) {
+          if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
           if (_setLoadingStatus(status)) {
             notifyListeners();
           }
         },
         onFetchStatusUpdate: (status) {
+          if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
           if (_setFetchingState(status)) {
             notifyListeners();
           }
         },
-        isCancelled: () => !metadata.isSameTrack(_currentMetadata),
+        isCancelled: () => !_canAcceptLyricsResult(metadata, requestVersion),
         trimMetadataProviders: _trimMetadataProviders.current,
         richSyncEnabled: _richSyncEnabled.current,
         onTranslation: (trans) {
-          if (!metadata.isSameTrack(_currentMetadata) ||
+          if (!_canAcceptLyricsResult(metadata, requestVersion) ||
               !_translationEnabled.current ||
               trans.rawTranslation!.isEmpty ||
               trans.language == null) {
@@ -1035,13 +1053,13 @@ class LyricsProvider with ChangeNotifier {
           }
         },
         onCandidate: (candidate) {
-          if (!metadata.isSameTrack(_currentMetadata)) return;
+          if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
           if (_appendCandidateIfNeeded(candidate)) {
             notifyListeners();
           }
         },
         onPauseForCandidates: () async {
-          if (!metadata.isSameTrack(_currentMetadata)) return false;
+          if (!_canAcceptLyricsResult(metadata, requestVersion)) return false;
           // If the sheet was opened before we reached this point, skip waiting.
           if (_candidateSheetOpenedEarly) {
             _candidateSheetOpenedEarly = false;
@@ -1055,7 +1073,7 @@ class LyricsProvider with ChangeNotifier {
       );
 
       await for (var result in stream) {
-        if (!metadata.isSameTrack(_currentMetadata)) return;
+        if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
 
         result = _prepareLyricsResultForDisplay(result);
 
@@ -1078,7 +1096,7 @@ class LyricsProvider with ChangeNotifier {
         notifyListeners();
       }
 
-      if (!metadata.isSameTrack(_currentMetadata)) return;
+      if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
 
       if (_translationEnabled.current &&
           !skipFetchTranslations &&
@@ -1087,10 +1105,10 @@ class LyricsProvider with ChangeNotifier {
         await _fetchTranslationsForCurrentTrack(metadata);
       }
     } catch (e) {
-      if (!metadata.isSameTrack(_currentMetadata)) return;
+      if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
       _setLoadingStatus('Error: $e');
     } finally {
-      _finishLyricsFetchState(metadata);
+      _finishLyricsFetchState(metadata, requestVersion);
     }
   }
 
@@ -1120,6 +1138,9 @@ class LyricsProvider with ChangeNotifier {
     _candidatePauseCompleter?.complete(false);
     _candidatePauseCompleter = null;
     _isPausedForCandidates = false;
+    _invalidateLyricsRequests();
+    _isFetching = false;
+    _isLoading = false;
 
     final result = _prepareLyricsResultForDisplay(candidate);
 
@@ -1171,6 +1192,7 @@ class LyricsProvider with ChangeNotifier {
   /// Isar cache so subsequent loads use this selection.
   Future<void> selectTranslationCandidate(LyricsResult candidate) async {
     if (_currentMetadata == null) return;
+    _translationRequestVersion++;
     _translationResult = candidate;
     _cachedAlignedLyrics = null; // Invalidate alignment cache.
     _updateCurrentIndex();
