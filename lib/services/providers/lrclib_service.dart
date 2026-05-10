@@ -9,6 +9,11 @@ import '../../utils/string_similarity.dart';
 class LrclibService {
   static const String _baseSearchUrl = 'https://lrclib.net/api/search';
 
+  LrclibService({Future<http.Response> Function(Uri uri)? httpGet})
+    : _httpGet = httpGet ?? http.get;
+
+  final Future<http.Response> Function(Uri uri) _httpGet;
+
   Future<LyricsResult> fetchLyrics({
     required String title,
     required List<String> artist,
@@ -31,7 +36,7 @@ class LrclibService {
 
       onStatusUpdate?.call('[LRCLIB] Searching lyrics...');
 
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await _httpGet(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> rawResults = jsonDecode(response.body);
@@ -106,13 +111,16 @@ class LrclibService {
 
         onStatusUpdate?.call('[LRCLIB] Processing lyrics...');
         List<Lyric> lyrics = [];
+        bool hasSyncedTiming = false;
 
         if (enhancedLyrics != null && enhancedLyrics.isNotEmpty) {
           lyrics = EnhancedLrcParser.parse(enhancedLyrics);
+          hasSyncedTiming = lyrics.isNotEmpty;
         }
 
         if (lyrics.isEmpty && syncedLyrics != null && syncedLyrics.isNotEmpty) {
           lyrics = LrcParser.parse(syncedLyrics).lyrics;
+          hasSyncedTiming = lyrics.isNotEmpty;
         } else if (lyrics.isEmpty &&
             plainLyrics != null &&
             plainLyrics.isNotEmpty) {
@@ -126,7 +134,7 @@ class LrclibService {
           return LyricsResult(
             lyrics: lyrics,
             source: 'LRCLIB',
-            isSynced: true,
+            isSynced: hasSyncedTiming,
             isPureMusic: isInstrumental,
           );
         }
