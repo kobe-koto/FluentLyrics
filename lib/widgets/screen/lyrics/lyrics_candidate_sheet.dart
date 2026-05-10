@@ -365,13 +365,33 @@ class _LyricsTab extends StatelessWidget {
             if (!provider.isLoading)
               Padding(
                 padding: const EdgeInsets.only(top: 16),
-                child: TextButton.icon(
-                  onPressed: () => provider.refetchLyrics(),
-                  icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Refresh Lyrics'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.lightBlue.withValues(alpha: 0.8),
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => provider.refetchLyrics(),
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: const Text('Refresh Lyrics'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.lightBlue.withValues(
+                          alpha: 0.8,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        provider.markCurrentTrackAsPureMusic();
+                        Navigator.of(context).pop();
+                      },
+                      icon: const Icon(Icons.music_off_rounded, size: 16),
+                      label: const Text('Mark as pure music'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.purpleAccent.withValues(
+                          alpha: 0.8,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -397,15 +417,33 @@ class _LyricsTab extends StatelessWidget {
                         color: Colors.lightBlue.withValues(alpha: 0.5),
                       ),
                     )
-                  : TextButton.icon(
-                      onPressed: () => provider.refetchLyrics(),
-                      icon: const Icon(Icons.refresh_rounded, size: 16),
-                      label: const Text('Refresh Lyrics'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.lightBlue.withValues(
-                          alpha: 0.8,
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => provider.refetchLyrics(),
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text('Refresh Lyrics'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.lightBlue.withValues(
+                              alpha: 0.8,
+                            ),
+                          ),
                         ),
-                      ),
+                        TextButton.icon(
+                          onPressed: () {
+                            provider.markCurrentTrackAsPureMusic();
+                            Navigator.of(context).pop();
+                          },
+                          icon: const Icon(Icons.music_off_rounded, size: 16),
+                          label: const Text('Mark as pure music'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.purpleAccent.withValues(
+                              alpha: 0.8,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
             ),
           );

@@ -1011,6 +1011,40 @@ class LyricsProvider with ChangeNotifier {
     }
   }
 
+  Future<void> markCurrentTrackAsPureMusic() async {
+    final metadata = _currentMetadata;
+    if (metadata == null) return;
+
+    _candidatePauseCompleter?.complete(false);
+    _candidatePauseCompleter = null;
+    _isPausedForCandidates = false;
+    _invalidateLyricsRequests();
+    _invalidateTranslationRequests();
+    _isFetching = false;
+    _isLoading = false;
+
+    final result = LyricsResult(
+      lyrics: const [],
+      source: LyricsCacheService.manualPureMusicSource,
+      isSynced: false,
+      isPureMusic: true,
+    );
+    _lyricsResult = result;
+    _appendCandidateIfNeeded(result);
+    _updateCurrentIndex();
+    notifyListeners();
+
+    if (_cacheEnabled.current) {
+      await _cacheService.cacheLyrics(
+        metadata.title,
+        metadata.artist,
+        metadata.album,
+        metadata.duration.inSeconds,
+        result,
+      );
+    }
+  }
+
   Future<void> _fetchTranslationsForCurrentTrack(
     MediaMetadata metadata, {
     bool showLoadingState = false,

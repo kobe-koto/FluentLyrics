@@ -293,6 +293,7 @@ class _FakeLyricsService extends LyricsService {
 }
 
 class _FakeLyricsCacheService extends LyricsCacheService {
+  LyricsResult? cachedLyrics;
   final Map<String, LyricsResult> cachedTranslations = {};
   final List<String> clearedTranslationCacheIds = [];
 
@@ -303,7 +304,9 @@ class _FakeLyricsCacheService extends LyricsCacheService {
     String? album,
     int durationSeconds,
     LyricsResult result,
-  ) async {}
+  ) async {
+    cachedLyrics = result;
+  }
 
   @override
   String generateTranslationCacheId(
@@ -659,6 +662,47 @@ void main() {
           ?.source,
       'SKIPPED',
     );
+
+    provider.dispose();
+  });
+
+  test('markCurrentTrackAsPureMusic stores manual pure music cache', () async {
+    final lyricsService = _FakeLyricsService();
+    final cacheService = _FakeLyricsCacheService();
+    final mediaService = _FakeMediaService(
+      MediaMetadata(
+        title: 'Song',
+        artist: const ['Artist'],
+        album: 'Album',
+        duration: const Duration(seconds: 120),
+        artUrl: 'fallback',
+      ),
+    );
+    final provider = LyricsProvider(
+      mediaService: mediaService,
+      lyricsService: lyricsService,
+      settingsService: _FakeSettingsService(cacheEnabled: true),
+      cacheService: cacheService,
+    );
+
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    mediaService.emitChange();
+    await Future<void>.delayed(Duration.zero);
+
+    await provider.markCurrentTrackAsPureMusic();
+
+    expect(
+      provider.lyricsResult.source,
+      LyricsCacheService.manualPureMusicSource,
+    );
+    expect(provider.lyricsResult.isPureMusic, isTrue);
+    expect(provider.lyricsResult.lyrics, isEmpty);
+    expect(
+      cacheService.cachedLyrics?.source,
+      LyricsCacheService.manualPureMusicSource,
+    );
+    expect(cacheService.cachedLyrics?.isPureMusic, isTrue);
 
     provider.dispose();
   });
