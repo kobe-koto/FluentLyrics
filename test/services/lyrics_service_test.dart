@@ -288,6 +288,7 @@ void main() {
           lyrics: const [],
           source: 'Cache',
           translation: true,
+          translationInvalidatable: true,
           language: 'zht',
           translationProvider: 'Cache',
           rawTranslation: const [
@@ -332,6 +333,60 @@ void main() {
       expect(onlineRequestedLanguages, ['zht']);
       expect(results, hasLength(1));
       expect(results.single.translationProvider, 'Musixmatch');
+    },
+  );
+
+  test(
+    'fetchTranslation reuses non-invalidatable cached translation without coverage check',
+    () async {
+      final cacheService = _FakeLyricsCacheService({
+        'zht': LyricsResult(
+          lyrics: const [],
+          source: 'Cache',
+          translation: true,
+          language: 'zht',
+          translationProvider: 'Cache',
+          rawTranslation: const [
+            {'original': 'different lyrics', 'translated': '你好'},
+          ],
+        ),
+      });
+      final onlineRequestedLanguages = <String>[];
+      final service = LyricsService(
+        settingsService: _FakeSettingsService(
+          cacheEnabled: true,
+          translationCoverageThreshold: 100,
+          priority: const [LyricProviderType.musixmatch],
+        ),
+        cacheService: cacheService,
+        sourceRegistry: LyricsSourceRegistry(
+          sources: [
+            _FakeTranslationSource(
+              LyricProviderType.musixmatch,
+              'Musixmatch',
+              requestedLanguages: onlineRequestedLanguages,
+            ),
+          ],
+        ),
+      );
+
+      final results = await service
+          .fetchTranslation(
+            bestResult: LyricsResult(
+              lyrics: [lyric('hello', 1), lyric('world', 2)],
+              source: 'lyrics',
+            ),
+            title: 'Song',
+            artist: const ['Artist'],
+            album: 'Album',
+            durationSeconds: 120,
+          )
+          .toList();
+
+      expect(cacheService.requestedCacheIds, ['zht']);
+      expect(onlineRequestedLanguages, isEmpty);
+      expect(results, hasLength(1));
+      expect(results.single.translationProvider, 'Cache (cached)');
     },
   );
 }

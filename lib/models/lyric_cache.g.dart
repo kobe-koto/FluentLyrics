@@ -2409,8 +2409,13 @@ const TranslationCacheSchema = CollectionSchema(
       name: r'translationContributor',
       type: IsarType.string,
     ),
-    r'translationProvider': PropertySchema(
+    r'translationInvalidatable': PropertySchema(
       id: 7,
+      name: r'translationInvalidatable',
+      type: IsarType.bool,
+    ),
+    r'translationProvider': PropertySchema(
+      id: 8,
       name: r'translationProvider',
       type: IsarType.string,
     ),
@@ -2525,7 +2530,8 @@ void _translationCacheSerialize(
   writer.writeString(offsets[4], object.source);
   writer.writeString(offsets[5], object.sourceProvider);
   writer.writeString(offsets[6], object.translationContributor);
-  writer.writeString(offsets[7], object.translationProvider);
+  writer.writeBool(offsets[7], object.translationInvalidatable);
+  writer.writeString(offsets[8], object.translationProvider);
 }
 
 TranslationCache _translationCacheDeserialize(
@@ -2555,7 +2561,8 @@ TranslationCache _translationCacheDeserialize(
   object.source = reader.readString(offsets[4]);
   object.sourceProvider = reader.readStringOrNull(offsets[5]);
   object.translationContributor = reader.readStringOrNull(offsets[6]);
-  object.translationProvider = reader.readString(offsets[7]);
+  object.translationInvalidatable = reader.readBool(offsets[7]);
+  object.translationProvider = reader.readString(offsets[8]);
   return object;
 }
 
@@ -2594,6 +2601,8 @@ P _translationCacheDeserializeProp<P>(
     case 6:
       return (reader.readStringOrNull(offset)) as P;
     case 7:
+      return (reader.readBool(offset)) as P;
+    case 8:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -3730,6 +3739,18 @@ extension TranslationCacheQueryFilter
   }
 
   QueryBuilder<TranslationCache, TranslationCache, QAfterFilterCondition>
+  translationInvalidatableEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'translationInvalidatable',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<TranslationCache, TranslationCache, QAfterFilterCondition>
   translationProviderEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -3967,6 +3988,20 @@ extension TranslationCacheQuerySortBy
   }
 
   QueryBuilder<TranslationCache, TranslationCache, QAfterSortBy>
+  sortByTranslationInvalidatable() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'translationInvalidatable', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TranslationCache, TranslationCache, QAfterSortBy>
+  sortByTranslationInvalidatableDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'translationInvalidatable', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TranslationCache, TranslationCache, QAfterSortBy>
   sortByTranslationProvider() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'translationProvider', Sort.asc);
@@ -4067,6 +4102,20 @@ extension TranslationCacheQuerySortThenBy
   }
 
   QueryBuilder<TranslationCache, TranslationCache, QAfterSortBy>
+  thenByTranslationInvalidatable() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'translationInvalidatable', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TranslationCache, TranslationCache, QAfterSortBy>
+  thenByTranslationInvalidatableDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'translationInvalidatable', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TranslationCache, TranslationCache, QAfterSortBy>
   thenByTranslationProvider() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'translationProvider', Sort.asc);
@@ -4122,6 +4171,13 @@ extension TranslationCacheQueryWhereDistinct
         r'translationContributor',
         caseSensitive: caseSensitive,
       );
+    });
+  }
+
+  QueryBuilder<TranslationCache, TranslationCache, QDistinct>
+  distinctByTranslationInvalidatable() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'translationInvalidatable');
     });
   }
 
@@ -4187,6 +4243,13 @@ extension TranslationCacheQueryProperty
   translationContributorProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'translationContributor');
+    });
+  }
+
+  QueryBuilder<TranslationCache, bool, QQueryOperations>
+  translationInvalidatableProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'translationInvalidatable');
     });
   }
 

@@ -468,6 +468,10 @@ class LyricsService {
     int coverageThreshold,
     int perLineSimilarityThreshold,
   ) {
+    if (!translation.translationInvalidatable) {
+      return true;
+    }
+
     final translationSourceProvider = translation.sourceProvider;
     if (originalSourceProvider != null &&
         translationSourceProvider != null &&

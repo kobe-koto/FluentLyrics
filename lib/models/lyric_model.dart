@@ -84,6 +84,7 @@ class LyricsResult {
   final String? translationProvider;
   final String? translationContributor;
   final LyricProviderType? sourceProvider;
+  final bool translationInvalidatable;
 
   LyricsResult({
     required this.lyrics,
@@ -103,6 +104,7 @@ class LyricsResult {
     this.rawTranslation,
     this.artworkUrls,
     this.sourceProvider,
+    this.translationInvalidatable = false,
   }) : isSynced = isSynced ?? _checkIfSynced(lyrics),
        isRichSync = isRichSync ?? _checkIfRichSynced(lyrics);
 
@@ -170,6 +172,7 @@ class LyricsResult {
     List<Map<String, String>>? rawTranslation,
     List<String>? artworkUrls,
     LyricProviderType? sourceProvider,
+    bool? translationInvalidatable,
   }) {
     return LyricsResult(
       lyrics: lyrics ?? this.lyrics,
@@ -190,6 +193,8 @@ class LyricsResult {
       rawTranslation: rawTranslation ?? this.rawTranslation,
       artworkUrls: artworkUrls ?? this.artworkUrls,
       sourceProvider: sourceProvider ?? this.sourceProvider,
+      translationInvalidatable:
+          translationInvalidatable ?? this.translationInvalidatable,
     );
   }
 
@@ -234,6 +239,7 @@ class LyricsResult {
     if (rawTranslation != null) 'rawTranslation': rawTranslation,
     if (artworkUrls != null) 'artworkUrls': artworkUrls,
     if (sourceProvider != null) 'sourceProvider': sourceProvider!.name,
+    'translationInvalidatable': translationInvalidatable,
   };
 
   factory LyricsResult.fromJson(Map<String, dynamic> json) => LyricsResult(
@@ -266,5 +272,7 @@ class LyricsResult {
     sourceProvider: lyricProviderTypeFromName(
       json['sourceProvider'] as String?,
     ),
+    translationInvalidatable:
+        json['translationInvalidatable'] as bool? ?? false,
   );
 }

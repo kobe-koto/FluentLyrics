@@ -180,6 +180,7 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
           lyrics: contentfulOriginalLyrics,
           source: 'SKIPPED',
           translation: false,
+          translationInvalidatable: true,
         );
       }
       dynamic translatedLines;
@@ -232,6 +233,7 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
           lyrics: contentfulOriginalLyrics,
           source: 'SKIPPED',
           translation: false,
+          translationInvalidatable: true,
         );
       }
 
@@ -260,6 +262,7 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
         source: 'LLM Translation',
         language: targetLanguage,
         translation: true,
+        translationInvalidatable: true,
         translationProvider: 'LLM Translation',
         translationContributor:
             'Model $model, Request Elapsed ${requestElapsed / 1000}s',

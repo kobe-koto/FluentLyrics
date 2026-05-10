@@ -105,6 +105,7 @@ class TranslationCache {
   late String translationProvider;
   late String? translationContributor;
   late String language;
+  late bool translationInvalidatable;
   late List<TranslationItem> lyrics;
   late List<RawTranslationPair>? rawTranslation;
 
@@ -135,6 +136,7 @@ class TranslationCache {
       translation: true,
       translationProvider: translationProvider,
       translationContributor: translationContributor,
+      translationInvalidatable: translationInvalidatable,
     );
   }
 
@@ -149,6 +151,7 @@ class TranslationCache {
       ..translationProvider = result.translationProvider ?? 'unknown'
       ..translationContributor = result.translationContributor ?? 'unknown'
       ..language = result.language ?? 'en'
+      ..translationInvalidatable = result.translationInvalidatable
       ..lyrics = result.lyrics
           .map(
             (l) => TranslationItem()

@@ -421,6 +421,8 @@ class LyricsProvider with ChangeNotifier {
 
   bool _translationMatchesCurrentLyricsProvider(LyricsResult? translation) {
     if (translation == null) return false;
+    if (!translation.translationInvalidatable) return true;
+
     final currentSourceProvider = _lyricsResult.sourceProvider;
     final translationSourceProvider = translation.sourceProvider;
     if (currentSourceProvider != null &&
