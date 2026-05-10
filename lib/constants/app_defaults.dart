@@ -27,6 +27,7 @@ class AppDefaults {
   static const List<String> translationIgnoredLanguages = [];
   static const int translationBias = 50;
   static const int translationAlignmentThreshold = 80;
+  static const int translationCoverageThreshold = 80;
   static const String? musixmatchToken = null;
   static const String llmApiEndpoint = 'https://dummy.endpoint.example/v1';
   static const String llmApiKey = 'sk-dummy';

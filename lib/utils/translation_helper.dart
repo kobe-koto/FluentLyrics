@@ -116,62 +116,121 @@ class TranslationHelper {
   }
 
   /// Counts how many non-empty lines in [currentLyrics] receive a translation
-  /// when paired against [rawTranslation] using [align]. Returns
-  /// `(matched, totalLines)` where `totalLines` is the number of contentful
-  /// lines in [currentLyrics].
+  /// when paired against [rawTranslation]. Returns `(matched, totalLines)`
+  /// where `totalLines` is the number of contentful lines in [currentLyrics].
   static (int matched, int totalLines) coverage({
     required List<Lyric> currentLyrics,
     required List<Map<String, String>> rawTranslation,
     int similarityThreshold = 80,
   }) {
-    final contentfulLines = currentLyrics
-        .where((l) => l.text.trim().isNotEmpty)
-        .toList();
+    final contentfulLines = _contentfulLines(currentLyrics);
     final totalLines = contentfulLines.length;
     if (totalLines == 0 || rawTranslation.isEmpty) return (0, totalLines);
 
-    final aligned = align(
-      originalLyrics: contentfulLines,
+    final matched = _countMatches(
+      contentfulLines: contentfulLines,
       rawTranslation: rawTranslation,
       similarityThreshold: similarityThreshold,
     );
-    final matched = aligned.where((l) => l.translation != null).length;
     return (matched, totalLines);
   }
 
   /// Returns `true` when [rawTranslation]'s original lines align with
   /// [currentLyrics] well enough that the coverage ratio meets
-  /// [similarityThreshold] (interpreted as a percentage). Used to decide
-  /// whether an existing translation is still valid for a new lyrics result.
+  /// [coverageThreshold] (interpreted as a percentage), where each line is
+  /// considered matched when its similarity exceeds [perLineSimilarityThreshold].
+  /// Used to decide whether an existing translation is still valid for a new
+  /// lyrics result.
   static bool hasSufficientCoverage({
     required List<Lyric> currentLyrics,
     required List<Map<String, String>>? rawTranslation,
-    required int similarityThreshold,
+    required int coverageThreshold,
+    required int perLineSimilarityThreshold,
   }) {
     if (rawTranslation == null || rawTranslation.isEmpty) return false;
-    final (matched, totalLines) = coverage(
-      currentLyrics: currentLyrics,
-      rawTranslation: rawTranslation,
-      similarityThreshold: similarityThreshold,
-    );
+    final contentfulLines = _contentfulLines(currentLyrics);
+    final totalLines = contentfulLines.length;
     if (totalLines == 0) return false;
-    final coveragePercent = matched * 100 ~/ totalLines;
-    return coveragePercent >= similarityThreshold;
+    if (coverageThreshold <= 0) return true;
+
+    // matched * 100 ~/ totalLines >= threshold
+    //   <=> matched >= ceil(threshold * totalLines / 100).
+    final requiredMatched =
+        (coverageThreshold * totalLines + 99) ~/ 100;
+    final matched = _countMatches(
+      contentfulLines: contentfulLines,
+      rawTranslation: rawTranslation,
+      similarityThreshold: perLineSimilarityThreshold,
+      earlyExitTarget: requiredMatched,
+    );
+    return matched >= requiredMatched;
+  }
+
+  static List<Lyric> _contentfulLines(List<Lyric> lyrics) {
+    final out = <Lyric>[];
+    for (final l in lyrics) {
+      if (l.text.trim().isNotEmpty) out.add(l);
+    }
+    return out;
+  }
+
+  /// Walks [contentfulLines] in order and counts how many pair against
+  /// [rawTranslation] above [similarityThreshold]. Mirrors [align]'s pairing
+  /// logic without allocating a result `List<Lyric>`. When [earlyExitTarget]
+  /// is supplied, stops as soon as the answer is determined — either the
+  /// target is reached or the remaining lines can no longer reach it.
+  static int _countMatches({
+    required List<Lyric> contentfulLines,
+    required List<Map<String, String>> rawTranslation,
+    required int similarityThreshold,
+    int? earlyExitTarget,
+  }) {
+    final n = contentfulLines.length;
+    int matched = 0;
+    int nextSearchStartIndex = 0;
+    for (int idx = 0; idx < n; idx++) {
+      // Normalize the outer line once per outer iteration instead of once per
+      // (outer, inner) pair.
+      final cleanLine = contentfulLines[idx].text.toLowerCase().trim();
+      if (cleanLine.isNotEmpty) {
+        for (int i = nextSearchStartIndex; i < rawTranslation.length; i++) {
+          final originalText = rawTranslation[i]['original'] ?? '';
+          final similarity = _calcLineSimilarityFromClean(
+            cleanLine,
+            originalText,
+          );
+          if (similarity > similarityThreshold) {
+            matched++;
+            if ((i + 1 - nextSearchStartIndex) < maxIndexMove) {
+              nextSearchStartIndex = i + 1;
+            }
+            break;
+          }
+        }
+      }
+      if (earlyExitTarget != null) {
+        if (matched >= earlyExitTarget) return matched;
+        final remaining = n - idx - 1;
+        if (matched + remaining < earlyExitTarget) return matched;
+      }
+    }
+    return matched;
   }
 
   static int _calcLineSimilarity(String line1, String line2) {
     if (line1.isEmpty || line2.isEmpty) return 0;
+    final clean1 = line1.toLowerCase().trim();
+    if (clean1.isEmpty) return 0;
+    return _calcLineSimilarityFromClean(clean1, line2);
+  }
 
-    // 1. Simple normalization
-    String clean1 = line1.toLowerCase().trim();
-    String clean2 = line2.toLowerCase().trim();
-
-    if (clean1.isEmpty || clean2.isEmpty) return 0;
-
-    // 2. Calculate similarity (0-100)
+  static int _calcLineSimilarityFromClean(String cleanLine1, String line2) {
+    if (cleanLine1.isEmpty || line2.isEmpty) return 0;
+    final clean2 = line2.toLowerCase().trim();
+    if (clean2.isEmpty) return 0;
     try {
       // StringSimilarity.compareTwoStrings returns 0.0 to 1.0
-      final similarity = StringSimilarity.compareTwoStrings(clean1, clean2);
+      final similarity = StringSimilarity.compareTwoStrings(cleanLine1, clean2);
       return (similarity * 100).toInt();
     } catch (e) {
       AppLogger.debug('[LyricAligner] Error calculating similarity: $e');

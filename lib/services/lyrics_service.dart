@@ -270,6 +270,8 @@ class LyricsService {
         (await _settingsService.getTranslationBias()).current;
     final translationAlignmentThreshold =
         (await _settingsService.getTranslationAlignmentThreshold()).current;
+    final translationCoverageThreshold =
+        (await _settingsService.getTranslationCoverageThreshold()).current;
     final priority = await _settingsService.getPriority();
 
     if (targetLanguages.isEmpty ||
@@ -332,6 +334,7 @@ class LyricsService {
             transResult,
             originalSourceProvider,
             bestResult.lyrics,
+            translationCoverageThreshold,
             translationAlignmentThreshold,
           )) {
             AppLogger.debug(
@@ -462,7 +465,8 @@ class LyricsService {
     LyricsResult translation,
     LyricProviderType? originalSourceProvider,
     List<Lyric> currentLyrics,
-    int alignmentThreshold,
+    int coverageThreshold,
+    int perLineSimilarityThreshold,
   ) {
     final translationSourceProvider = translation.sourceProvider;
     if (originalSourceProvider != null &&
@@ -475,7 +479,8 @@ class LyricsService {
     return TranslationHelper.hasSufficientCoverage(
       currentLyrics: currentLyrics,
       rawTranslation: translation.rawTranslation,
-      similarityThreshold: alignmentThreshold,
+      coverageThreshold: coverageThreshold,
+      perLineSimilarityThreshold: perLineSimilarityThreshold,
     );
   }
 }

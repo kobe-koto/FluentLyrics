@@ -15,11 +15,15 @@ class _FakeSettingsService extends SettingsService {
       LyricProviderType.musixmatch,
       LyricProviderType.netease,
     ],
+    this.translationAlignmentThreshold = 80,
+    this.translationCoverageThreshold = 80,
   });
 
   final bool cacheEnabled;
   final List<String> targetLanguages;
   final List<LyricProviderType> priority;
+  final int translationAlignmentThreshold;
+  final int translationCoverageThreshold;
 
   @override
   Future<Setting<bool>> getCacheEnabled() async {
@@ -51,7 +55,20 @@ class _FakeSettingsService extends SettingsService {
 
   @override
   Future<Setting<int>> getTranslationAlignmentThreshold() async {
-    return const Setting(current: 80, defaultValue: 80, changed: false);
+    return Setting(
+      current: translationAlignmentThreshold,
+      defaultValue: translationAlignmentThreshold,
+      changed: false,
+    );
+  }
+
+  @override
+  Future<Setting<int>> getTranslationCoverageThreshold() async {
+    return Setting(
+      current: translationCoverageThreshold,
+      defaultValue: translationCoverageThreshold,
+      changed: false,
+    );
   }
 
   @override
@@ -260,6 +277,61 @@ void main() {
       expect(onlineRequestedLanguages, ['zht']);
       expect(results, hasLength(1));
       expect(results.single.language, 'zht');
+    },
+  );
+
+  test(
+    'fetchTranslation refetches cached translation below coverage threshold',
+    () async {
+      final cacheService = _FakeLyricsCacheService({
+        'zht': LyricsResult(
+          lyrics: const [],
+          source: 'Cache',
+          translation: true,
+          language: 'zht',
+          translationProvider: 'Cache',
+          rawTranslation: const [
+            {'original': 'hello', 'translated': '你好'},
+          ],
+        ),
+      });
+      final onlineRequestedLanguages = <String>[];
+      final service = LyricsService(
+        settingsService: _FakeSettingsService(
+          cacheEnabled: true,
+          translationAlignmentThreshold: 80,
+          translationCoverageThreshold: 100,
+          priority: const [LyricProviderType.musixmatch],
+        ),
+        cacheService: cacheService,
+        sourceRegistry: LyricsSourceRegistry(
+          sources: [
+            _FakeTranslationSource(
+              LyricProviderType.musixmatch,
+              'Musixmatch',
+              requestedLanguages: onlineRequestedLanguages,
+            ),
+          ],
+        ),
+      );
+
+      final results = await service
+          .fetchTranslation(
+            bestResult: LyricsResult(
+              lyrics: [lyric('hello', 1), lyric('world', 2)],
+              source: 'lyrics',
+            ),
+            title: 'Song',
+            artist: const ['Artist'],
+            album: 'Album',
+            durationSeconds: 120,
+          )
+          .toList();
+
+      expect(cacheService.requestedCacheIds, ['zht']);
+      expect(onlineRequestedLanguages, ['zht']);
+      expect(results, hasLength(1));
+      expect(results.single.translationProvider, 'Musixmatch');
     },
   );
 }

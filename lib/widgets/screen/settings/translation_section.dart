@@ -141,6 +141,27 @@ class TranslationSection extends StatelessWidget {
                 resetTooltip: 'Reset to 80%',
               ),
               const SizedBox(height: 24),
+              // Coverage Threshold (cache validation)
+              SettingsSliderCard(
+                title: 'Cache Coverage Threshold',
+                subtitle:
+                    'Min % of current lyric lines that must match a cached translation. Only used when source providers differ.',
+                value: provider.translationCoverageThreshold.current.toDouble(),
+                min: 0,
+                max: 100,
+                divisions: 20,
+                label: '${provider.translationCoverageThreshold.current}%',
+                valueText: '${provider.translationCoverageThreshold.current}%',
+                onChanged: (value) =>
+                    provider.setTranslationCoverageThreshold(value.toInt()),
+                onReset: provider.translationCoverageThreshold.changed
+                    ? () => provider.setTranslationCoverageThreshold(
+                        provider.translationCoverageThreshold.defaultValue,
+                      )
+                    : null,
+                resetTooltip: 'Reset to 80%',
+              ),
+              const SizedBox(height: 24),
               // LLM Configuration
               LlmConfigurationCard(provider: provider),
             ],

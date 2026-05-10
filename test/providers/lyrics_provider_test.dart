@@ -179,6 +179,11 @@ class _FakeSettingsService extends SettingsService {
   }
 
   @override
+  Future<Setting<int>> getTranslationCoverageThreshold() async {
+    return const Setting(current: 80, defaultValue: 80, changed: false);
+  }
+
+  @override
   Future<Setting<String>> getLlmApiEndpoint() async {
     return const Setting(current: '', defaultValue: '', changed: false);
   }
@@ -348,10 +353,7 @@ class _StaleTranslationLyricsService extends LyricsService {
     void Function(LyricsResult)? onCandidate,
     Future<bool> Function()? onPauseForCandidates,
   }) async* {
-    final base = LyricsResult(
-      lyrics: [lyric('base line', 1)],
-      source: 'Base',
-    );
+    final base = LyricsResult(lyrics: [lyric('base line', 1)], source: 'Base');
     yield base;
   }
 
@@ -402,42 +404,45 @@ Lyric lyric(String text, int seconds) {
 }
 
 void main() {
-  test('selectCandidate prevents stale lyrics fetch from overwriting it', () async {
-    final lyricsService = _StaleLyricsService();
-    final mediaService = _FakeMediaService(
-      MediaMetadata(
-        title: 'Song',
-        artist: const ['Artist'],
-        album: 'Album',
-        duration: const Duration(seconds: 120),
-        artUrl: 'fallback',
-      ),
-    );
-    final provider = LyricsProvider(
-      mediaService: mediaService,
-      lyricsService: lyricsService,
-      settingsService: _FakeSettingsService(translationEnabled: false),
-      cacheService: _FakeLyricsCacheService(),
-    );
+  test(
+    'selectCandidate prevents stale lyrics fetch from overwriting it',
+    () async {
+      final lyricsService = _StaleLyricsService();
+      final mediaService = _FakeMediaService(
+        MediaMetadata(
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          duration: const Duration(seconds: 120),
+          artUrl: 'fallback',
+        ),
+      );
+      final provider = LyricsProvider(
+        mediaService: mediaService,
+        lyricsService: lyricsService,
+        settingsService: _FakeSettingsService(translationEnabled: false),
+        cacheService: _FakeLyricsCacheService(),
+      );
 
-    await Future<void>.delayed(Duration.zero);
-    await Future<void>.delayed(Duration.zero);
-    mediaService.emitChange();
-    await lyricsService.firstResultYielded.future;
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      mediaService.emitChange();
+      await lyricsService.firstResultYielded.future;
 
-    await provider.selectCandidate(
-      LyricsResult(lyrics: [lyric('manual line', 3)], source: 'Manual'),
-    );
+      await provider.selectCandidate(
+        LyricsResult(lyrics: [lyric('manual line', 3)], source: 'Manual'),
+      );
 
-    lyricsService.releaseStaleResult.complete();
-    await Future<void>.delayed(Duration.zero);
-    await Future<void>.delayed(Duration.zero);
+      lyricsService.releaseStaleResult.complete();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
 
-    expect(provider.lyricsResult.source, 'Manual');
-    expect(provider.lyricsResult.lyrics.last.text, 'manual line');
+      expect(provider.lyricsResult.source, 'Manual');
+      expect(provider.lyricsResult.lyrics.last.text, 'manual line');
 
-    provider.dispose();
-  });
+      provider.dispose();
+    },
+  );
 
   test(
     'selectTranslationCandidate prevents stale translation fetch from overwriting it',
@@ -481,8 +486,14 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
 
-      expect(provider.translationResult?.translationProvider, 'Manual Translation');
-      expect(provider.translationResult?.rawTranslation?.first['translated'], '手动');
+      expect(
+        provider.translationResult?.translationProvider,
+        'Manual Translation',
+      );
+      expect(
+        provider.translationResult?.rawTranslation?.first['translated'],
+        '手动',
+      );
 
       provider.dispose();
     },

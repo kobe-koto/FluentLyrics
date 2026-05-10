@@ -331,6 +331,8 @@ class SettingsService {
   static const String _translationBiasKey = 'translation_bias';
   static const String _translationAlignmentThresholdKey =
       'translation_alignment_threshold';
+  static const String _translationCoverageThresholdKey =
+      'translation_coverage_threshold';
 
   Future<Setting<List<String>>> getTranslationTargetLanguages() async {
     final prefs = await _prefs;
@@ -401,6 +403,23 @@ class SettingsService {
   Future<void> setTranslationAlignmentThreshold(int threshold) async {
     final prefs = await _prefs;
     await prefs.setInt(_translationAlignmentThresholdKey, threshold);
+  }
+
+  Future<Setting<int>> getTranslationCoverageThreshold() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getInt(_translationCoverageThresholdKey) ??
+        AppDefaults.translationCoverageThreshold;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.translationCoverageThreshold,
+      changed: current != AppDefaults.translationCoverageThreshold,
+    );
+  }
+
+  Future<void> setTranslationCoverageThreshold(int threshold) async {
+    final prefs = await _prefs;
+    await prefs.setInt(_translationCoverageThresholdKey, threshold);
   }
 
   Future<Setting<String>> getLlmApiEndpoint() async {
