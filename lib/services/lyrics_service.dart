@@ -252,6 +252,8 @@ class LyricsService {
     required String album,
     required int durationSeconds,
     bool Function()? isCancelled,
+    Map<LyricProviderType, Set<String>>? refetchTargets,
+    bool skipCacheLookup = false,
 
     /// Called for every provider that returns a valid translation (not just the
     /// first winner). Used to populate the translation candidate list.
@@ -262,8 +264,11 @@ class LyricsService {
     );
     final cacheEnabled = (await _settingsService.getCacheEnabled()).current;
 
-    final targetLanguages =
+    final configuredTargetLanguages =
         (await _settingsService.getTranslationTargetLanguages()).current;
+    final targetLanguages = refetchTargets == null
+        ? configuredTargetLanguages
+        : refetchTargets.values.expand((languages) => languages).toSet();
     final ignoredLanguages =
         (await _settingsService.getTranslationIgnoredLanguages()).current;
     final translationBias =
@@ -308,7 +313,7 @@ class LyricsService {
     // start searching
     bool isYielded = false;
 
-    if (cacheEnabled) {
+    if (cacheEnabled && !skipCacheLookup && refetchTargets == null) {
       final skipCacheId = _cacheService.generateTranslationCacheId(
         title,
         artist,
@@ -334,7 +339,7 @@ class LyricsService {
         continue;
       }
 
-      if (cacheEnabled) {
+      if (cacheEnabled && !skipCacheLookup) {
         AppLogger.debug(
           '[LyricsService.fetchTranslation]   ==> Checking cache for $targetLanguage',
         );
@@ -394,7 +399,13 @@ class LyricsService {
       AppLogger.debug(
         '[LyricsService.fetchTranslation]   ==> Checking providers for $targetLanguage',
       );
-      for (var tProvider in priority) {
+      final translationProviders = refetchTargets == null
+          ? priority
+          : refetchTargets.entries
+                .where((entry) => entry.value.contains(targetLanguage))
+                .map((entry) => entry.key);
+
+      for (var tProvider in translationProviders) {
         // break if cancelled
         if (isCancelled?.call() == true) return;
         // cache is checked before, ignore

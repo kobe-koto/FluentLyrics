@@ -20,10 +20,33 @@ List<LyricsResult> appendTranslationCandidateIfNeeded(
   final isDuplicate = candidates.any(
     (existing) =>
         existing.translationProvider == candidate.translationProvider &&
-        existing.language == candidate.language,
+        existing.language == candidate.language &&
+        existing.source == candidate.source &&
+        _rawTranslationEquals(
+          existing.rawTranslation,
+          candidate.rawTranslation,
+        ),
   );
   if (isDuplicate) return candidates;
   return List.unmodifiable([...candidates, candidate]);
+}
+
+bool _rawTranslationEquals(
+  List<Map<String, String>>? left,
+  List<Map<String, String>>? right,
+) {
+  if (identical(left, right)) return true;
+  if (left == null || right == null) return false;
+  if (left.length != right.length) return false;
+  for (var i = 0; i < left.length; i++) {
+    final leftLine = left[i];
+    final rightLine = right[i];
+    if (leftLine.length != rightLine.length) return false;
+    for (final entry in leftLine.entries) {
+      if (rightLine[entry.key] != entry.value) return false;
+    }
+  }
+  return true;
 }
 
 List<LyricsResult> appendCandidateIfNeeded(

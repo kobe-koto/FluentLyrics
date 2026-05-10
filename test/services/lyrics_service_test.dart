@@ -504,4 +504,60 @@ void main() {
     expect(results.single.source, 'SKIPPED');
     expect(results.single.translationProvider, 'LLM Translation (cached)');
   });
+
+  test(
+    'fetchTranslation can refetch a specific provider and language',
+    () async {
+      final cacheService = _FakeLyricsCacheService({});
+      final musixmatchRequestedLanguages = <String>[];
+      final neteaseRequestedLanguages = <String>[];
+      final service = LyricsService(
+        settingsService: _FakeSettingsService(
+          cacheEnabled: true,
+          priority: const [
+            LyricProviderType.musixmatch,
+            LyricProviderType.netease,
+          ],
+        ),
+        cacheService: cacheService,
+        sourceRegistry: LyricsSourceRegistry(
+          sources: [
+            _FakeTranslationSource(
+              LyricProviderType.musixmatch,
+              'Musixmatch',
+              requestedLanguages: musixmatchRequestedLanguages,
+            ),
+            _FakeTranslationSource(
+              LyricProviderType.netease,
+              'Netease Music',
+              requestedLanguages: neteaseRequestedLanguages,
+            ),
+          ],
+        ),
+      );
+
+      final results = await service
+          .fetchTranslation(
+            bestResult: LyricsResult(
+              lyrics: [lyric('hello', 1)],
+              source: 'lyrics',
+            ),
+            title: 'Song',
+            artist: const ['Artist'],
+            album: 'Album',
+            durationSeconds: 120,
+            refetchTargets: const {
+              LyricProviderType.netease: {'zht'},
+            },
+            skipCacheLookup: true,
+          )
+          .toList();
+
+      expect(cacheService.requestedCacheIds, isEmpty);
+      expect(musixmatchRequestedLanguages, isEmpty);
+      expect(neteaseRequestedLanguages, ['zht']);
+      expect(results, hasLength(1));
+      expect(results.single.translationProvider, 'Netease Music');
+    },
+  );
 }

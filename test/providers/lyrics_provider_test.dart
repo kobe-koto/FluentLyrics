@@ -232,6 +232,7 @@ class _FakeLyricsService extends LyricsService {
 
   int translationFetchCount = 0;
   List<String> lastTranslationLyrics = [];
+  Map<LyricProviderType, Set<String>>? lastRefetchTargets;
 
   @override
   Stream<LyricsResult> fetchLyrics({
@@ -257,8 +258,9 @@ class _FakeLyricsService extends LyricsService {
         lyrics: const [],
         source: 'Initial Translation',
         translation: true,
+        translationInvalidatable: true,
         language: 'zht',
-        translationProvider: 'Initial Translation',
+        translationProvider: 'LLM Translation',
         rawTranslation: const [
           {'original': 'old line', 'translated': '旧'},
         ],
@@ -275,20 +277,26 @@ class _FakeLyricsService extends LyricsService {
     required String album,
     required int durationSeconds,
     bool Function()? isCancelled,
+    Map<LyricProviderType, Set<String>>? refetchTargets,
+    bool skipCacheLookup = false,
     void Function(LyricsResult)? onTranslationCandidate,
   }) async* {
     translationFetchCount++;
     lastTranslationLyrics = bestResult.lyrics.map((line) => line.text).toList();
-    yield LyricsResult(
+    lastRefetchTargets = refetchTargets;
+    final result = LyricsResult(
       lyrics: const [],
       source: 'Refetched Translation',
       translation: true,
       language: 'zht',
       translationProvider: 'Refetched Translation',
+      translationInvalidatable: true,
       rawTranslation: const [
         {'original': 'new line', 'translated': '新'},
       ],
     );
+    onTranslationCandidate?.call(result);
+    yield result;
   }
 }
 
@@ -399,6 +407,8 @@ class _StaleTranslationLyricsService extends LyricsService {
     required String album,
     required int durationSeconds,
     bool Function()? isCancelled,
+    Map<LyricProviderType, Set<String>>? refetchTargets,
+    bool skipCacheLookup = false,
     void Function(LyricsResult)? onTranslationCandidate,
   }) async* {
     final first = LyricsResult(
@@ -534,7 +544,7 @@ void main() {
   );
 
   test(
-    'selectCandidate clears stale translation and refetches for new lyrics',
+    'selectCandidate keeps invalidated translation and refetches its provider',
     () async {
       final lyricsService = _FakeLyricsService();
       final mediaService = _FakeMediaService(
@@ -560,7 +570,7 @@ void main() {
 
       expect(
         provider.translationResult?.translationProvider,
-        'Initial Translation',
+        'LLM Translation',
       );
 
       await provider.selectCandidate(
@@ -569,6 +579,15 @@ void main() {
 
       expect(lyricsService.translationFetchCount, 1);
       expect(lyricsService.lastTranslationLyrics, ['new line']);
+      expect(lyricsService.lastRefetchTargets, isNotNull);
+      expect(lyricsService.lastRefetchTargets!.keys, [LyricProviderType.llm]);
+      expect(lyricsService.lastRefetchTargets![LyricProviderType.llm], {'zht'});
+      expect(
+        provider.translationCandidates
+            .map((item) => item.rawTranslation)
+            .length,
+        2,
+      );
       expect(
         provider.translationResult?.translationProvider,
         'Refetched Translation',
@@ -605,7 +624,7 @@ void main() {
 
       expect(
         provider.translationResult?.translationProvider,
-        'Initial Translation',
+        'LLM Translation',
       );
 
       provider.setTranslationTargetLanguages(['ja']);

@@ -441,6 +441,65 @@ class LyricsProvider with ChangeNotifier {
     );
   }
 
+  bool _translationInvalidatedByLyrics(
+    LyricsResult translation,
+    LyricsResult lyricsResult,
+  ) {
+    if (!translation.translationInvalidatable) return false;
+
+    final currentSourceProvider = lyricsResult.sourceProvider;
+    final translationSourceProvider = translation.sourceProvider;
+    if (currentSourceProvider != null &&
+        translationSourceProvider != null &&
+        translationSourceProvider == currentSourceProvider) {
+      return false;
+    }
+
+    return !TranslationHelper.hasSufficientCoverage(
+      currentLyrics: lyricsResult.lyrics,
+      rawTranslation: translation.rawTranslation,
+      coverageThreshold: _translationCoverageThreshold.current,
+      perLineSimilarityThreshold: _translationAlignmentThreshold.current,
+    );
+  }
+
+  LyricProviderType? _translationProviderTypeFor(LyricsResult translation) {
+    final provider = translation.translationProvider
+        ?.replaceAll(' (cached)', '')
+        .toLowerCase();
+    if (provider == null) return null;
+    if (provider.contains('musixmatch')) return LyricProviderType.musixmatch;
+    if (provider.contains('netease')) return LyricProviderType.netease;
+    if (provider.contains('qqmusic') || provider.contains('qq music')) {
+      return LyricProviderType.qqmusic;
+    }
+    if (provider.contains('llm')) return LyricProviderType.llm;
+    return null;
+  }
+
+  Map<LyricProviderType, Set<String>> _invalidatedTranslationTargetsFor(
+    LyricsResult lyricsResult,
+  ) {
+    final targets = <LyricProviderType, Set<String>>{};
+    final seen = <LyricsResult>{};
+    final translations = <LyricsResult>[
+      ..._translationCandidates,
+      ?_translationResult,
+    ];
+
+    for (final translation in translations) {
+      if (!seen.add(translation)) continue;
+      final language = translation.language;
+      if (language == null) continue;
+      if (!_translationInvalidatedByLyrics(translation, lyricsResult)) continue;
+
+      final provider = _translationProviderTypeFor(translation);
+      if (provider == null) continue;
+      targets.putIfAbsent(provider, () => <String>{}).add(language);
+    }
+    return targets;
+  }
+
   bool _appendCandidateIfNeeded(LyricsResult candidate) {
     final nextCandidates = appendCandidateIfNeeded(_candidates, candidate);
     if (identical(nextCandidates, _candidates)) return false;
@@ -1049,6 +1108,9 @@ class LyricsProvider with ChangeNotifier {
     MediaMetadata metadata, {
     bool showLoadingState = false,
     bool clearCachedTranslations = false,
+    bool clearTranslationState = true,
+    bool skipCacheLookup = false,
+    Map<LyricProviderType, Set<String>>? refetchTargets,
   }) async {
     if (!_translationEnabled.current || _lyricsResult.lyrics.isEmpty) return;
 
@@ -1057,7 +1119,9 @@ class LyricsProvider with ChangeNotifier {
     }
 
     final requestVersion = _beginTranslationRequest();
-    _clearTranslationState();
+    if (clearTranslationState) {
+      _clearTranslationState();
+    }
 
     if (showLoadingState) {
       _beginTranslationRefreshState();
@@ -1070,6 +1134,8 @@ class LyricsProvider with ChangeNotifier {
         artist: metadata.artist,
         album: metadata.album,
         durationSeconds: metadata.duration.inSeconds,
+        refetchTargets: refetchTargets,
+        skipCacheLookup: skipCacheLookup,
         isCancelled: () =>
             !_canAcceptTranslationResult(metadata, requestVersion),
         onTranslationCandidate: (trans) {
@@ -1250,9 +1316,13 @@ class LyricsProvider with ChangeNotifier {
     _isLoading = false;
 
     final result = _prepareLyricsResultForDisplay(candidate);
+    final invalidatedTranslationTargets = _invalidatedTranslationTargetsFor(
+      result,
+    );
 
     _lyricsResult = result;
-    _invalidateTranslationRequests();
+    _translationRequestVersion++;
+    _cachedAlignedLyrics = null;
     _updateCurrentIndex();
     notifyListeners();
 
@@ -1269,8 +1339,17 @@ class LyricsProvider with ChangeNotifier {
       );
     }
 
-    if (_translationEnabled.current && result.lyrics.isNotEmpty) {
-      unawaited(_fetchTranslationsForCurrentTrack(_currentMetadata!));
+    if (_translationEnabled.current &&
+        result.lyrics.isNotEmpty &&
+        invalidatedTranslationTargets.isNotEmpty) {
+      unawaited(
+        _fetchTranslationsForCurrentTrack(
+          _currentMetadata!,
+          clearTranslationState: false,
+          skipCacheLookup: true,
+          refetchTargets: invalidatedTranslationTargets,
+        ),
+      );
     }
   }
 
