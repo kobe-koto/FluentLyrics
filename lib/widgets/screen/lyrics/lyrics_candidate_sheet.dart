@@ -472,27 +472,17 @@ class _TranslationTab extends StatelessWidget {
   /// Count how many non-empty original lines have a matching translation.
   /// Returns (matched, total).
   (int, int) _coverage(LyricsResult trans, List<Lyric> displayLyrics) {
-    final sanitizedDisplayLyrics = displayLyrics
-        .map(
-          (l) =>
-              Lyric(startTime: l.startTime, text: l.text, endTime: l.endTime),
-        )
-        .toList();
-    final contentfulLines = sanitizedDisplayLyrics
-        .where((l) => l.text.trim().isNotEmpty)
-        .toList();
-    final totalLines = contentfulLines.length;
-    if (trans.rawTranslation == null || totalLines == 0) return (0, totalLines);
-
-    // Use the same align() algorithm to count how many original lines got
-    // a translation — mirrors what the display does.
-    final aligned = TranslationHelper.align(
-      originalLyrics: contentfulLines,
+    if (trans.rawTranslation == null) {
+      final totalLines = displayLyrics
+          .where((l) => l.text.trim().isNotEmpty)
+          .length;
+      return (0, totalLines);
+    }
+    return TranslationHelper.coverage(
+      currentLyrics: displayLyrics,
       rawTranslation: trans.rawTranslation!,
       similarityThreshold: provider.translationAlignmentThreshold.current,
     );
-    final matched = aligned.where((l) => l.translation != null).length;
-    return (matched, totalLines);
   }
 
   @override

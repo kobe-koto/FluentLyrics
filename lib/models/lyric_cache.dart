@@ -1,5 +1,6 @@
 import 'package:isar_community/isar.dart';
 import 'lyric_model.dart';
+import 'lyric_provider_type.dart';
 
 part 'lyric_cache.g.dart';
 
@@ -11,6 +12,7 @@ class LyricCache {
   late String cacheId;
 
   late String source;
+  String? sourceProvider;
   late bool isSynced;
   late bool isRichSync;
   String? writtenBy;
@@ -44,6 +46,9 @@ class LyricCache {
           )
           .toList(),
       source: source,
+      sourceProvider:
+          lyricProviderTypeFromName(sourceProvider) ??
+          lyricProviderTypeFromSource(source),
       isSynced: isSynced,
       isRichSync: isRichSync,
       writtenBy: writtenBy,
@@ -59,6 +64,7 @@ class LyricCache {
     final cache = LyricCache();
     cache.cacheId = cacheId;
     cache.source = result.source;
+    cache.sourceProvider = result.sourceProvider?.name;
     cache.isSynced = result.isSynced;
     cache.isRichSync = result.isRichSync;
     cache.writtenBy = result.writtenBy;
@@ -95,6 +101,7 @@ class TranslationCache {
   late String cacheId;
 
   late String source;
+  String? sourceProvider;
   late String translationProvider;
   late String? translationContributor;
   late String language;
@@ -123,6 +130,7 @@ class TranslationCache {
           )
           .toList(),
       source: source,
+      sourceProvider: lyricProviderTypeFromName(sourceProvider),
       language: language,
       translation: true,
       translationProvider: translationProvider,
@@ -137,6 +145,7 @@ class TranslationCache {
     return TranslationCache()
       ..cacheId = cacheId
       ..source = result.source
+      ..sourceProvider = result.sourceProvider?.name
       ..translationProvider = result.translationProvider ?? 'unknown'
       ..translationContributor = result.translationContributor ?? 'unknown'
       ..language = result.language ?? 'en'

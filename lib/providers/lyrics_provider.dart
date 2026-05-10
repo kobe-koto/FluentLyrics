@@ -13,6 +13,7 @@ import '../utils/app_logger.dart';
 import '../utils/lyrics_candidate_helper.dart';
 import '../utils/lyrics_display_helper.dart';
 import '../utils/richify_helper.dart';
+import '../utils/translation_helper.dart';
 
 class LyricsProvider with ChangeNotifier {
   final MediaService mediaService;
@@ -411,6 +412,25 @@ class LyricsProvider with ChangeNotifier {
     return true;
   }
 
+  bool _translationMatchesCurrentLyricsProvider(LyricsResult? translation) {
+    if (translation == null) return false;
+    final currentSourceProvider = _lyricsResult.sourceProvider;
+    final translationSourceProvider = translation.sourceProvider;
+    if (currentSourceProvider != null &&
+        translationSourceProvider != null &&
+        translationSourceProvider == currentSourceProvider) {
+      return true;
+    }
+    // Fallback: even if the source providers differ (or are missing), the
+    // translation may still be aligned with the current lyrics. Treat it as
+    // valid when its original lines cover enough of the current lyrics.
+    return TranslationHelper.hasSufficientCoverage(
+      currentLyrics: _lyricsResult.lyrics,
+      rawTranslation: translation.rawTranslation,
+      similarityThreshold: _translationAlignmentThreshold.current,
+    );
+  }
+
   bool _appendCandidateIfNeeded(LyricsResult candidate) {
     final nextCandidates = appendCandidateIfNeeded(_candidates, candidate);
     if (identical(nextCandidates, _candidates)) return false;
@@ -651,7 +671,7 @@ class LyricsProvider with ChangeNotifier {
     if (!wasEnabled &&
         _currentMetadata != null &&
         _lyricsResult.lyrics.isNotEmpty &&
-        _translationResult == null) {
+        !_translationMatchesCurrentLyricsProvider(_translationResult)) {
       unawaited(_fetchTranslationsForCurrentTrack(_currentMetadata!));
     }
   }
@@ -1034,7 +1054,7 @@ class LyricsProvider with ChangeNotifier {
           if (!_matchesTranslationTargetLanguage(trans.language!)) return;
           _appendTranslationCandidateIfNeeded(trans);
 
-          if (_translationResult == null) {
+          if (!_translationMatchesCurrentLyricsProvider(_translationResult)) {
             _translationResult = trans;
             notifyListeners();
             if (_cacheEnabled.current &&
@@ -1078,6 +1098,9 @@ class LyricsProvider with ChangeNotifier {
         result = _prepareLyricsResultForDisplay(result);
 
         _lyricsResult = result;
+        if (!_translationMatchesCurrentLyricsProvider(_translationResult)) {
+          _clearTranslationState();
+        }
         if (result.artworkUrls != null && result.artworkUrls!.isNotEmpty) {
           final newUrls = result.artworkUrls!
               .where((url) => !artworkUrlsNotifier.value.contains(url))
@@ -1101,7 +1124,7 @@ class LyricsProvider with ChangeNotifier {
       if (_translationEnabled.current &&
           !skipFetchTranslations &&
           _lyricsResult.lyrics.isNotEmpty &&
-          _translationResult == null) {
+          !_translationMatchesCurrentLyricsProvider(_translationResult)) {
         await _fetchTranslationsForCurrentTrack(metadata);
       }
     } catch (e) {
@@ -1192,20 +1215,23 @@ class LyricsProvider with ChangeNotifier {
   /// Isar cache so subsequent loads use this selection.
   Future<void> selectTranslationCandidate(LyricsResult candidate) async {
     if (_currentMetadata == null) return;
+    final taggedCandidate = candidate.copyWith(
+      sourceProvider: _lyricsResult.sourceProvider,
+    );
     _translationRequestVersion++;
-    _translationResult = candidate;
+    _translationResult = taggedCandidate;
     _cachedAlignedLyrics = null; // Invalidate alignment cache.
     _updateCurrentIndex();
     notifyListeners();
 
-    if (_cacheEnabled.current && candidate.language != null) {
-      final targetLanguage = candidate.language!;
+    if (_cacheEnabled.current && taggedCandidate.language != null) {
+      final targetLanguage = taggedCandidate.language!;
       final cacheId = _cacheService.generateTranslationCacheId(
         _currentMetadata!.title,
         _currentMetadata!.artist,
         targetLanguage,
       );
-      await _cacheService.cacheTranslation(cacheId, candidate);
+      await _cacheService.cacheTranslation(cacheId, taggedCandidate);
       AppLogger.debug(
         '[LyricsProvider] Translation candidate from ${candidate.translationProvider} saved to cache.',
       );

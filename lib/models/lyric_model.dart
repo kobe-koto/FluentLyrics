@@ -1,3 +1,5 @@
+import 'package:fluent_lyrics/models/lyric_provider_type.dart';
+
 class Lyric {
   final Duration startTime;
   final Duration? endTime;
@@ -81,6 +83,7 @@ class LyricsResult {
   final bool translation;
   final String? translationProvider;
   final String? translationContributor;
+  final LyricProviderType? sourceProvider;
 
   LyricsResult({
     required this.lyrics,
@@ -99,6 +102,7 @@ class LyricsResult {
     this.translationContributor,
     this.rawTranslation,
     this.artworkUrls,
+    this.sourceProvider,
   }) : isSynced = isSynced ?? _checkIfSynced(lyrics),
        isRichSync = isRichSync ?? _checkIfRichSynced(lyrics);
 
@@ -165,6 +169,7 @@ class LyricsResult {
     String? translationContributor,
     List<Map<String, String>>? rawTranslation,
     List<String>? artworkUrls,
+    LyricProviderType? sourceProvider,
   }) {
     return LyricsResult(
       lyrics: lyrics ?? this.lyrics,
@@ -184,6 +189,7 @@ class LyricsResult {
           translationContributor ?? this.translationContributor,
       rawTranslation: rawTranslation ?? this.rawTranslation,
       artworkUrls: artworkUrls ?? this.artworkUrls,
+      sourceProvider: sourceProvider ?? this.sourceProvider,
     );
   }
 
@@ -227,6 +233,7 @@ class LyricsResult {
       'translationContributor': translationContributor,
     if (rawTranslation != null) 'rawTranslation': rawTranslation,
     if (artworkUrls != null) 'artworkUrls': artworkUrls,
+    if (sourceProvider != null) 'sourceProvider': sourceProvider!.name,
   };
 
   factory LyricsResult.fromJson(Map<String, dynamic> json) => LyricsResult(
@@ -256,5 +263,8 @@ class LyricsResult {
     artworkUrls: json['artworkUrls'] != null
         ? List<String>.from(json['artworkUrls'])
         : null,
+    sourceProvider: lyricProviderTypeFromName(
+      json['sourceProvider'] as String?,
+    ),
   );
 }

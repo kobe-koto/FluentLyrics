@@ -115,6 +115,50 @@ class TranslationHelper {
     return newLyrics;
   }
 
+  /// Counts how many non-empty lines in [currentLyrics] receive a translation
+  /// when paired against [rawTranslation] using [align]. Returns
+  /// `(matched, totalLines)` where `totalLines` is the number of contentful
+  /// lines in [currentLyrics].
+  static (int matched, int totalLines) coverage({
+    required List<Lyric> currentLyrics,
+    required List<Map<String, String>> rawTranslation,
+    int similarityThreshold = 80,
+  }) {
+    final contentfulLines = currentLyrics
+        .where((l) => l.text.trim().isNotEmpty)
+        .toList();
+    final totalLines = contentfulLines.length;
+    if (totalLines == 0 || rawTranslation.isEmpty) return (0, totalLines);
+
+    final aligned = align(
+      originalLyrics: contentfulLines,
+      rawTranslation: rawTranslation,
+      similarityThreshold: similarityThreshold,
+    );
+    final matched = aligned.where((l) => l.translation != null).length;
+    return (matched, totalLines);
+  }
+
+  /// Returns `true` when [rawTranslation]'s original lines align with
+  /// [currentLyrics] well enough that the coverage ratio meets
+  /// [similarityThreshold] (interpreted as a percentage). Used to decide
+  /// whether an existing translation is still valid for a new lyrics result.
+  static bool hasSufficientCoverage({
+    required List<Lyric> currentLyrics,
+    required List<Map<String, String>>? rawTranslation,
+    required int similarityThreshold,
+  }) {
+    if (rawTranslation == null || rawTranslation.isEmpty) return false;
+    final (matched, totalLines) = coverage(
+      currentLyrics: currentLyrics,
+      rawTranslation: rawTranslation,
+      similarityThreshold: similarityThreshold,
+    );
+    if (totalLines == 0) return false;
+    final coveragePercent = matched * 100 ~/ totalLines;
+    return coveragePercent >= similarityThreshold;
+  }
+
   static int _calcLineSimilarity(String line1, String line2) {
     if (line1.isEmpty || line2.isEmpty) return 0;
 

@@ -9,6 +9,7 @@ import 'providers/qqmusic_service.dart';
 import 'providers/lyrics_cache_service.dart';
 import 'providers/llm_translation_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/translation_helper.dart';
 import 'lyrics_source_registry.dart';
 import 'winner_selector.dart';
 
@@ -101,17 +102,7 @@ class LyricsService {
     final translationBias =
         (await _settingsService.getTranslationBias()).current;
 
-    // create a on translation wrapper that change translationReceived if called
     bool translationReceived = false;
-    LyricsResult onTranslationWrapper(LyricsResult result) {
-      if (translationEnabled &&
-          result.translation &&
-          result.rawTranslation!.isNotEmpty) {
-        translationReceived = true;
-        onTranslation?.call(result);
-      }
-      return result;
-    }
 
     LyricsResult? bestResult;
     for (var provider in priority) {
@@ -144,6 +135,17 @@ class LyricsService {
         continue;
       }
 
+      LyricsResult onTranslationWrapper(LyricsResult result) {
+        final taggedResult = result.copyWith(sourceProvider: provider);
+        if (translationEnabled &&
+            taggedResult.translation &&
+            taggedResult.rawTranslation!.isNotEmpty) {
+          translationReceived = true;
+          onTranslation?.call(taggedResult);
+        }
+        return taggedResult;
+      }
+
       result = await source.fetchLyrics(
         LyricsFetchRequest(
           title: title,
@@ -156,6 +158,13 @@ class LyricsService {
           translationBias: translationBias,
           onTranslation: onTranslationWrapper,
         ),
+      );
+
+      result = result.copyWith(
+        sourceProvider: provider == LyricProviderType.cache
+            ? result.sourceProvider ??
+                  lyricProviderTypeFromSource(result.source)
+            : provider,
       );
 
       if (accumulatedArtworkUrls.isNotEmpty) {
@@ -259,6 +268,8 @@ class LyricsService {
         (await _settingsService.getTranslationIgnoredLanguages()).current;
     final translationBias =
         (await _settingsService.getTranslationBias()).current;
+    final translationAlignmentThreshold =
+        (await _settingsService.getTranslationAlignmentThreshold()).current;
     final priority = await _settingsService.getPriority();
 
     if (targetLanguages.isEmpty ||
@@ -290,15 +301,7 @@ class LyricsService {
           })
           .join('\n'),
     );
-
-    // check if source == target
-    if (bestResult.language != null &&
-        targetLanguages.contains(bestResult.language)) {
-      AppLogger.debug(
-        '[LyricsService.fetchTranslation]   ==> Target language contains source language, skipping translation',
-      );
-      return;
-    }
+    final originalSourceProvider = bestResult.sourceProvider;
 
     // start searching
     bool isYielded = false;
@@ -307,6 +310,13 @@ class LyricsService {
     // Iterate translation providers
     LyricsResult? transResult;
     for (var targetLanguage in targetLanguages) {
+      if (bestResult.language == targetLanguage) {
+        AppLogger.debug(
+          '[LyricsService.fetchTranslation]   ==> Target language matches source language, skipping $targetLanguage',
+        );
+        continue;
+      }
+
       if (cacheEnabled) {
         AppLogger.debug(
           '[LyricsService.fetchTranslation]   ==> Checking cache for $targetLanguage',
@@ -318,20 +328,33 @@ class LyricsService {
         );
         transResult = await _cacheService.getCachedTranslation(cacheId);
         if (transResult != null) {
-          AppLogger.debug(
-            '[LyricsService.fetchTranslation]     ==> Found cached $targetLanguage',
-          );
-          transResult = transResult.copyWith(
-            translationProvider: '${transResult.translationProvider} (cached)',
-          );
-          if (_isCandidate(transResult)) {
-            onTranslationCandidate?.call(transResult);
+          if (!_matchesCurrentLyrics(
+            transResult,
+            originalSourceProvider,
+            bestResult.lyrics,
+            translationAlignmentThreshold,
+          )) {
+            AppLogger.debug(
+              '[LyricsService.fetchTranslation]     ==> Cached $targetLanguage does not match current lyrics, refetching',
+            );
+            transResult = null;
+          } else {
+            AppLogger.debug(
+              '[LyricsService.fetchTranslation]     ==> Found cached $targetLanguage',
+            );
+            transResult = transResult.copyWith(
+              translationProvider:
+                  '${transResult.translationProvider} (cached)',
+            );
+            if (_isCandidate(transResult)) {
+              onTranslationCandidate?.call(transResult);
+            }
+            if (_shouldYield(transResult) && !isYielded) {
+              isYielded = true;
+              yield transResult;
+            }
+            continue;
           }
-          if (_shouldYield(transResult) && !isYielded) {
-            isYielded = true;
-            yield transResult;
-          }
-          continue;
         }
       }
 
@@ -366,6 +389,9 @@ class LyricsService {
             targetLanguage: targetLanguage,
             translationBias: translationBias,
           ),
+        );
+        transResult = transResult.copyWith(
+          sourceProvider: originalSourceProvider,
         );
         // check if successed (malformed? null?)
         final bool usableResult =
@@ -430,5 +456,26 @@ class LyricsService {
     } else {
       return false;
     }
+  }
+
+  bool _matchesCurrentLyrics(
+    LyricsResult translation,
+    LyricProviderType? originalSourceProvider,
+    List<Lyric> currentLyrics,
+    int alignmentThreshold,
+  ) {
+    final translationSourceProvider = translation.sourceProvider;
+    if (originalSourceProvider != null &&
+        translationSourceProvider != null &&
+        translationSourceProvider == originalSourceProvider) {
+      return true;
+    }
+    // Fallback: keep the translation when its original lines align well with
+    // the current lyrics, even if source providers differ or are missing.
+    return TranslationHelper.hasSufficientCoverage(
+      currentLyrics: currentLyrics,
+      rawTranslation: translation.rawTranslation,
+      similarityThreshold: alignmentThreshold,
+    );
   }
 }

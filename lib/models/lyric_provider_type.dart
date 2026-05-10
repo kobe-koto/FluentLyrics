@@ -2,6 +2,30 @@ import 'package:flutter/material.dart';
 
 enum LyricProviderType { lrclib, musixmatch, netease, qqmusic, cache, llm }
 
+LyricProviderType? lyricProviderTypeFromName(String? name) {
+  if (name == null) return null;
+  for (final provider in LyricProviderType.values) {
+    if (provider.name == name) return provider;
+  }
+  return null;
+}
+
+LyricProviderType? lyricProviderTypeFromSource(String? source) {
+  final normalized = source
+      ?.replaceAll(RegExp(r'\s+\(cached\)$'), '')
+      .trim()
+      .toLowerCase();
+  return switch (normalized) {
+    'lrclib' => LyricProviderType.lrclib,
+    'musixmatch' => LyricProviderType.musixmatch,
+    'netease music' => LyricProviderType.netease,
+    'qq music' => LyricProviderType.qqmusic,
+    'cache' => LyricProviderType.cache,
+    'llm translation' => LyricProviderType.llm,
+    _ => null,
+  };
+}
+
 extension LyricProviderTypeMetadata on LyricProviderType {
   Map<String, dynamic> get metadata {
     switch (this) {
