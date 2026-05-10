@@ -60,11 +60,15 @@ class _FakeMediaService extends MediaService {
 }
 
 class _FakeSettingsService extends SettingsService {
-  _FakeSettingsService({this.translationEnabled = true});
+  _FakeSettingsService({
+    this.translationEnabled = true,
+    this.cacheEnabled = false,
+  });
 
   List<String>? persistedTranslationTargetLanguages;
   List<String>? persistedTranslationIgnoredLanguages;
   final bool translationEnabled;
+  final bool cacheEnabled;
 
   @override
   Future<Setting<List<LyricProviderType>>> getAllProvidersOrdered() async {
@@ -82,7 +86,11 @@ class _FakeSettingsService extends SettingsService {
 
   @override
   Future<Setting<bool>> getCacheEnabled() async {
-    return const Setting(current: false, defaultValue: false, changed: false);
+    return Setting(
+      current: cacheEnabled,
+      defaultValue: cacheEnabled,
+      changed: false,
+    );
   }
 
   @override
@@ -285,6 +293,9 @@ class _FakeLyricsService extends LyricsService {
 }
 
 class _FakeLyricsCacheService extends LyricsCacheService {
+  final Map<String, LyricsResult> cachedTranslations = {};
+  final List<String> clearedTranslationCacheIds = [];
+
   @override
   Future<void> cacheLyrics(
     String title,
@@ -293,6 +304,26 @@ class _FakeLyricsCacheService extends LyricsCacheService {
     int durationSeconds,
     LyricsResult result,
   ) async {}
+
+  @override
+  String generateTranslationCacheId(
+    String title,
+    List<String> artist,
+    String language,
+  ) {
+    return language;
+  }
+
+  @override
+  Future<void> cacheTranslation(String cacheId, LyricsResult result) async {
+    cachedTranslations[cacheId] = result;
+  }
+
+  @override
+  Future<void> clearTranslationCache(String cacheId) async {
+    clearedTranslationCacheIds.add(cacheId);
+    cachedTranslations.remove(cacheId);
+  }
 }
 
 class _StaleLyricsService extends LyricsService {
@@ -586,4 +617,49 @@ void main() {
       provider.dispose();
     },
   );
+
+  test('markCurrentTranslationAsSkipped stores manual skip cache', () async {
+    final lyricsService = _FakeLyricsService();
+    final cacheService = _FakeLyricsCacheService();
+    final mediaService = _FakeMediaService(
+      MediaMetadata(
+        title: 'Song',
+        artist: const ['Artist'],
+        album: 'Album',
+        duration: const Duration(seconds: 120),
+        artUrl: 'fallback',
+      ),
+    );
+    final provider = LyricsProvider(
+      mediaService: mediaService,
+      lyricsService: lyricsService,
+      settingsService: _FakeSettingsService(cacheEnabled: true),
+      cacheService: cacheService,
+    );
+
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    mediaService.emitChange();
+    await Future<void>.delayed(Duration.zero);
+
+    await provider.markCurrentTranslationAsSkipped();
+
+    expect(provider.translationResult?.source, 'SKIPPED');
+    expect(
+      provider.translationResult?.language,
+      LyricsCacheService.manualTranslationSkipLanguage,
+    );
+    expect(
+      provider.translationResult?.translationProvider,
+      LyricsCacheService.manualTranslationSkipProvider,
+    );
+    expect(
+      cacheService
+          .cachedTranslations[LyricsCacheService.manualTranslationSkipLanguage]
+          ?.source,
+      'SKIPPED',
+    );
+
+    provider.dispose();
+  });
 }

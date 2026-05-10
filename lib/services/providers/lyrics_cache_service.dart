@@ -6,6 +6,10 @@ import '../../models/lyric_model.dart';
 import '../../models/lyric_cache.dart';
 
 class LyricsCacheService {
+  static const manualTranslationSkipLanguage = '__manual_translation_skip__';
+  static const manualTranslationSkipProvider = '__manual_skip__';
+  static const manualPureMusicSource = '__manual_pure_music__';
+
   static Isar? _isar;
   static Future<Isar>? _openFuture;
 

@@ -232,7 +232,11 @@ void main() {
           )
           .toList();
 
-      expect(cacheService.requestedCacheIds, ['zht', 'zh_CN']);
+      expect(cacheService.requestedCacheIds, [
+        LyricsCacheService.manualTranslationSkipLanguage,
+        'zht',
+        'zh_CN',
+      ]);
       expect(onlineRequestedLanguages, ['zht']);
       expect(candidates, ['Musixmatch', 'Cache (cached)']);
       expect(results, hasLength(1));
@@ -329,7 +333,10 @@ void main() {
           )
           .toList();
 
-      expect(cacheService.requestedCacheIds, ['zht']);
+      expect(cacheService.requestedCacheIds, [
+        LyricsCacheService.manualTranslationSkipLanguage,
+        'zht',
+      ]);
       expect(onlineRequestedLanguages, ['zht']);
       expect(results, hasLength(1));
       expect(results.single.translationProvider, 'Musixmatch');
@@ -383,10 +390,118 @@ void main() {
           )
           .toList();
 
-      expect(cacheService.requestedCacheIds, ['zht']);
+      expect(cacheService.requestedCacheIds, [
+        LyricsCacheService.manualTranslationSkipLanguage,
+        'zht',
+      ]);
       expect(onlineRequestedLanguages, isEmpty);
       expect(results, hasLength(1));
       expect(results.single.translationProvider, 'Cache (cached)');
     },
   );
+
+  test('fetchTranslation uses manual skip cache before providers', () async {
+    final cacheService = _FakeLyricsCacheService({
+      LyricsCacheService.manualTranslationSkipLanguage: LyricsResult(
+        lyrics: const [],
+        source: 'SKIPPED',
+        translation: false,
+        language: LyricsCacheService.manualTranslationSkipLanguage,
+        translationProvider: LyricsCacheService.manualTranslationSkipProvider,
+      ),
+    });
+    final onlineRequestedLanguages = <String>[];
+    final service = LyricsService(
+      settingsService: _FakeSettingsService(
+        cacheEnabled: true,
+        priority: const [LyricProviderType.musixmatch],
+      ),
+      cacheService: cacheService,
+      sourceRegistry: LyricsSourceRegistry(
+        sources: [
+          _FakeTranslationSource(
+            LyricProviderType.musixmatch,
+            'Musixmatch',
+            requestedLanguages: onlineRequestedLanguages,
+          ),
+        ],
+      ),
+    );
+
+    final results = await service
+        .fetchTranslation(
+          bestResult: LyricsResult(
+            lyrics: [lyric('hello', 1)],
+            source: 'lyrics',
+          ),
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          durationSeconds: 120,
+        )
+        .toList();
+
+    expect(cacheService.requestedCacheIds, [
+      LyricsCacheService.manualTranslationSkipLanguage,
+    ]);
+    expect(onlineRequestedLanguages, isEmpty);
+    expect(results, hasLength(1));
+    expect(results.single.source, 'SKIPPED');
+    expect(
+      results.single.translationProvider,
+      LyricsCacheService.manualTranslationSkipProvider,
+    );
+  });
+
+  test('fetchTranslation reuses provider skipped cache', () async {
+    final cacheService = _FakeLyricsCacheService({
+      'zht': LyricsResult(
+        lyrics: [lyric('hello', 1)],
+        source: 'SKIPPED',
+        translation: false,
+        translationInvalidatable: true,
+        language: 'zht',
+        translationProvider: 'LLM Translation',
+      ),
+    });
+    final onlineRequestedLanguages = <String>[];
+    final service = LyricsService(
+      settingsService: _FakeSettingsService(
+        cacheEnabled: true,
+        priority: const [LyricProviderType.musixmatch],
+      ),
+      cacheService: cacheService,
+      sourceRegistry: LyricsSourceRegistry(
+        sources: [
+          _FakeTranslationSource(
+            LyricProviderType.musixmatch,
+            'Musixmatch',
+            requestedLanguages: onlineRequestedLanguages,
+          ),
+        ],
+      ),
+    );
+
+    final results = await service
+        .fetchTranslation(
+          bestResult: LyricsResult(
+            lyrics: [lyric('hello', 1)],
+            source: 'lyrics',
+          ),
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          durationSeconds: 120,
+        )
+        .toList();
+
+    expect(cacheService.requestedCacheIds, [
+      LyricsCacheService.manualTranslationSkipLanguage,
+      'zht',
+    ]);
+    expect(onlineRequestedLanguages, isEmpty);
+    expect(results, hasLength(1));
+    expect(results.single.source, 'SKIPPED');
+    expect(results.single.translationProvider, 'LLM Translation (cached)');
+  });
 }

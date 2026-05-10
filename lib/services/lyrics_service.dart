@@ -308,6 +308,21 @@ class LyricsService {
     // start searching
     bool isYielded = false;
 
+    if (cacheEnabled) {
+      final skipCacheId = _cacheService.generateTranslationCacheId(
+        title,
+        artist,
+        LyricsCacheService.manualTranslationSkipLanguage,
+      );
+      final skippedTranslation = await _cacheService.getCachedTranslation(
+        skipCacheId,
+      );
+      if (_isSkippedTranslation(skippedTranslation)) {
+        yield skippedTranslation!;
+        return;
+      }
+    }
+
     // check online
     // Iterate translation providers
     LyricsResult? transResult;
@@ -330,6 +345,21 @@ class LyricsService {
         );
         transResult = await _cacheService.getCachedTranslation(cacheId);
         if (transResult != null) {
+          if (_isSkippedTranslation(transResult)) {
+            AppLogger.debug(
+              '[LyricsService.fetchTranslation]     ==> Found cached skipped $targetLanguage',
+            );
+            transResult = transResult.copyWith(
+              translationProvider:
+                  '${transResult.translationProvider} (cached)',
+            );
+            if (_shouldYield(transResult) && !isYielded) {
+              isYielded = true;
+              yield transResult;
+            }
+            continue;
+          }
+
           if (!_matchesCurrentLyrics(
             transResult,
             originalSourceProvider,
@@ -451,6 +481,12 @@ class LyricsService {
     } else {
       return false;
     }
+  }
+
+  bool _isSkippedTranslation(LyricsResult? transResult) {
+    return transResult != null &&
+        !transResult.translation &&
+        transResult.source == 'SKIPPED';
   }
 
   bool _isCandidate(LyricsResult? transResult) {

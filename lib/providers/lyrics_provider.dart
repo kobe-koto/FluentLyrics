@@ -968,7 +968,10 @@ class LyricsProvider with ChangeNotifier {
     MediaMetadata metadata,
   ) async {
     await Future.wait(
-      _translationTargetLanguages.current.map(
+      [
+        ..._translationTargetLanguages.current,
+        LyricsCacheService.manualTranslationSkipLanguage,
+      ].map(
         (lang) => _cacheService.clearTranslationCache(
           _cacheService.generateTranslationCacheId(
             metadata.title,
@@ -978,6 +981,34 @@ class LyricsProvider with ChangeNotifier {
         ),
       ),
     );
+  }
+
+  Future<void> markCurrentTranslationAsSkipped() async {
+    final metadata = _currentMetadata;
+    if (metadata == null) return;
+    if (!_translationEnabled.current) return;
+
+    _invalidateTranslationRequests();
+    final skipped = LyricsResult(
+      lyrics: const [],
+      source: 'SKIPPED',
+      translation: false,
+      language: LyricsCacheService.manualTranslationSkipLanguage,
+      translationProvider: LyricsCacheService.manualTranslationSkipProvider,
+      sourceProvider: _lyricsResult.sourceProvider,
+    );
+    _translationResult = skipped;
+    _cachedAlignedLyrics = null;
+    notifyListeners();
+
+    if (_cacheEnabled.current) {
+      final cacheId = _cacheService.generateTranslationCacheId(
+        metadata.title,
+        metadata.artist,
+        LyricsCacheService.manualTranslationSkipLanguage,
+      );
+      await _cacheService.cacheTranslation(cacheId, skipped);
+    }
   }
 
   Future<void> _fetchTranslationsForCurrentTrack(

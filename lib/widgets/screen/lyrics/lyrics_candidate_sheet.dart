@@ -517,13 +517,29 @@ class _TranslationTab extends StatelessWidget {
             if (!provider.isFetching)
               Padding(
                 padding: const EdgeInsets.only(top: 16),
-                child: TextButton.icon(
-                  onPressed: () => provider.refetchTranslations(),
-                  icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Refresh Translations'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.teal.withValues(alpha: 0.8),
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => provider.refetchTranslations(),
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: const Text('Refresh Translations'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.teal.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        provider.markCurrentTranslationAsSkipped();
+                        Navigator.of(context).pop();
+                      },
+                      icon: const Icon(Icons.block_rounded, size: 16),
+                      label: const Text('Mark as skipped'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.orange.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -549,13 +565,31 @@ class _TranslationTab extends StatelessWidget {
                         color: Colors.teal.withValues(alpha: 0.5),
                       ),
                     )
-                  : TextButton.icon(
-                      onPressed: () => provider.refetchTranslations(),
-                      icon: const Icon(Icons.refresh_rounded, size: 16),
-                      label: const Text('Refresh Translations'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.teal.withValues(alpha: 0.8),
-                      ),
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => provider.refetchTranslations(),
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text('Refresh Translations'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.teal.withValues(alpha: 0.8),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            provider.markCurrentTranslationAsSkipped();
+                            Navigator.of(context).pop();
+                          },
+                          icon: const Icon(Icons.block_rounded, size: 16),
+                          label: const Text('Mark as skipped'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.orange.withValues(
+                              alpha: 0.8,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
             ),
           );
