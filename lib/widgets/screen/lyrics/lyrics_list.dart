@@ -202,6 +202,16 @@ class _LyricsListState extends State<LyricsList> {
               );
             }
 
+            final hasRichInlineParts =
+                lyric.inlineParts != null && lyric.inlineParts!.isNotEmpty;
+            // Only the highlighted rich-sync line needs to subscribe to
+            // positionResyncNotifier: non-highlighted rich lines have their
+            // _RichPart controllers parked at 0 or 1 and don't need precise
+            // re-sync on seek/jump. They still receive provider.currentPosition
+            // captured at the moment the surrounding Consumer rebuilds (which
+            // happens whenever currentIndex flips, i.e. every line change).
+            final subscribeToResync = hasRichInlineParts && isHighlighted;
+
             return _InViewportBuilder(
               index: index,
               notifier: _inViewport,
@@ -211,8 +221,7 @@ class _LyricsListState extends State<LyricsList> {
                       ? () => provider.seek(lyric.startTime)
                       : null,
                   behavior: HitTestBehavior.translucent,
-                  child:
-                      lyric.inlineParts != null && lyric.inlineParts!.isNotEmpty
+                  child: subscribeToResync
                       ? ValueListenableBuilder<Duration>(
                           valueListenable: provider.positionResyncNotifier,
                           builder: (context, currentPosition, child) {
