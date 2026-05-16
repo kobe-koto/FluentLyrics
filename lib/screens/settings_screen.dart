@@ -1,19 +1,14 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../services/settings_service.dart';
-import '../models/lyric_provider_type.dart';
-import '../services/providers/musixmatch_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../widgets/screen/settings/settings_app_bar.dart';
-import '../widgets/screen/settings/priority_section.dart';
-import '../widgets/screen/settings/display_section.dart';
-import '../widgets/screen/settings/translation_section.dart';
-import '../widgets/screen/settings/lyric_configuration_section.dart';
-import '../widgets/screen/settings/cache_section.dart';
-import '../widgets/screen/settings/experimental_section.dart';
+import '../widgets/settings_scaffold.dart';
 import '../widgets/screen/settings/version_section.dart';
+import 'settings/priority_screen.dart';
+import 'settings/display_screen.dart';
+import 'settings/translation_screen.dart';
+import 'settings/lyric_configuration_screen.dart';
+import 'settings/cache_screen.dart';
+import 'settings/experimental_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -23,187 +18,153 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final SettingsService _settingsService = SettingsService();
-  final MusixmatchService _musixmatchService = MusixmatchService();
-  final TextEditingController _tokenController = TextEditingController();
-
-  List<LyricProviderType> _allProviders = [];
-  int _enabledCount = 0;
-  bool _cacheEnabled = true;
-  bool _isLoading = true;
-  bool _isFetchingToken = false;
   String _version = '';
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    _loadVersion();
   }
 
-  @override
-  void dispose() {
-    _tokenController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadSettings() async {
-    final allProviders =
-        (await _settingsService.getAllProvidersOrdered()).current;
-    final enabledCount = (await _settingsService.getEnabledCount()).current;
-    final cacheEnabled = (await _settingsService.getCacheEnabled()).current;
-    final token = (await _settingsService.getMusixmatchToken()).current;
+  Future<void> _loadVersion() async {
     final packageInfo = await PackageInfo.fromPlatform();
-    setState(() {
-      _allProviders = allProviders;
-      _enabledCount = enabledCount;
-      _cacheEnabled = cacheEnabled;
-      _tokenController.text = token ?? '';
-      _version = packageInfo.version;
-      _isLoading = false;
-    });
-  }
-
-  Future<void> _savePriority() async {
-    await _settingsService.setPriority(_allProviders);
-    await _settingsService.setEnabledCount(_enabledCount);
-    if (mounted) {
-      _showSnackBar('Priority updated');
-    }
-  }
-
-  Future<void> _toggleCache(bool enabled) async {
-    setState(() => _cacheEnabled = enabled);
-    await _settingsService.setCacheEnabled(enabled);
-    if (mounted) {
-      _showSnackBar(enabled ? 'Cache enabled' : 'Cache disabled');
-    }
-  }
-
-  Future<void> _saveToken() async {
-    await _settingsService.setMusixmatchToken(_tokenController.text);
-    if (mounted) {
-      _showSnackBar('Token saved');
-    }
-  }
-
-  Future<void> _getNewToken() async {
-    setState(() => _isFetchingToken = true);
-    try {
-      final newToken = await _musixmatchService.fetchNewToken();
-      if (newToken != null) {
-        setState(() {
-          _tokenController.text = newToken;
-        });
-        await _settingsService.setMusixmatchToken(newToken);
-        if (mounted) _showSnackBar('New token acquired');
-      } else {
-        if (mounted) _showSnackBar('Failed to get new token');
-      }
-    } finally {
-      setState(() => _isFetchingToken = false);
-    }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        backgroundColor: Colors.white24,
-      ),
-    );
+    setState(() => _version = packageInfo.version);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (PointerDownEvent event) {
-        if (event.buttons == kBackMouseButton) {
-          Navigator.pop(context);
-        }
-      },
-      child: CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.escape): () =>
-              Navigator.pop(context),
-        },
-        child: Focus(
-          autofocus: true,
-          child: Scaffold(
-            backgroundColor: Colors.black,
-            body: Stack(
+    return SettingsScaffold(
+      title: 'Settings',
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        children: [
+          _SettingsEntry(
+            icon: Icons.sort,
+            color: Colors.blue,
+            title: 'Provider Priority',
+            subtitle: 'Reorder and enable/disable lyrics providers',
+            onTap: () => _push(context, const PriorityScreen()),
+          ),
+          _SettingsEntry(
+            icon: Icons.display_settings,
+            color: Colors.purple,
+            title: 'Display',
+            subtitle: 'Font size, blur, background motion, scroll behavior',
+            onTap: () => _push(context, const DisplayScreen()),
+          ),
+          _SettingsEntry(
+            icon: Icons.translate,
+            color: Colors.teal,
+            title: 'Translation',
+            subtitle: 'Translation targets, LLM config, alignment',
+            onTap: () => _push(context, const TranslationScreen()),
+          ),
+          _SettingsEntry(
+            icon: Icons.music_note,
+            color: Colors.orange,
+            title: 'Lyric Configuration',
+            subtitle: 'Rich sync, offset, metadata trim, Musixmatch token',
+            onTap: () => _push(context, const LyricConfigurationScreen()),
+          ),
+          _SettingsEntry(
+            icon: Icons.storage,
+            color: Colors.red,
+            title: 'Cache Management',
+            subtitle: 'Clear lyrics and artwork cache',
+            onTap: () => _push(context, const CacheScreen()),
+          ),
+          _SettingsEntry(
+            icon: Icons.science,
+            color: Colors.amber,
+            title: 'Experimental',
+            subtitle: 'Unstable features and fixes',
+            onTap: () => _push(context, const ExperimentalScreen()),
+          ),
+          const SizedBox(height: 32),
+          if (_version.isNotEmpty) VersionSection(version: _version),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  void _push(BuildContext context, Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => screen),
+    );
+  }
+}
+
+class _SettingsEntry extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SettingsEntry({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 16.0,
+            ),
+            child: Row(
               children: [
-                Positioned.fill(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF1A1A1A), Colors.black],
-                      ),
-                    ),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
                   ),
+                  child: Icon(icon, color: color, size: 20),
                 ),
-                SafeArea(
+                const SizedBox(width: 16),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SettingsAppBar(
-                        onBackPressed: () => Navigator.pop(context),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      Expanded(
-                        child: _isLoading
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
-                              )
-                            : SingleChildScrollView(
-                                padding: const EdgeInsets.all(24.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    PrioritySection(
-                                      allProviders: _allProviders,
-                                      enabledCount: _enabledCount,
-                                      cacheEnabled: _cacheEnabled,
-                                      onReorder:
-                                          (newProviders, newEnabledCount) {
-                                            setState(() {
-                                              _allProviders = newProviders;
-                                              _enabledCount = newEnabledCount;
-                                            });
-                                            _savePriority();
-                                          },
-                                      onCacheToggle: _toggleCache,
-                                    ),
-                                    const SizedBox(height: 48),
-                                    const DisplaySection(),
-                                    const SizedBox(height: 48),
-                                    const TranslationSection(),
-                                    const SizedBox(height: 48),
-                                    LyricConfigurationSection(
-                                      tokenController: _tokenController,
-                                      isFetchingToken: _isFetchingToken,
-                                      onGetNewToken: _getNewToken,
-                                      onTokenChanged: _saveToken,
-                                    ),
-                                    const SizedBox(height: 48),
-                                    CacheSection(
-                                      onRefresh: () => setState(() {}),
-                                      showSnackBar: _showSnackBar,
-                                    ),
-                                    const SizedBox(height: 48),
-                                    const ExperimentalSection(),
-                                    const SizedBox(height: 48),
-                                    VersionSection(version: _version),
-                                  ],
-                                ),
-                              ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.white.withValues(alpha: 0.3),
                 ),
               ],
             ),
