@@ -13,6 +13,25 @@ class LyricConfigurationScreen extends StatefulWidget {
 }
 
 class _LyricConfigurationScreenState extends State<LyricConfigurationScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return const SettingsScaffold(
+      title: 'Lyric Configuration',
+      child: LyricConfigurationSettingsContent(),
+    );
+  }
+}
+
+class LyricConfigurationSettingsContent extends StatefulWidget {
+  const LyricConfigurationSettingsContent({super.key});
+
+  @override
+  State<LyricConfigurationSettingsContent> createState() =>
+      _LyricConfigurationSettingsContentState();
+}
+
+class _LyricConfigurationSettingsContentState
+    extends State<LyricConfigurationSettingsContent> {
   final SettingsService _settingsService = SettingsService();
   final MusixmatchService _musixmatchService = MusixmatchService();
   final TextEditingController _tokenController = TextEditingController();
@@ -74,21 +93,18 @@ class _LyricConfigurationScreenState extends State<LyricConfigurationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsScaffold(
-      title: 'Lyric Configuration',
-      child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: LyricConfigurationSection(
-                tokenController: _tokenController,
-                isFetchingToken: _isFetchingToken,
-                onGetNewToken: _getNewToken,
-                onTokenChanged: _saveToken,
-              ),
+    return _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          )
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: LyricConfigurationSection(
+              tokenController: _tokenController,
+              isFetchingToken: _isFetchingToken,
+              onGetNewToken: _getNewToken,
+              onTokenChanged: _saveToken,
             ),
-    );
+          );
   }
 }

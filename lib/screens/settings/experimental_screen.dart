@@ -9,10 +9,19 @@ class ExperimentalScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SettingsScaffold(
       title: 'Experimental',
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(24.0),
-        child: ExperimentalSection(),
-      ),
+      child: ExperimentalSettingsContent(),
+    );
+  }
+}
+
+class ExperimentalSettingsContent extends StatelessWidget {
+  const ExperimentalSettingsContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SingleChildScrollView(
+      padding: EdgeInsets.all(24.0),
+      child: ExperimentalSection(),
     );
   }
 }

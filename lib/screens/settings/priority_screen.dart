@@ -12,6 +12,23 @@ class PriorityScreen extends StatefulWidget {
 }
 
 class _PriorityScreenState extends State<PriorityScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return const SettingsScaffold(
+      title: 'Provider Priority',
+      child: PrioritySettingsContent(),
+    );
+  }
+}
+
+class PrioritySettingsContent extends StatefulWidget {
+  const PrioritySettingsContent({super.key});
+
+  @override
+  State<PrioritySettingsContent> createState() => _PrioritySettingsContentState();
+}
+
+class _PrioritySettingsContentState extends State<PrioritySettingsContent> {
   final SettingsService _settingsService = SettingsService();
 
   List<LyricProviderType> _allProviders = [];
@@ -65,28 +82,25 @@ class _PriorityScreenState extends State<PriorityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsScaffold(
-      title: 'Provider Priority',
-      child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: PrioritySection(
-                allProviders: _allProviders,
-                enabledCount: _enabledCount,
-                cacheEnabled: _cacheEnabled,
-                onReorder: (newProviders, newEnabledCount) {
-                  setState(() {
-                    _allProviders = newProviders;
-                    _enabledCount = newEnabledCount;
-                  });
-                  _savePriority();
-                },
-                onCacheToggle: _toggleCache,
-              ),
+    return _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          )
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: PrioritySection(
+              allProviders: _allProviders,
+              enabledCount: _enabledCount,
+              cacheEnabled: _cacheEnabled,
+              onReorder: (newProviders, newEnabledCount) {
+                setState(() {
+                  _allProviders = newProviders;
+                  _enabledCount = newEnabledCount;
+                });
+                _savePriority();
+              },
+              onCacheToggle: _toggleCache,
             ),
-    );
+          );
   }
 }

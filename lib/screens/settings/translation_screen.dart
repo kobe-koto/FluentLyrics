@@ -9,10 +9,19 @@ class TranslationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SettingsScaffold(
       title: 'Translation',
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(24.0),
-        child: TranslationSection(),
-      ),
+      child: TranslationSettingsContent(),
+    );
+  }
+}
+
+class TranslationSettingsContent extends StatelessWidget {
+  const TranslationSettingsContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SingleChildScrollView(
+      padding: EdgeInsets.all(24.0),
+      child: TranslationSection(),
     );
   }
 }

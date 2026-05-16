@@ -9,10 +9,19 @@ class DisplayScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SettingsScaffold(
       title: 'Display',
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(24.0),
-        child: DisplaySection(),
-      ),
+      child: DisplaySettingsContent(),
+    );
+  }
+}
+
+class DisplaySettingsContent extends StatelessWidget {
+  const DisplaySettingsContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SingleChildScrollView(
+      padding: EdgeInsets.all(24.0),
+      child: DisplaySection(),
     );
   }
 }

@@ -19,6 +19,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   String _version = '';
+  _SettingsDestination _selectedDestination = _SettingsDestination.priority;
 
   @override
   void initState() {
@@ -33,56 +34,166 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsScaffold(
-      title: 'Settings',
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide =
+            constraints.maxWidth >= 960 &&
+            constraints.maxWidth > constraints.maxHeight;
+        return SettingsScaffold(
+          title: 'Settings',
+          child: isWide
+              ? _buildWideLayout(context)
+              : _buildCompactLayout(context),
+        );
+      },
+    );
+  }
+
+  Widget _buildCompactLayout(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      children: [
+        for (final destination in _SettingsDestination.values)
+          _SettingsEntry(
+            destination: destination,
+            selected: false,
+            trailing: Icon(
+              Icons.chevron_right,
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
+            onTap: () => _push(context, destination.screen),
+          ),
+        const SizedBox(height: 32),
+        if (_version.isNotEmpty) VersionSection(version: _version),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildWideLayout(BuildContext context) {
+    final destination = _selectedDestination;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Row(
         children: [
-          _SettingsEntry(
-            icon: Icons.sort,
-            color: Colors.blue,
-            title: 'Provider Priority',
-            subtitle: 'Reorder and enable/disable lyrics providers',
-            onTap: () => _push(context, const PriorityScreen()),
+          SizedBox(
+            width: 320,
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.06),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+                          child: Text(
+                            'Preferences',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView.separated(
+                            itemCount: _SettingsDestination.values.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 6),
+                            itemBuilder: (context, index) {
+                              final item = _SettingsDestination.values[index];
+                              return _SettingsEntry(
+                                destination: item,
+                                selected: item == destination,
+                                trailing: item == destination
+                                    ? Icon(
+                                        Icons.arrow_forward_ios,
+                                        size: 16,
+                                        color: item.color,
+                                      )
+                                    : null,
+                                onTap: () {
+                                  setState(() {
+                                    _selectedDestination = item;
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_version.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  VersionSection(version: _version),
+                ],
+              ],
+            ),
           ),
-          _SettingsEntry(
-            icon: Icons.display_settings,
-            color: Colors.purple,
-            title: 'Display',
-            subtitle: 'Font size, blur, background motion, scroll behavior',
-            onTap: () => _push(context, const DisplayScreen()),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.06),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 24, 28, 18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            destination.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            destination.subtitle,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.45),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
+                    Expanded(
+                      child: destination.content,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          _SettingsEntry(
-            icon: Icons.translate,
-            color: Colors.teal,
-            title: 'Translation',
-            subtitle: 'Translation targets, LLM config, alignment',
-            onTap: () => _push(context, const TranslationScreen()),
-          ),
-          _SettingsEntry(
-            icon: Icons.music_note,
-            color: Colors.orange,
-            title: 'Lyric Configuration',
-            subtitle: 'Rich sync, offset, metadata trim, Musixmatch token',
-            onTap: () => _push(context, const LyricConfigurationScreen()),
-          ),
-          _SettingsEntry(
-            icon: Icons.storage,
-            color: Colors.red,
-            title: 'Cache Management',
-            subtitle: 'Clear lyrics and artwork cache',
-            onTap: () => _push(context, const CacheScreen()),
-          ),
-          _SettingsEntry(
-            icon: Icons.science,
-            color: Colors.amber,
-            title: 'Experimental',
-            subtitle: 'Unstable features and fixes',
-            onTap: () => _push(context, const ExperimentalScreen()),
-          ),
-          const SizedBox(height: 32),
-          if (_version.isNotEmpty) VersionSection(version: _version),
-          const SizedBox(height: 16),
         ],
       ),
     );
@@ -97,26 +208,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
 }
 
 class _SettingsEntry extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
+  final _SettingsDestination destination;
+  final bool selected;
+  final Widget? trailing;
   final VoidCallback onTap;
 
   const _SettingsEntry({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
+    required this.destination,
+    required this.selected,
+    required this.trailing,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = destination.color;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Material(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: selected
+            ? color.withValues(alpha: 0.15)
+            : Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -135,7 +247,7 @@ class _SettingsEntry extends StatelessWidget {
                     color: color.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: color, size: 20),
+                  child: Icon(destination.icon, color: color, size: 20),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -143,7 +255,7 @@ class _SettingsEntry extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        title,
+                        destination.title,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -152,9 +264,11 @@ class _SettingsEntry extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        subtitle,
+                        destination.subtitle,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: Colors.white.withValues(
+                            alpha: selected ? 0.72 : 0.4,
+                          ),
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -162,10 +276,7 @@ class _SettingsEntry extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
+                if (trailing != null) trailing!,
               ],
             ),
           ),
@@ -173,4 +284,71 @@ class _SettingsEntry extends StatelessWidget {
       ),
     );
   }
+}
+
+enum _SettingsDestination {
+  priority(
+    icon: Icons.sort,
+    color: Colors.blue,
+    title: 'Provider Priority',
+    subtitle: 'Reorder and enable/disable lyrics providers',
+    screen: PriorityScreen(),
+    content: PrioritySettingsContent(),
+  ),
+  display(
+    icon: Icons.display_settings,
+    color: Colors.purple,
+    title: 'Display',
+    subtitle: 'Font size, blur, background motion, scroll behavior',
+    screen: DisplayScreen(),
+    content: DisplaySettingsContent(),
+  ),
+  translation(
+    icon: Icons.translate,
+    color: Colors.teal,
+    title: 'Translation',
+    subtitle: 'Translation targets, LLM config, alignment',
+    screen: TranslationScreen(),
+    content: TranslationSettingsContent(),
+  ),
+  lyricConfiguration(
+    icon: Icons.music_note,
+    color: Colors.orange,
+    title: 'Lyric Configuration',
+    subtitle: 'Rich sync, offset, metadata trim, Musixmatch token',
+    screen: LyricConfigurationScreen(),
+    content: LyricConfigurationSettingsContent(),
+  ),
+  cache(
+    icon: Icons.storage,
+    color: Colors.red,
+    title: 'Cache Management',
+    subtitle: 'Clear lyrics and artwork cache',
+    screen: CacheScreen(),
+    content: CacheSettingsContent(),
+  ),
+  experimental(
+    icon: Icons.science,
+    color: Colors.amber,
+    title: 'Experimental',
+    subtitle: 'Unstable features and fixes',
+    screen: ExperimentalScreen(),
+    content: ExperimentalSettingsContent(),
+  );
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final Widget screen;
+  final Widget content;
+
+  const _SettingsDestination({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.screen,
+    required this.content,
+  });
 }
