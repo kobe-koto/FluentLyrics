@@ -155,8 +155,7 @@ class TranslationHelper {
 
     // matched * 100 ~/ totalLines >= threshold
     //   <=> matched >= ceil(threshold * totalLines / 100).
-    final requiredMatched =
-        (coverageThreshold * totalLines + 99) ~/ 100;
+    final requiredMatched = (coverageThreshold * totalLines + 99) ~/ 100;
     final matched = _countMatches(
       contentfulLines: contentfulLines,
       rawTranslation: rawTranslation,

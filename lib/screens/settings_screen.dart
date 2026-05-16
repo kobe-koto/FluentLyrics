@@ -109,7 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Expanded(
                           child: ListView.separated(
                             itemCount: _SettingsDestination.values.length,
-                            separatorBuilder: (_, __) =>
+                            separatorBuilder: (_, _) =>
                                 const SizedBox(height: 6),
                             itemBuilder: (context, index) {
                               final item = _SettingsDestination.values[index];
@@ -144,9 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.06),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28),
@@ -167,10 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   layoutBuilder: (currentChild, previousChildren) {
                     return Stack(
                       alignment: Alignment.topLeft,
-                      children: [
-                        ...previousChildren,
-                        if (currentChild != null) currentChild,
-                      ],
+                      children: [...previousChildren, ?currentChild],
                     );
                   },
                   child: KeyedSubtree(
@@ -221,10 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _push(BuildContext context, Widget screen) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
   }
 }
 
@@ -309,7 +301,7 @@ class _SettingsEntry extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (trailing != null) trailing!,
+                      ?trailing,
                     ],
                   ),
                 ),
@@ -330,8 +322,10 @@ class _SettingsEntry extends StatelessWidget {
                     return FadeTransition(
                       opacity: animation,
                       child: ScaleTransition(
-                        scale: Tween<double>(begin: 0.4, end: 1.0)
-                            .animate(animation),
+                        scale: Tween<double>(
+                          begin: 0.4,
+                          end: 1.0,
+                        ).animate(animation),
                         alignment: Alignment.centerLeft,
                         child: child,
                       ),

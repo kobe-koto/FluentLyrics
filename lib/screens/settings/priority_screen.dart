@@ -25,7 +25,8 @@ class PrioritySettingsContent extends StatefulWidget {
   const PrioritySettingsContent({super.key});
 
   @override
-  State<PrioritySettingsContent> createState() => _PrioritySettingsContentState();
+  State<PrioritySettingsContent> createState() =>
+      _PrioritySettingsContentState();
 }
 
 class _PrioritySettingsContentState extends State<PrioritySettingsContent> {
@@ -83,9 +84,7 @@ class _PrioritySettingsContentState extends State<PrioritySettingsContent> {
   @override
   Widget build(BuildContext context) {
     return _isLoading
-        ? const Center(
-            child: CircularProgressIndicator(color: Colors.white),
-          )
+        ? const Center(child: CircularProgressIndicator(color: Colors.white))
         : SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: PrioritySection(

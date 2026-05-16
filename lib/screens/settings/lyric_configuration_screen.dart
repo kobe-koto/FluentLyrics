@@ -94,9 +94,7 @@ class _LyricConfigurationSettingsContentState
   @override
   Widget build(BuildContext context) {
     return _isLoading
-        ? const Center(
-            child: CircularProgressIndicator(color: Colors.white),
-          )
+        ? const Center(child: CircularProgressIndicator(color: Colors.white))
         : SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: LyricConfigurationSection(

@@ -5,8 +5,7 @@ import 'package:http/http.dart' as http;
 void main() {
   test('plain lyrics are returned as unsynced', () async {
     final service = LrclibService(
-      httpGet: (_) async => http.Response(
-        '''
+      httpGet: (_) async => http.Response('''
 [
   {
     "trackName": "Song",
@@ -16,9 +15,7 @@ void main() {
     "instrumental": false
   }
 ]
-''',
-        200,
-      ),
+''', 200),
     );
 
     final result = await service.fetchLyrics(
@@ -34,8 +31,7 @@ void main() {
 
   test('synced lyrics are returned as synced', () async {
     final service = LrclibService(
-      httpGet: (_) async => http.Response(
-        '''
+      httpGet: (_) async => http.Response('''
 [
   {
     "trackName": "Song",
@@ -45,9 +41,7 @@ void main() {
     "instrumental": false
   }
 ]
-''',
-        200,
-      ),
+''', 200),
     );
 
     final result = await service.fetchLyrics(
