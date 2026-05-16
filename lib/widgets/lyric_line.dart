@@ -51,41 +51,6 @@ class LyricLine extends StatefulWidget {
   });
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is LyricLine &&
-        identical(other.lyric, lyric) &&
-        other.isHighlighted == isHighlighted &&
-        other.distance == distance &&
-        other.isManualScrolling == isManualScrolling &&
-        other.blurEnabled == blurEnabled &&
-        other.inViewport == inViewport &&
-        other.fontSize == fontSize &&
-        other.inactiveScale == inactiveScale &&
-        other.translationHighlightOnly == translationHighlightOnly &&
-        other.experimentalRichInlineFontSizeGlitching ==
-            experimentalRichInlineFontSizeGlitching &&
-        other.adjustedPosition == adjustedPosition &&
-        other.isPlaying == isPlaying;
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    identityHashCode(lyric),
-    isHighlighted,
-    distance,
-    isManualScrolling,
-    blurEnabled,
-    inViewport,
-    fontSize,
-    inactiveScale,
-    translationHighlightOnly,
-    experimentalRichInlineFontSizeGlitching,
-    adjustedPosition,
-    isPlaying,
-  );
-
-  @override
   State<LyricLine> createState() => _LyricLineState();
 }
 
@@ -97,10 +62,32 @@ class _LyricLineState extends State<LyricLine> {
   /// unrelated to this particular line).
   Widget? _cachedTree;
 
+  /// Compares two LyricLine widgets for cache-reuse purposes. Kept here rather
+  /// than as Widget.operator== because Flutter marks Widget's equality
+  /// non-virtual: overriding it on the widget class would silently break
+  /// framework invariants and produce an invalid_override_of_non_virtual_member
+  /// warning.
+  static bool _propsEqual(LyricLine a, LyricLine b) {
+    if (identical(a, b)) return true;
+    return identical(a.lyric, b.lyric) &&
+        a.isHighlighted == b.isHighlighted &&
+        a.distance == b.distance &&
+        a.isManualScrolling == b.isManualScrolling &&
+        a.blurEnabled == b.blurEnabled &&
+        a.inViewport == b.inViewport &&
+        a.fontSize == b.fontSize &&
+        a.inactiveScale == b.inactiveScale &&
+        a.translationHighlightOnly == b.translationHighlightOnly &&
+        a.experimentalRichInlineFontSizeGlitching ==
+            b.experimentalRichInlineFontSizeGlitching &&
+        a.adjustedPosition == b.adjustedPosition &&
+        a.isPlaying == b.isPlaying;
+  }
+
   @override
   void didUpdateWidget(covariant LyricLine oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget != widget) {
+    if (!_propsEqual(oldWidget, widget)) {
       _cachedTree = null;
     }
   }
