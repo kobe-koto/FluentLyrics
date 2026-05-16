@@ -57,6 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _SettingsEntry(
             destination: destination,
             selected: false,
+            showAccentBar: false,
             trailing: Icon(
               Icons.chevron_right,
               color: Colors.white.withValues(alpha: 0.3),
@@ -115,13 +116,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               return _SettingsEntry(
                                 destination: item,
                                 selected: item == destination,
-                                trailing: item == destination
-                                    ? Icon(
-                                        Icons.arrow_forward_ios,
-                                        size: 16,
-                                        color: item.color,
-                                      )
-                                    : null,
+                                showAccentBar: true,
+                                trailing: null,
                                 onTap: () {
                                   setState(() {
                                     _selectedDestination = item;
@@ -154,42 +150,67 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(28, 24, 28, 18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            destination.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                            ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    final slide = Tween<Offset>(
+                      begin: const Offset(0.04, 0.0),
+                      end: Offset.zero,
+                    ).animate(animation);
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(position: slide, child: child),
+                    );
+                  },
+                  layoutBuilder: (currentChild, previousChildren) {
+                    return Stack(
+                      alignment: Alignment.topLeft,
+                      children: [
+                        ...previousChildren,
+                        if (currentChild != null) currentChild,
+                      ],
+                    );
+                  },
+                  child: KeyedSubtree(
+                    key: ValueKey(destination),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(28, 24, 28, 18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                destination.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                destination.subtitle,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.45),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            destination.subtitle,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.45),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                        Divider(
+                          height: 1,
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
+                        Expanded(child: destination.content),
+                      ],
                     ),
-                    Divider(
-                      height: 1,
-                      color: Colors.white.withValues(alpha: 0.06),
-                    ),
-                    Expanded(
-                      child: destination.content,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -210,12 +231,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _SettingsEntry extends StatelessWidget {
   final _SettingsDestination destination;
   final bool selected;
+  final bool showAccentBar;
   final Widget? trailing;
   final VoidCallback onTap;
 
   const _SettingsEntry({
     required this.destination,
     required this.selected,
+    required this.showAccentBar,
     required this.trailing,
     required this.onTap,
   });
@@ -225,62 +248,115 @@ class _SettingsEntry extends StatelessWidget {
     final color = destination.color;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Material(
-        color: selected
-            ? color.withValues(alpha: 0.15)
-            : Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20.0,
-              vertical: 16.0,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: selected
+                  ? color.withValues(alpha: 0.15)
+                  : Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 16.0,
                   ),
-                  child: Icon(destination.icon, color: color, size: 20),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        destination.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(destination.icon, color: color, size: 20),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              destination.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              destination.subtitle,
+                              style: TextStyle(
+                                color: Colors.white.withValues(
+                                  alpha: selected ? 0.72 : 0.4,
+                                ),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        destination.subtitle,
-                        style: TextStyle(
-                          color: Colors.white.withValues(
-                            alpha: selected ? 0.72 : 0.4,
-                          ),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      if (trailing != null) trailing!,
                     ],
                   ),
                 ),
-                if (trailing != null) trailing!,
-              ],
+              ),
             ),
           ),
-        ),
+          if (showAccentBar)
+            Positioned(
+              left: -4,
+              top: 12,
+              bottom: 12,
+              child: IgnorePointer(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.4, end: 1.0)
+                            .animate(animation),
+                        alignment: Alignment.centerLeft,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: selected
+                      ? Container(
+                          key: const ValueKey('bar'),
+                          width: 4,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withValues(alpha: 0.5),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(key: ValueKey('empty')),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
