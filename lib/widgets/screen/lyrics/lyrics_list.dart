@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -6,7 +7,12 @@ import '../../../providers/lyrics_provider.dart';
 import '../../lyric_line.dart';
 import '../../interlude_indicator.dart';
 
-class LyricsList extends StatelessWidget {
+/// How far outside the visible viewport a line is still considered "in
+/// viewport" for animation/blur purposes. Matches the previous behavior of
+/// treating any line within 2 of an actually-visible item as in-viewport.
+const int _inViewportRadius = 2;
+
+class LyricsList extends StatefulWidget {
   final LyricsProvider provider;
   final ItemScrollController itemScrollController;
   final ItemPositionsListener itemPositionsListener;
@@ -23,7 +29,77 @@ class LyricsList extends StatelessWidget {
   });
 
   @override
+  State<LyricsList> createState() => _LyricsListState();
+}
+
+class _LyricsListState extends State<LyricsList> {
+  /// Deduplicated set of indices currently considered in-viewport.
+  ///
+  /// Driven by [ItemPositionsListener.itemPositions] but only notifies when
+  /// the resulting set actually changes, so per-line ValueListenableBuilders
+  /// don't rebuild on every scroll tick.
+  final _InViewportNotifier _inViewport = _InViewportNotifier();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.itemPositionsListener.itemPositions.addListener(_recomputeViewport);
+    // Seed initial value once positions are populated post-mount.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _recomputeViewport();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant LyricsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.itemPositionsListener != widget.itemPositionsListener) {
+      oldWidget.itemPositionsListener.itemPositions.removeListener(
+        _recomputeViewport,
+      );
+      widget.itemPositionsListener.itemPositions.addListener(
+        _recomputeViewport,
+      );
+      _recomputeViewport();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.itemPositionsListener.itemPositions.removeListener(
+      _recomputeViewport,
+    );
+    _inViewport.dispose();
+    super.dispose();
+  }
+
+  void _recomputeViewport() {
+    final positions = widget.itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) {
+      _inViewport.update(const <int>{});
+      return;
+    }
+
+    var minIndex = 1 << 30;
+    var maxIndex = -(1 << 30);
+    for (final pos in positions) {
+      if (pos.index < minIndex) minIndex = pos.index;
+      if (pos.index > maxIndex) maxIndex = pos.index;
+    }
+    final lower = minIndex - _inViewportRadius;
+    final upper = maxIndex + _inViewportRadius;
+
+    final next = <int>{};
+    for (int i = lower; i <= upper; i++) {
+      next.add(i);
+    }
+    _inViewport.update(next);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final provider = widget.provider;
     final lyrics = provider.lyrics;
     final metadata = provider.currentMetadata;
     final lyricsResult = provider.lyricsResult;
@@ -86,7 +162,7 @@ class LyricsList extends StatelessWidget {
       onNotification: (notification) {
         if (notification is UserScrollNotification &&
             notification.direction != ScrollDirection.idle) {
-          onUserInteraction(provider.scrollAutoResumeDelay.current);
+          widget.onUserInteraction(provider.scrollAutoResumeDelay.current);
         }
         return false;
       },
@@ -94,8 +170,8 @@ class LyricsList extends StatelessWidget {
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: ScrollablePositionedList.builder(
           itemCount: lyrics.length + 1,
-          itemScrollController: itemScrollController,
-          itemPositionsListener: itemPositionsListener,
+          itemScrollController: widget.itemScrollController,
+          itemPositionsListener: widget.itemPositionsListener,
           minCacheExtent: 0,
           itemBuilder: (context, index) {
             if (index == lyrics.length) {
@@ -126,13 +202,10 @@ class LyricsList extends StatelessWidget {
               );
             }
 
-            return ValueListenableBuilder<Iterable<ItemPosition>>(
-              valueListenable: itemPositionsListener.itemPositions,
-              builder: (context, positions, child) {
-                final inViewport = positions.any(
-                  (pos) => (pos.index - index).abs() <= 2,
-                );
-
+            return _InViewportBuilder(
+              index: index,
+              notifier: _inViewport,
+              builder: (context, inViewport) {
                 return GestureDetector(
                   onDoubleTap: provider.controlAbility.canSeek
                       ? () => provider.seek(lyric.startTime)
@@ -181,11 +254,12 @@ class LyricsList extends StatelessWidget {
     required bool inViewport,
     required Duration currentPosition,
   }) {
+    final provider = widget.provider;
     return LyricLine(
       lyric: lyric,
       isHighlighted: isHighlighted,
       distance: distance,
-      isManualScrolling: isManualScrolling,
+      isManualScrolling: widget.isManualScrolling,
       blurEnabled: provider.blurEnabled.current,
       inViewport: inViewport,
       fontSize: provider.fontSize.current,
@@ -200,6 +274,7 @@ class LyricsList extends StatelessWidget {
   }
 
   Widget _buildLyricsInfoLine() {
+    final provider = widget.provider;
     final result = provider.lyricsResult;
     final transResult = provider.translationResult;
     final List<String> infoParts = [];
@@ -255,5 +330,83 @@ class LyricsList extends StatelessWidget {
             .toList(),
       ),
     );
+  }
+}
+
+/// ChangeNotifier-backed set of viewport indices that only notifies when the
+/// set's contents actually change. This keeps per-line in-viewport listeners
+/// from rebuilding on every scroll tick.
+class _InViewportNotifier extends ChangeNotifier {
+  Set<int> _value = const <int>{};
+
+  Set<int> get value => _value;
+
+  bool contains(int index) => _value.contains(index);
+
+  void update(Set<int> next) {
+    if (setEquals(_value, next)) return;
+    _value = next;
+    notifyListeners();
+  }
+}
+
+/// Builds [builder] with a fresh boolean indicating whether [index] is in the
+/// current viewport, rebuilding only when that boolean flips for this index.
+class _InViewportBuilder extends StatefulWidget {
+  final int index;
+  final _InViewportNotifier notifier;
+  final Widget Function(BuildContext context, bool inViewport) builder;
+
+  const _InViewportBuilder({
+    required this.index,
+    required this.notifier,
+    required this.builder,
+  });
+
+  @override
+  State<_InViewportBuilder> createState() => _InViewportBuilderState();
+}
+
+class _InViewportBuilderState extends State<_InViewportBuilder> {
+  late bool _inViewport;
+
+  @override
+  void initState() {
+    super.initState();
+    _inViewport = widget.notifier.contains(widget.index);
+    widget.notifier.addListener(_handleChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _InViewportBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.notifier != widget.notifier ||
+        oldWidget.index != widget.index) {
+      oldWidget.notifier.removeListener(_handleChanged);
+      widget.notifier.addListener(_handleChanged);
+      final next = widget.notifier.contains(widget.index);
+      if (next != _inViewport) {
+        _inViewport = next;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.notifier.removeListener(_handleChanged);
+    super.dispose();
+  }
+
+  void _handleChanged() {
+    final next = widget.notifier.contains(widget.index);
+    if (next == _inViewport) return;
+    setState(() {
+      _inViewport = next;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.builder(context, _inViewport);
   }
 }
