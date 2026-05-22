@@ -21,11 +21,18 @@ A desktop lyrics viewer built with Flutter, displays and syncs song lyrics from 
 
 The main interface.
 
-## Supports
-- Linux (get track metadata via MPRIS D-Bus Interface)
+## Supported platforms
+- Linux x86_64 (retrieve now-playing metadata via the MPRIS D‑Bus interface)
 - Android
-- no other platform support planned
-- PR welcome
+- macOS (see https://gist.github.com/SKaplanOfficial/f9f5bdd6455436203d0d318c078358de, HUGE thanks to [@watchdogexd](https://github.com/watchdogexd).)
+- No other platform support is planned
+- Pull requests are welcome
+
+## Cannot support
+- iOS – theoretically impossible to obtain now‑playing metadata without jailbreaking.
+- Linux arm64 – official support for building a Linux arm64 Flutter app requires a native Linux arm64 machine, but GitHub Actions does not provide a Linux arm64 runner.
+- Linux (except x86_64 and arm64) – not natively supported by Flutter.
+- BSD – not natively supported by Flutter.
 
 ## Installations
 
@@ -41,15 +48,9 @@ paru -Sy fluent-lyrics-bin
 
 Please use the AppImage or kindly package it yourself :3
 
-### Android
+### Others
 
 see Releases
-
-### macOS
-
-see Release, 
-
-HUGE thanks to [@watchdogexd](https://github.com/watchdogexd) and https://gist.github.com/SKaplanOfficial/f9f5bdd6455436203d0d318c078358de
 
 ## Quick start (developer)
 
@@ -62,6 +63,7 @@ Requirements:
 Common commands:
 - flutter pub get
 - flutter run -d <device>
+- dart run build_runner build  # after modifing Isar @Collection 
 - please refer to fastforge for packaging
 
 ## Disclaimer
