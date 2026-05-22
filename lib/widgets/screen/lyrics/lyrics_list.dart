@@ -204,13 +204,6 @@ class _LyricsListState extends State<LyricsList> {
 
             final hasRichInlineParts =
                 lyric.inlineParts != null && lyric.inlineParts!.isNotEmpty;
-            // Only the highlighted rich-sync line needs to subscribe to
-            // positionResyncNotifier: non-highlighted rich lines have their
-            // _RichPart controllers parked at 0 or 1 and don't need precise
-            // re-sync on seek/jump. They still receive provider.currentPosition
-            // captured at the moment the surrounding Consumer rebuilds (which
-            // happens whenever currentIndex flips, i.e. every line change).
-            final subscribeToResync = hasRichInlineParts && isHighlighted;
 
             return _InViewportBuilder(
               index: index,
@@ -221,10 +214,12 @@ class _LyricsListState extends State<LyricsList> {
                       ? () => provider.seek(lyric.startTime)
                       : null,
                   behavior: HitTestBehavior.translucent,
-                  child: subscribeToResync
-                      ? ValueListenableBuilder<Duration>(
-                          valueListenable: provider.positionResyncNotifier,
-                          builder: (context, currentPosition, child) {
+                  child: hasRichInlineParts
+                      ? _RichLineResyncBridge(
+                          listenable: provider.positionResyncNotifier,
+                          subscribeToResync: isHighlighted,
+                          fallbackPosition: provider.currentPosition,
+                          builder: (context, currentPosition) {
                             return _buildLyricLine(
                               lyric: lyric,
                               isHighlighted: isHighlighted,
@@ -338,6 +333,90 @@ class _LyricsListState extends State<LyricsList> {
             )
             .toList(),
       ),
+    );
+  }
+}
+
+/// Keeps a stable widget shape for rich-sync lyric rows while subscribing to
+/// [listenable] only when the row is currently highlighted.
+///
+/// This avoids two problems at once:
+/// 1. Non-highlighted rich rows no longer rebuild on every resync event.
+/// 2. Highlight transitions do not swap the row subtree between two different
+///    runtimeTypes (plain LyricLine vs `ValueListenableBuilder<Duration>`), which
+///    would discard the implicit animation state and make AnimatedPadding /
+///    AnimatedScale jump instead of tween.
+class _RichLineResyncBridge extends StatefulWidget {
+  final ValueListenable<Duration> listenable;
+  final bool subscribeToResync;
+  final Duration fallbackPosition;
+  final Widget Function(BuildContext context, Duration currentPosition) builder;
+
+  const _RichLineResyncBridge({
+    required this.listenable,
+    required this.subscribeToResync,
+    required this.fallbackPosition,
+    required this.builder,
+  });
+
+  @override
+  State<_RichLineResyncBridge> createState() => _RichLineResyncBridgeState();
+}
+
+class _RichLineResyncBridgeState extends State<_RichLineResyncBridge> {
+  Duration? _resyncedPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncSubscription(null);
+  }
+
+  @override
+  void didUpdateWidget(covariant _RichLineResyncBridge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.listenable != widget.listenable ||
+        oldWidget.subscribeToResync != widget.subscribeToResync) {
+      _syncSubscription(oldWidget);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (widget.subscribeToResync) {
+      widget.listenable.removeListener(_handleResync);
+    }
+    super.dispose();
+  }
+
+  void _syncSubscription(_RichLineResyncBridge? oldWidget) {
+    if (oldWidget != null && oldWidget.subscribeToResync) {
+      oldWidget.listenable.removeListener(_handleResync);
+    }
+
+    if (widget.subscribeToResync) {
+      _resyncedPosition = widget.listenable.value;
+      widget.listenable.addListener(_handleResync);
+    } else {
+      _resyncedPosition = null;
+    }
+  }
+
+  void _handleResync() {
+    final next = widget.listenable.value;
+    if (_resyncedPosition == next) return;
+    setState(() {
+      _resyncedPosition = next;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.builder(
+      context,
+      widget.subscribeToResync
+          ? (_resyncedPosition ?? widget.listenable.value)
+          : widget.fallbackPosition,
     );
   }
 }

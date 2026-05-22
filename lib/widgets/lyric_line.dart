@@ -4,8 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/lyric_model.dart';
 
-@immutable
-class LyricLine extends StatefulWidget {
+class LyricLine extends StatelessWidget {
   static final Expando<List<LyricInlinePart>> _mergedInlinePartsCache = Expando(
     'mergedInlineParts',
   );
@@ -51,70 +50,16 @@ class LyricLine extends StatefulWidget {
   });
 
   @override
-  State<LyricLine> createState() => _LyricLineState();
-}
-
-class _LyricLineState extends State<LyricLine> {
-  /// Cached widget subtree. Reused across rebuilds when neither widget props
-  /// nor inherited dependencies have changed, so the heavy Animated* tree
-  /// is not reconstructed when the surrounding Consumer rebuilds with
-  /// identical inputs (e.g. a notifyListeners triggered by something
-  /// unrelated to this particular line).
-  Widget? _cachedTree;
-
-  /// Compares two LyricLine widgets for cache-reuse purposes. Kept here rather
-  /// than as Widget.operator== because Flutter marks Widget's equality
-  /// non-virtual: overriding it on the widget class would silently break
-  /// framework invariants and produce an invalid_override_of_non_virtual_member
-  /// warning.
-  static bool _propsEqual(LyricLine a, LyricLine b) {
-    if (identical(a, b)) return true;
-    return identical(a.lyric, b.lyric) &&
-        a.isHighlighted == b.isHighlighted &&
-        a.distance == b.distance &&
-        a.isManualScrolling == b.isManualScrolling &&
-        a.blurEnabled == b.blurEnabled &&
-        a.inViewport == b.inViewport &&
-        a.fontSize == b.fontSize &&
-        a.inactiveScale == b.inactiveScale &&
-        a.translationHighlightOnly == b.translationHighlightOnly &&
-        a.experimentalRichInlineFontSizeGlitching ==
-            b.experimentalRichInlineFontSizeGlitching &&
-        a.adjustedPosition == b.adjustedPosition &&
-        a.isPlaying == b.isPlaying;
-  }
-
-  @override
-  void didUpdateWidget(covariant LyricLine oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!_propsEqual(oldWidget, widget)) {
-      _cachedTree = null;
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Inherited dependencies (Theme, MediaQuery, DefaultTextStyle) may have
-    // changed; invalidate the cached tree so _buildTree picks them up.
-    _cachedTree = null;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return _cachedTree ??= _buildTree(context);
-  }
-
-  Widget _buildTree(BuildContext context) {
-    final lyric = widget.lyric;
-    final isHighlighted = widget.isHighlighted;
-    final distance = widget.distance;
-    final isManualScrolling = widget.isManualScrolling;
-    final blurEnabled = widget.blurEnabled;
-    final inViewport = widget.inViewport;
-    final fontSize = widget.fontSize;
-    final inactiveScale = widget.inactiveScale;
-    final translationHighlightOnly = widget.translationHighlightOnly;
+    final lyric = this.lyric;
+    final isHighlighted = this.isHighlighted;
+    final distance = this.distance;
+    final isManualScrolling = this.isManualScrolling;
+    final blurEnabled = this.blurEnabled;
+    final inViewport = this.inViewport;
+    final fontSize = this.fontSize;
+    final inactiveScale = this.inactiveScale;
+    final translationHighlightOnly = this.translationHighlightOnly;
 
     const double minOpacity = 0.4;
 
@@ -226,8 +171,8 @@ class _LyricLineState extends State<LyricLine> {
   }
 
   Widget _buildText(BuildContext context) {
-    final lyric = widget.lyric;
-    final isHighlighted = widget.isHighlighted;
+    final lyric = this.lyric;
+    final isHighlighted = this.isHighlighted;
     final text = lyric.text;
     if (!isHighlighted ||
         lyric.inlineParts == null ||
@@ -245,7 +190,7 @@ class _LyricLineState extends State<LyricLine> {
       );
     }
     final richTextStyle = DefaultTextStyle.of(context).style.copyWith(
-      fontSize: widget.experimentalRichInlineFontSizeGlitching
+      fontSize: experimentalRichInlineFontSizeGlitching
           ? DefaultTextStyle.of(context).style.fontSize! / 0.9
           : DefaultTextStyle.of(context).style.fontSize!,
       height: 1.2,
@@ -267,8 +212,8 @@ class _LyricLineState extends State<LyricLine> {
               startTime: part.startTime,
               endTime: part.endTime,
               style: richTextStyle,
-              adjustedPosition: widget.adjustedPosition,
-              isPlaying: widget.isPlaying,
+              adjustedPosition: adjustedPosition,
+              isPlaying: isPlaying,
             ),
           );
         }).toList(),
@@ -278,13 +223,13 @@ class _LyricLineState extends State<LyricLine> {
   }
 
   List<LyricInlinePart> _getMergedInlineParts(List<LyricInlinePart> parts) {
-    final cached = LyricLine._mergedInlinePartsCache[parts];
+    final cached = _mergedInlinePartsCache[parts];
     if (cached != null) {
       return cached;
     }
 
     final merged = _mergeAttachedPunctuation(parts);
-    LyricLine._mergedInlinePartsCache[parts] = merged;
+    _mergedInlinePartsCache[parts] = merged;
     return merged;
   }
 
@@ -346,13 +291,13 @@ class _LyricLineState extends State<LyricLine> {
   bool _isAttachablePunctuation(String text) {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return false;
-    if (trimmed.contains(LyricLine._wordOrNumberPattern)) {
+    if (trimmed.contains(_wordOrNumberPattern)) {
       return false;
     }
-    if (trimmed.contains(LyricLine._bracketOrQuotePattern)) {
+    if (trimmed.contains(_bracketOrQuotePattern)) {
       return false;
     }
-    return trimmed.contains(LyricLine._punctuationOrSymbolPattern);
+    return trimmed.contains(_punctuationOrSymbolPattern);
   }
 
   bool _endsWithWhitespace(String text) {
