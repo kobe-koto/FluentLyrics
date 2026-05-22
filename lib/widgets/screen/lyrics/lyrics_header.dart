@@ -210,7 +210,6 @@ class _CandidatesButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasCandidates = provider.candidates.isNotEmpty;
-    final isPaused = provider.isPausedForCandidates;
 
     return Stack(
       alignment: Alignment.topRight,
@@ -218,17 +217,15 @@ class _CandidatesButton extends StatelessWidget {
         IconButton(
           icon: Icon(
             Icons.library_music_rounded,
+            // this is intended, implied theres no candidates, but user can still open it
             color: hasCandidates
                 ? Colors.white
-                : Colors.white.withValues(alpha: 0.35),
+                : Colors.white.withValues(alpha: 0.75),
           ),
           iconSize: iconSize ?? 24,
           tooltip: 'Choose lyrics',
-          onPressed: hasCandidates || isPaused
-              ? () => showLyricsCandidateSheet(context, provider)
-              : null,
+          onPressed: () => showLyricsCandidateSheet(context, provider),
         ),
-        if (isPaused) Positioned(right: 6, top: 6, child: _PulseDot()),
       ],
     );
   }
