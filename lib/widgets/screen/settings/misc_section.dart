@@ -30,7 +30,8 @@ class MiscSection extends StatelessWidget {
                 value: provider.trayEnabled.current,
                 onChanged: (value) => provider.setTrayEnabled(value),
               ),
-              if (provider.trayEnabled.current)
+              const SizedBox(height: 16),
+              if (provider.trayEnabled.current) ...[
                 SettingsToggleCard(
                   title: 'Hide to Tray on Close',
                   subtitle:
@@ -41,6 +42,8 @@ class MiscSection extends StatelessWidget {
                   value: provider.hideToTrayOnClose.current,
                   onChanged: (value) => provider.setHideToTrayOnClose(value),
                 ),
+                const SizedBox(height: 16),
+              ],
               const _LyricsStreamCard(),
             ] else
               const _UnsupportedNotice(
