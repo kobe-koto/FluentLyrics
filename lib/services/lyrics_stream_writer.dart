@@ -186,9 +186,7 @@ class LyricsStreamWriter {
           await file.delete();
         }
       } catch (e, st) {
-        AppLogger.debug(
-          'LyricsStreamWriter: failed to delete $path: $e\n$st',
-        );
+        AppLogger.debug('LyricsStreamWriter: failed to delete $path: $e\n$st');
       }
     });
   }

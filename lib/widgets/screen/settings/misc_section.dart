@@ -121,8 +121,7 @@ class _LyricsStreamCardState extends State<_LyricsStreamCard> {
       text: provider.translationStreamPath.current,
     );
     _lyricsFocus = FocusNode()..addListener(_handleLyricsFocusChange);
-    _translationFocus = FocusNode()
-      ..addListener(_handleTranslationFocusChange);
+    _translationFocus = FocusNode()..addListener(_handleTranslationFocusChange);
   }
 
   @override
@@ -282,4 +281,3 @@ class _LyricsStreamCardState extends State<_LyricsStreamCard> {
     );
   }
 }
-

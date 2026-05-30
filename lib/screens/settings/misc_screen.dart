@@ -7,10 +7,7 @@ class MiscScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SettingsScaffold(
-      title: 'Misc',
-      child: MiscSettingsContent(),
-    );
+    return const SettingsScaffold(title: 'Misc', child: MiscSettingsContent());
   }
 }
 

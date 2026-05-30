@@ -111,10 +111,7 @@ class TrayService with TrayListener {
   /// Update the now-playing line shown at the top of the tray menu.
   ///
   /// No-op when the tray is disabled or on unsupported platforms.
-  Future<void> updateNowPlaying({
-    String? title,
-    String? artist,
-  }) async {
+  Future<void> updateNowPlaying({String? title, String? artist}) async {
     if (!_enabled) return;
     final next = (title == null || title.isEmpty) ? null : title;
     final nextArtist = (artist == null || artist.isEmpty) ? null : artist;
@@ -207,12 +204,7 @@ class TrayService with TrayListener {
 
     if (_isPausedForCandidates) {
       children
-        ..add(
-          MenuItem(
-            key: 'continue_fetch',
-            label: 'Continue searching…',
-          ),
-        )
+        ..add(MenuItem(key: 'continue_fetch', label: 'Continue searching…'))
         ..add(MenuItem.separator());
     }
 
@@ -251,17 +243,9 @@ class TrayService with TrayListener {
 
     children
       ..add(MenuItem.separator())
+      ..add(MenuItem(key: 'lyrics_refresh', label: 'Refresh lyrics'))
       ..add(
-        MenuItem(
-          key: 'lyrics_refresh',
-          label: 'Refresh lyrics',
-        ),
-      )
-      ..add(
-        MenuItem(
-          key: 'lyrics_mark_pure_music',
-          label: 'Mark as pure music',
-        ),
+        MenuItem(key: 'lyrics_mark_pure_music', label: 'Mark as pure music'),
       );
 
     return MenuItem.submenu(
@@ -276,12 +260,7 @@ class TrayService with TrayListener {
 
     if (_translationEnabled && _isPausedForCandidates) {
       children
-        ..add(
-          MenuItem(
-            key: 'continue_fetch',
-            label: 'Continue searching…',
-          ),
-        )
+        ..add(MenuItem(key: 'continue_fetch', label: 'Continue searching…'))
         ..add(MenuItem.separator());
     }
 
@@ -332,10 +311,7 @@ class TrayService with TrayListener {
       children
         ..add(MenuItem.separator())
         ..add(
-          MenuItem(
-            key: 'translations_refresh',
-            label: 'Refresh translations',
-          ),
+          MenuItem(key: 'translations_refresh', label: 'Refresh translations'),
         )
         ..add(
           MenuItem(
