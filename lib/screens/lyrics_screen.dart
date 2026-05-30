@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../models/lyric_model.dart';
 import '../providers/lyrics_provider.dart';
 import '../services/media_service.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -55,6 +56,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
   LyricsProvider? _scrollSyncProvider;
   LyricsProvider? _wakelockProvider;
   bool? _lastKeepScreenOn;
+  List<Lyric>? _lastLyricsRef;
 
   @override
   void didChangeDependencies() {
@@ -65,6 +67,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
       _scrollSyncProvider?.removeListener(_handleProviderChanged);
       _scrollSyncProvider = provider;
       _scrollSyncProvider!.addListener(_handleProviderChanged);
+      _lastLyricsRef = provider.lyrics;
       _syncCurrentIndex(provider.currentIndex, provider.linesBefore.current);
     }
 
@@ -77,24 +80,42 @@ class _LyricsScreenState extends State<LyricsScreen> {
     _syncWakelock(provider.keepScreenOn.current);
   }
 
+  ({int targetIndex, double alignment}) _resolveScrollTarget(
+    int index,
+    int linesBefore,
+  ) {
+    final safeIndex = index < 0 ? 0 : index;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final targetIndex = isLandscape
+        ? safeIndex
+        : (safeIndex - linesBefore).clamp(0, safeIndex);
+    final alignment = isLandscape ? 0.3 : 0.0;
+    return (targetIndex: targetIndex, alignment: alignment);
+  }
+
   void _scrollToCurrentIndex(int index, int linesBefore) {
-    if (_itemScrollController.isAttached) {
-      final safeIndex = index < 0 ? 0 : index;
-      final isLandscape =
-          MediaQuery.of(context).orientation == Orientation.landscape;
+    if (!_itemScrollController.isAttached) return;
+    final target = _resolveScrollTarget(index, linesBefore);
+    _itemScrollController.scrollTo(
+      index: target.targetIndex,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutQuart,
+      alignment: target.alignment,
+    );
+  }
 
-      final targetIndex = isLandscape
-          ? safeIndex
-          : (safeIndex - linesBefore).clamp(0, safeIndex);
-      final alignment = isLandscape ? 0.3 : 0.0;
-
-      _itemScrollController.scrollTo(
-        index: targetIndex,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutQuart,
-        alignment: alignment,
-      );
-    }
+  /// Snap (no animation) to [index]. Used when the displayed lyrics content
+  /// changes (e.g. translation arrives, new lyrics returned) so the viewport
+  /// re-anchors to the current line instead of letting line-height changes
+  /// shift everything visually.
+  void _jumpToCurrentIndex(int index, int linesBefore) {
+    if (!_itemScrollController.isAttached) return;
+    final target = _resolveScrollTarget(index, linesBefore);
+    _itemScrollController.jumpTo(
+      index: target.targetIndex,
+      alignment: target.alignment,
+    );
   }
 
   void _syncCurrentIndex(int index, int linesBefore) {
@@ -268,7 +289,44 @@ class _LyricsScreenState extends State<LyricsScreen> {
   void _handleProviderChanged() {
     final provider = _scrollSyncProvider;
     if (provider == null) return;
+
+    // Detect display-content changes (new lyrics fetched, translation
+    // arrived/cleared, rich-sync stripping toggled). LyricsProvider's `lyrics`
+    // getter returns the same List reference when nothing changed thanks to
+    // its alignment / stripping caches, so a reference inequality is a
+    // reliable signal that the rendered content shifted.
+    final lyricsRef = provider.lyrics;
+    if (!identical(lyricsRef, _lastLyricsRef)) {
+      _lastLyricsRef = lyricsRef;
+      // Snap to the (possibly new) current index without animation. This also
+      // covers the case where currentIndex changed in the same notification,
+      // because an animated scrollTo would start from a now-misaligned offset
+      // and look worse than a clean jump.
+      _resnapToCurrentIndex(provider);
+      // Keep _previousIndex in sync so the subsequent _syncCurrentIndex call
+      // does not also schedule an animated scrollTo for the same index.
+      _previousIndex = provider.currentIndex;
+      return;
+    }
+
     _syncCurrentIndex(provider.currentIndex, provider.linesBefore.current);
+  }
+
+  /// Re-anchor the viewport to the current line without animation after the
+  /// displayed content changes, so line-height differences from new lyrics or
+  /// translations don't visually shift the page. Skipped while the user is
+  /// manually scrolling.
+  void _resnapToCurrentIndex(LyricsProvider provider) {
+    if (_isManualScrolling) return;
+    final index = provider.currentIndex;
+    if (index < 0) return;
+    final linesBefore = provider.linesBefore.current;
+    // Defer one frame so the rebuilt ScrollablePositionedList has the new
+    // item count / line widgets before we jump.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isManualScrolling) return;
+      _jumpToCurrentIndex(index, linesBefore);
+    });
   }
 
   void _updateArtProviders(
