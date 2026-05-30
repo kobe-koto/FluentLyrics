@@ -25,6 +25,11 @@ Future<void> main() async {
     yield LicenseEntryWithLineBreaks(<String>['Outfit font'], license);
   });
 
+  // Create the provider eagerly so the tray bridge can subscribe to it before
+  // any widget mounts. Without this the tray would briefly observe the
+  // defaults() snapshot and then re-sync once the screen wires up.
+  final lyricsProvider = LyricsProvider();
+
   // window_manager / tray_manager are desktop-only. Skip the bootstrap on
   // Android so the app keeps booting like before.
   TrayService? trayService;
@@ -42,13 +47,30 @@ Future<void> main() async {
       onQuit: () async {
         await windowManager.destroy();
       },
+      onLyricsCandidateSelected: (candidate) {
+        unawaited(lyricsProvider.selectCandidate(candidate));
+      },
+      onTranslationCandidateSelected: (candidate) {
+        unawaited(lyricsProvider.selectTranslationCandidate(candidate));
+      },
+      onResumeFetch: () {
+        lyricsProvider.resumeCandidateFetch();
+      },
+      onRefreshLyrics: () {
+        unawaited(lyricsProvider.refetchLyrics());
+      },
+      onRefreshTranslations: () {
+        unawaited(lyricsProvider.refetchTranslations());
+      },
+      onMarkAsPureMusic: () {
+        unawaited(lyricsProvider.markCurrentTrackAsPureMusic());
+      },
+      onMarkTranslationSkipped: () {
+        unawaited(lyricsProvider.markCurrentTranslationAsSkipped());
+      },
     );
   }
 
-  // Create the provider eagerly so the tray bridge can subscribe to it before
-  // any widget mounts. Without this the tray would briefly observe the
-  // defaults() snapshot and then re-sync once the screen wires up.
-  final lyricsProvider = LyricsProvider();
   if (trayService != null) {
     _bindTrayToProvider(trayService, lyricsProvider);
     await _installCloseInterceptor(trayService, lyricsProvider);
@@ -62,12 +84,25 @@ Future<void> main() async {
   );
 }
 
-/// Drives [tray] on/off and now-playing label from [provider] notifications.
+/// Drives [tray] on/off and pushes now-playing label + candidate lists from
+/// [provider] notifications.
 ///
-/// Mirrors the user's `trayEnabled` setting and pushes the current track to
-/// the tray menu so the popup label stays in sync.
+/// Mirrors the user's `trayEnabled` setting and keeps the tray menu (now
+/// playing label, Lyrics submenu, Translations submenu) in sync.
 void _bindTrayToProvider(TrayService tray, LyricsProvider provider) {
   bool lastEnabled = provider.trayEnabled.current;
+
+  Future<void> pushCandidates() async {
+    await tray.updateCandidates(
+      lyricsCandidates: provider.candidates,
+      translationCandidates: provider.translationCandidates,
+      activeLyrics: provider.lyricsResult,
+      activeTranslation: provider.translationResult,
+      isFetching: provider.isFetching,
+      isPausedForCandidates: provider.isPausedForCandidates,
+      translationEnabled: provider.translationEnabled.current,
+    );
+  }
 
   Future<void> applyEnabled(bool enabled) async {
     if (enabled) {
@@ -77,6 +112,7 @@ void _bindTrayToProvider(TrayService tray, LyricsProvider provider) {
         title: metadata?.title,
         artists: metadata?.artist,
       );
+      await pushCandidates();
     } else {
       await tray.disable();
     }
@@ -94,15 +130,15 @@ void _bindTrayToProvider(TrayService tray, LyricsProvider provider) {
       unawaited(applyEnabled(enabled));
       return;
     }
-    if (enabled) {
-      final metadata = provider.currentMetadata;
-      unawaited(
-        tray.updateFromMetadata(
-          title: metadata?.title,
-          artists: metadata?.artist,
-        ),
-      );
-    }
+    if (!enabled) return;
+    final metadata = provider.currentMetadata;
+    unawaited(
+      tray.updateFromMetadata(
+        title: metadata?.title,
+        artists: metadata?.artist,
+      ),
+    );
+    unawaited(pushCandidates());
   });
 }
 
