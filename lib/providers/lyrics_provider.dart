@@ -133,6 +133,14 @@ class LyricsProvider with ChangeNotifier {
   set _hideToTrayOnClose(Setting<bool> value) =>
       _settings.hideToTrayOnClose = value;
 
+  Setting<String> get _lyricsStreamPath => _settings.lyricsStreamPath;
+  set _lyricsStreamPath(Setting<String> value) =>
+      _settings.lyricsStreamPath = value;
+
+  Setting<String> get _translationStreamPath => _settings.translationStreamPath;
+  set _translationStreamPath(Setting<String> value) =>
+      _settings.translationStreamPath = value;
+
   Duration _trackOffset = Duration.zero;
   int _currentIndex = -1;
   bool _isPlaying = false;
@@ -296,6 +304,8 @@ class LyricsProvider with ChangeNotifier {
       _experimentalRichInlineFontSizeGlitching;
   Setting<bool> get trayEnabled => _trayEnabled;
   Setting<bool> get hideToTrayOnClose => _hideToTrayOnClose;
+  Setting<String> get lyricsStreamPath => _lyricsStreamPath;
+  Setting<String> get translationStreamPath => _translationStreamPath;
 
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
@@ -850,6 +860,24 @@ class LyricsProvider with ChangeNotifier {
       value: enabled,
       assign: (value) => _hideToTrayOnClose = value,
       persist: _settingsService.setHideToTrayOnClose,
+    );
+  }
+
+  void setLyricsStreamPath(String value) {
+    _setSettingValue(
+      currentSetting: _lyricsStreamPath,
+      value: value,
+      assign: (v) => _lyricsStreamPath = v,
+      persist: _settingsService.setLyricsStreamPath,
+    );
+  }
+
+  void setTranslationStreamPath(String value) {
+    _setSettingValue(
+      currentSetting: _translationStreamPath,
+      value: value,
+      assign: (v) => _translationStreamPath = v,
+      persist: _settingsService.setTranslationStreamPath,
     );
   }
 

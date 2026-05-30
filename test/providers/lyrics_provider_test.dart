@@ -235,6 +235,16 @@ class _FakeSettingsService extends SettingsService {
   Future<Setting<bool>> getHideToTrayOnClose() async {
     return const Setting(current: false, defaultValue: false, changed: false);
   }
+
+  @override
+  Future<Setting<String>> getLyricsStreamPath() async {
+    return const Setting(current: '', defaultValue: '', changed: false);
+  }
+
+  @override
+  Future<Setting<String>> getTranslationStreamPath() async {
+    return const Setting(current: '', defaultValue: '', changed: false);
+  }
 }
 
 class _FakeLyricsService extends LyricsService {

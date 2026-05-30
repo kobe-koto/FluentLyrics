@@ -38,4 +38,6 @@ class AppDefaults {
   static const bool experimentalRichInlineFontSizeGlitching = false;
   static const bool trayEnabled = false;
   static const bool hideToTrayOnClose = false;
+  static const String lyricsStreamPath = '';
+  static const String translationStreamPath = '';
 }

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'providers/lyrics_provider.dart';
 import 'screens/lyrics_screen.dart';
+import 'services/lyrics_stream_writer.dart';
 import 'services/tray_service.dart';
 
 class MyHttpOverrides extends HttpOverrides {
@@ -74,6 +75,14 @@ Future<void> main() async {
   if (trayService != null) {
     _bindTrayToProvider(trayService, lyricsProvider);
     await _installCloseInterceptor(trayService, lyricsProvider);
+  }
+
+  // Lyrics / translation streaming to plain text files is desktop-only —
+  // Android paths trigger permission prompts that we explicitly do not want
+  // to introduce. Linux / macOS users can pipe the output (e.g. `tail -F`)
+  // into status bars, OBS, or other tooling.
+  if (trayPlatformSupported) {
+    LyricsStreamWriter(provider: lyricsProvider).start();
   }
 
   runApp(

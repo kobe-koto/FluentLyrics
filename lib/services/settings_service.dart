@@ -32,6 +32,8 @@ class SettingsService {
       'experimental_rich_inline_font_size_glitching';
   static const String _trayEnabledKey = 'tray_enabled';
   static const String _hideToTrayOnCloseKey = 'hide_to_tray_on_close';
+  static const String _lyricsStreamPathKey = 'lyrics_stream_path';
+  static const String _translationStreamPathKey = 'translation_stream_path';
 
   Future<Setting<List<LyricProviderType>>> getAllProvidersOrdered() async {
     final prefs = await _prefs;
@@ -572,5 +574,38 @@ class SettingsService {
   Future<void> setHideToTrayOnClose(bool enabled) async {
     final prefs = await _prefs;
     await prefs.setBool(_hideToTrayOnCloseKey, enabled);
+  }
+
+  Future<Setting<String>> getLyricsStreamPath() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getString(_lyricsStreamPathKey) ?? AppDefaults.lyricsStreamPath;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.lyricsStreamPath,
+      changed: current != AppDefaults.lyricsStreamPath,
+    );
+  }
+
+  Future<void> setLyricsStreamPath(String path) async {
+    final prefs = await _prefs;
+    await prefs.setString(_lyricsStreamPathKey, path);
+  }
+
+  Future<Setting<String>> getTranslationStreamPath() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getString(_translationStreamPathKey) ??
+        AppDefaults.translationStreamPath;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.translationStreamPath,
+      changed: current != AppDefaults.translationStreamPath,
+    );
+  }
+
+  Future<void> setTranslationStreamPath(String path) async {
+    final prefs = await _prefs;
+    await prefs.setString(_translationStreamPathKey, path);
   }
 }
