@@ -201,6 +201,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
                           itemPositionsListener: _itemPositionsListener,
                           isManualScrolling: _isManualScrolling,
                           onUserInteraction: _handleUserInteraction,
+                          onViewportResized: () =>
+                              _resnapToCurrentIndex(provider),
                         ),
                       ),
                     );

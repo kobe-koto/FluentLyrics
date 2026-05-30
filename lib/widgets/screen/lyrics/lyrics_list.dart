@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../models/lyric_model.dart';
 import '../../../providers/lyrics_provider.dart';
@@ -19,6 +20,11 @@ class LyricsList extends StatefulWidget {
   final bool isManualScrolling;
   final Function(int) onUserInteraction;
 
+  /// Called when the viewport size changes (window resize, orientation flip,
+  /// pane re-layout). The lyric line widths/heights are now stale so the
+  /// embedder should re-anchor to the current index without animation.
+  final VoidCallback? onViewportResized;
+
   const LyricsList({
     super.key,
     required this.provider,
@@ -26,13 +32,15 @@ class LyricsList extends StatefulWidget {
     required this.itemPositionsListener,
     required this.isManualScrolling,
     required this.onUserInteraction,
+    this.onViewportResized,
   });
 
   @override
   State<LyricsList> createState() => _LyricsListState();
 }
 
-class _LyricsListState extends State<LyricsList> {
+class _LyricsListState extends State<LyricsList>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   /// Deduplicated set of indices currently considered in-viewport.
   ///
   /// Driven by [ItemPositionsListener.itemPositions] but only notifies when
@@ -40,10 +48,40 @@ class _LyricsListState extends State<LyricsList> {
   /// don't rebuild on every scroll tick.
   final _InViewportNotifier _inViewport = _InViewportNotifier();
 
+  /// Viewport size last reported by [LayoutBuilder]. Tracked so the embedder
+  /// can be notified once per actual resize (not on every layout pass that
+  /// happens to keep the same constraints).
+  Size? _lastViewportSize;
+
+  /// Last window logical size observed via any source (didChangeMetrics or
+  /// the polling Ticker). Some Wayland compositors (notably Niri's
+  /// switch-preset-size action) reconfigure the surface in a way where
+  /// neither LayoutBuilder constraints nor didChangeMetrics fire reliably,
+  /// so a per-frame poll catches what the event paths miss. The compare is
+  /// cheap (two doubles) and the Ticker is silent when no frame is being
+  /// produced.
+  Size? _lastWindowSize;
+  late final Ticker _viewportPollTicker;
+
+  /// Monotonic counter incremented on every resize. The post-frame callback
+  /// only fires the resize notification if its captured value is still the
+  /// latest, which collapses a burst of intermediate resizes (e.g. while the
+  /// user drags a window edge, or multiple channels reporting the same
+  /// resize) into a single jump.
+  int _resizeNonce = 0;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     widget.itemPositionsListener.itemPositions.addListener(_recomputeViewport);
+    // Per-frame fallback resize detector. Niri's switch-preset-size and
+    // similar compositor actions sometimes change the surface size without
+    // firing didChangeMetrics or rebuilding the LayoutBuilder; polling
+    // catches whatever the event channels miss. The Ticker is muted by the
+    // engine when no frame is being produced, so an idle hidden window
+    // costs nothing.
+    _viewportPollTicker = createTicker(_pollWindowSize)..start();
     // Seed initial value once positions are populated post-mount.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -67,11 +105,41 @@ class _LyricsListState extends State<LyricsList> {
 
   @override
   void dispose() {
+    _viewportPollTicker.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     widget.itemPositionsListener.itemPositions.removeListener(
       _recomputeViewport,
     );
     _inViewport.dispose();
     super.dispose();
+  }
+
+  /// Per-frame poll of the OS view size. Cheap (two doubles compared) and
+  /// the safety net for compositors that drop resize events.
+  void _pollWindowSize(Duration _) {
+    if (!mounted) return;
+    final view = View.maybeOf(context);
+    if (view == null) return;
+    final size = view.physicalSize / view.devicePixelRatio;
+    if (!size.isFinite) return;
+    if (_lastWindowSize == size) return;
+    _lastWindowSize = size;
+    _scheduleResnap();
+  }
+
+  @override
+  void didChangeMetrics() {
+    // Engine-level signal that the OS/compositor changed the window
+    // geometry. This is the fast path; the per-frame Ticker is a fallback
+    // for compositor paths that drop the metrics event on the floor.
+    if (!mounted) return;
+    final view = View.maybeOf(context);
+    if (view == null) return;
+    final size = view.physicalSize / view.devicePixelRatio;
+    if (!size.isFinite) return;
+    if (_lastWindowSize == size) return;
+    _lastWindowSize = size;
+    _scheduleResnap();
   }
 
   void _recomputeViewport() {
@@ -95,6 +163,36 @@ class _LyricsListState extends State<LyricsList> {
       next.add(i);
     }
     _inViewport.update(next);
+  }
+
+  /// Called from the LayoutBuilder on every layout pass. Detects an actual
+  /// viewport size change (window resize, orientation flip, pane re-layout)
+  /// and dispatches a single [onViewportResized] notification after the
+  /// frame settles. Skipped on the first pass so we don't fire on mount.
+  void _handleConstraints(BoxConstraints constraints) {
+    final size = constraints.biggest;
+    // Ignore unbounded / not-yet-laid-out constraints.
+    if (!size.isFinite) return;
+    final previous = _lastViewportSize;
+    if (previous == null) {
+      _lastViewportSize = size;
+      return;
+    }
+    if (previous == size) return;
+    _lastViewportSize = size;
+    _scheduleResnap();
+  }
+
+  /// Coalesce a burst of resize events (LayoutBuilder + didChangeMetrics
+  /// reporting the same compositor reconfigure, or many intermediate
+  /// drag-resize frames) into a single post-frame resnap.
+  void _scheduleResnap() {
+    final myNonce = ++_resizeNonce;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_resizeNonce != myNonce) return;
+      widget.onViewportResized?.call();
+    });
   }
 
   @override
@@ -166,87 +264,94 @@ class _LyricsListState extends State<LyricsList> {
         }
         return false;
       },
-      child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: ScrollablePositionedList.builder(
-          itemCount: lyrics.length + 1,
-          itemScrollController: widget.itemScrollController,
-          itemPositionsListener: widget.itemPositionsListener,
-          minCacheExtent: 0,
-          itemBuilder: (context, index) {
-            if (index == lyrics.length) {
-              return _buildLyricsInfoLine();
-            }
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          _handleConstraints(constraints);
+          return ScrollConfiguration(
+            behavior: ScrollConfiguration.of(
+              context,
+            ).copyWith(scrollbars: false),
+            child: ScrollablePositionedList.builder(
+              itemCount: lyrics.length + 1,
+              itemScrollController: widget.itemScrollController,
+              itemPositionsListener: widget.itemPositionsListener,
+              minCacheExtent: 0,
+              itemBuilder: (context, index) {
+                if (index == lyrics.length) {
+                  return _buildLyricsInfoLine();
+                }
 
-            final lyric = lyrics[index];
-            final isHighlighted = index == currentIndex;
-            final distance = (index - currentIndex).toDouble();
+                final lyric = lyrics[index];
+                final isHighlighted = index == currentIndex;
+                final distance = (index - currentIndex).toDouble();
 
-            if (isHighlighted && isInterlude && lyric.text.trim().isEmpty) {
-              return ValueListenableBuilder<Duration>(
-                valueListenable: provider.currentPositionNotifier,
-                builder: (context, currentPosition, child) {
-                  return GestureDetector(
-                    onDoubleTap: provider.controlAbility.canSeek
-                        ? () => provider.seek(lyric.startTime)
-                        : null,
-                    behavior: HitTestBehavior.translucent,
-                    child: InterludeIndicator(
-                      progress: provider.interludeProgressForPosition(
-                        currentPosition,
-                      ),
-                      duration: provider.interludeDuration,
-                    ),
+                if (isHighlighted && isInterlude && lyric.text.trim().isEmpty) {
+                  return ValueListenableBuilder<Duration>(
+                    valueListenable: provider.currentPositionNotifier,
+                    builder: (context, currentPosition, child) {
+                      return GestureDetector(
+                        onDoubleTap: provider.controlAbility.canSeek
+                            ? () => provider.seek(lyric.startTime)
+                            : null,
+                        behavior: HitTestBehavior.translucent,
+                        child: InterludeIndicator(
+                          progress: provider.interludeProgressForPosition(
+                            currentPosition,
+                          ),
+                          duration: provider.interludeDuration,
+                        ),
+                      );
+                    },
                   );
-                },
-              );
-            }
+                }
 
-            final hasRichInlineParts =
-                lyric.inlineParts != null && lyric.inlineParts!.isNotEmpty;
+                final hasRichInlineParts =
+                    lyric.inlineParts != null && lyric.inlineParts!.isNotEmpty;
 
-            return _InViewportBuilder(
-              index: index,
-              notifier: _inViewport,
-              builder: (context, inViewport) {
-                return GestureDetector(
-                  onDoubleTap: provider.controlAbility.canSeek
-                      ? () => provider.seek(lyric.startTime)
-                      : null,
-                  behavior: HitTestBehavior.translucent,
-                  child: hasRichInlineParts
-                      ? _RichLineResyncBridge(
-                          listenable: provider.positionResyncNotifier,
-                          subscribeToResync: isHighlighted,
-                          fallbackPosition: provider.currentPosition,
-                          builder: (context, currentPosition) {
-                            return _buildLyricLine(
+                return _InViewportBuilder(
+                  index: index,
+                  notifier: _inViewport,
+                  builder: (context, inViewport) {
+                    return GestureDetector(
+                      onDoubleTap: provider.controlAbility.canSeek
+                          ? () => provider.seek(lyric.startTime)
+                          : null,
+                      behavior: HitTestBehavior.translucent,
+                      child: hasRichInlineParts
+                          ? _RichLineResyncBridge(
+                              listenable: provider.positionResyncNotifier,
+                              subscribeToResync: isHighlighted,
+                              fallbackPosition: provider.currentPosition,
+                              builder: (context, currentPosition) {
+                                return _buildLyricLine(
+                                  lyric: lyric,
+                                  isHighlighted: isHighlighted,
+                                  distance: distance,
+                                  inViewport: inViewport,
+                                  currentPosition: currentPosition,
+                                );
+                              },
+                            )
+                          : _buildLyricLine(
                               lyric: lyric,
                               isHighlighted: isHighlighted,
                               distance: distance,
                               inViewport: inViewport,
-                              currentPosition: currentPosition,
-                            );
-                          },
-                        )
-                      : _buildLyricLine(
-                          lyric: lyric,
-                          isHighlighted: isHighlighted,
-                          distance: distance,
-                          inViewport: inViewport,
-                          currentPosition: provider.currentPosition,
-                        ),
+                              currentPosition: provider.currentPosition,
+                            ),
+                    );
+                  },
                 );
               },
-            );
-          },
-          padding: EdgeInsets.only(
-            top: MediaQuery.of(context).orientation == Orientation.landscape
-                ? MediaQuery.of(context).size.height * 0.3
-                : 0.0,
-            bottom: MediaQuery.of(context).size.height / 3,
-          ),
-        ),
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).orientation == Orientation.landscape
+                    ? MediaQuery.of(context).size.height * 0.3
+                    : 0.0,
+                bottom: MediaQuery.of(context).size.height / 3,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
