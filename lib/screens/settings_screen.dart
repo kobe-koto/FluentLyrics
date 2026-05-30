@@ -9,6 +9,7 @@ import 'settings/translation_screen.dart';
 import 'settings/lyric_configuration_screen.dart';
 import 'settings/cache_screen.dart';
 import 'settings/experimental_screen.dart';
+import 'settings/misc_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -404,6 +405,14 @@ enum _SettingsDestination {
     subtitle: 'Unstable features and fixes',
     screen: ExperimentalScreen(),
     content: ExperimentalSettingsContent(),
+  ),
+  misc(
+    icon: Icons.tune,
+    color: Colors.green,
+    title: 'Misc',
+    subtitle: 'System tray and other miscellaneous options',
+    screen: MiscScreen(),
+    content: MiscSettingsContent(),
   );
 
   final IconData icon;

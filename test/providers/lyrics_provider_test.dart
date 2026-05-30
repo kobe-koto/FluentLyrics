@@ -225,6 +225,16 @@ class _FakeSettingsService extends SettingsService {
   Future<Setting<bool>> getExperimentalRichInlineFontSizeGlitching() async {
     return const Setting(current: false, defaultValue: false, changed: false);
   }
+
+  @override
+  Future<Setting<bool>> getTrayEnabled() async {
+    return const Setting(current: false, defaultValue: false, changed: false);
+  }
+
+  @override
+  Future<Setting<bool>> getHideToTrayOnClose() async {
+    return const Setting(current: false, defaultValue: false, changed: false);
+  }
 }
 
 class _FakeLyricsService extends LyricsService {

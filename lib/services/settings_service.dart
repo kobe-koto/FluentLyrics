@@ -30,6 +30,8 @@ class SettingsService {
   static const String _backgroundMotionEnabledKey = 'background_motion_enabled';
   static const String _experimentalRichInlineFontSizeGlitchingKey =
       'experimental_rich_inline_font_size_glitching';
+  static const String _trayEnabledKey = 'tray_enabled';
+  static const String _hideToTrayOnCloseKey = 'hide_to_tray_on_close';
 
   Future<Setting<List<LyricProviderType>>> getAllProvidersOrdered() async {
     final prefs = await _prefs;
@@ -539,5 +541,36 @@ class SettingsService {
   Future<void> setExperimentalRichInlineFontSizeGlitching(bool enabled) async {
     final prefs = await _prefs;
     await prefs.setBool(_experimentalRichInlineFontSizeGlitchingKey, enabled);
+  }
+
+  Future<Setting<bool>> getTrayEnabled() async {
+    final prefs = await _prefs;
+    final current = prefs.getBool(_trayEnabledKey) ?? AppDefaults.trayEnabled;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.trayEnabled,
+      changed: current != AppDefaults.trayEnabled,
+    );
+  }
+
+  Future<void> setTrayEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_trayEnabledKey, enabled);
+  }
+
+  Future<Setting<bool>> getHideToTrayOnClose() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getBool(_hideToTrayOnCloseKey) ?? AppDefaults.hideToTrayOnClose;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.hideToTrayOnClose,
+      changed: current != AppDefaults.hideToTrayOnClose,
+    );
+  }
+
+  Future<void> setHideToTrayOnClose(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_hideToTrayOnCloseKey, enabled);
   }
 }

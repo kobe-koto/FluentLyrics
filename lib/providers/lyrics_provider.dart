@@ -126,6 +126,13 @@ class LyricsProvider with ChangeNotifier {
   set _experimentalRichInlineFontSizeGlitching(Setting<bool> value) =>
       _settings.experimentalRichInlineFontSizeGlitching = value;
 
+  Setting<bool> get _trayEnabled => _settings.trayEnabled;
+  set _trayEnabled(Setting<bool> value) => _settings.trayEnabled = value;
+
+  Setting<bool> get _hideToTrayOnClose => _settings.hideToTrayOnClose;
+  set _hideToTrayOnClose(Setting<bool> value) =>
+      _settings.hideToTrayOnClose = value;
+
   Duration _trackOffset = Duration.zero;
   int _currentIndex = -1;
   bool _isPlaying = false;
@@ -287,6 +294,8 @@ class LyricsProvider with ChangeNotifier {
   Setting<bool> get backgroundMotionEnabled => _backgroundMotionEnabled;
   Setting<bool> get experimentalRichInlineFontSizeGlitching =>
       _experimentalRichInlineFontSizeGlitching;
+  Setting<bool> get trayEnabled => _trayEnabled;
+  Setting<bool> get hideToTrayOnClose => _hideToTrayOnClose;
 
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
@@ -823,6 +832,24 @@ class LyricsProvider with ChangeNotifier {
       value: enabled,
       assign: (value) => _experimentalRichInlineFontSizeGlitching = value,
       persist: _settingsService.setExperimentalRichInlineFontSizeGlitching,
+    );
+  }
+
+  void setTrayEnabled(bool enabled) {
+    _setSettingValue(
+      currentSetting: _trayEnabled,
+      value: enabled,
+      assign: (value) => _trayEnabled = value,
+      persist: _settingsService.setTrayEnabled,
+    );
+  }
+
+  void setHideToTrayOnClose(bool enabled) {
+    _setSettingValue(
+      currentSetting: _hideToTrayOnClose,
+      value: enabled,
+      assign: (value) => _hideToTrayOnClose = value,
+      persist: _settingsService.setHideToTrayOnClose,
     );
   }
 

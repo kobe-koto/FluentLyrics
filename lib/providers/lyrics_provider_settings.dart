@@ -28,6 +28,8 @@ class LyricsProviderSettings {
     required this.keepScreenOn,
     required this.backgroundMotionEnabled,
     required this.experimentalRichInlineFontSizeGlitching,
+    required this.trayEnabled,
+    required this.hideToTrayOnClose,
   });
 
   factory LyricsProviderSettings.defaults() {
@@ -147,6 +149,16 @@ class LyricsProviderSettings {
         defaultValue: AppDefaults.experimentalRichInlineFontSizeGlitching,
         changed: false,
       ),
+      trayEnabled: const Setting(
+        current: AppDefaults.trayEnabled,
+        defaultValue: AppDefaults.trayEnabled,
+        changed: false,
+      ),
+      hideToTrayOnClose: const Setting(
+        current: AppDefaults.hideToTrayOnClose,
+        defaultValue: AppDefaults.hideToTrayOnClose,
+        changed: false,
+      ),
     );
   }
 
@@ -184,6 +196,8 @@ class LyricsProviderSettings {
           .getBackgroundMotionEnabled(),
       experimentalRichInlineFontSizeGlitching: await settingsService
           .getExperimentalRichInlineFontSizeGlitching(),
+      trayEnabled: await settingsService.getTrayEnabled(),
+      hideToTrayOnClose: await settingsService.getHideToTrayOnClose(),
     );
   }
 
@@ -210,4 +224,6 @@ class LyricsProviderSettings {
   Setting<bool> keepScreenOn;
   Setting<bool> backgroundMotionEnabled;
   Setting<bool> experimentalRichInlineFontSizeGlitching;
+  Setting<bool> trayEnabled;
+  Setting<bool> hideToTrayOnClose;
 }
