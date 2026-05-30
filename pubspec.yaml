@@ -8,8 +8,6 @@ publish_to: 'none'
 environment:
   sdk: ^3.10.4
 
-isar_version: &isar_version 3.3.2
-
 dependencies:
   flutter:
     sdk: flutter
@@ -22,10 +20,10 @@ dependencies:
   crypto: ^3.0.7
   encrypt: ^5.0.3
   async: ^2.13.0
-  isar_community: *isar_version
-  isar_community_flutter_libs: *isar_version
+  isar_community: 3.3.2
+  isar_community_flutter_libs: 3.3.2
   path_provider: ^2.1.5
-  package_info_plus: ^9.0.0
+  package_info_plus: ^10.1.0
   html_unescape: ^2.0.0
   wakelock_plus: ^1.5.1
   string_similarity: ^2.0.0
@@ -38,7 +36,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  isar_community_generator: *isar_version
+  isar_community_generator: 3.3.2
   build_runner: ^2.4.13
   flutter_launcher_icons: ^0.14.4
 
