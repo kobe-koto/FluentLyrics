@@ -36,6 +36,11 @@ class LyricsStreamWriter {
   String _lastLyricsPath = '';
   String _lastTranslationPath = '';
 
+  /// Paths the writer itself has materialised on disk. Only files we wrote
+  /// are eligible for deletion when the path changes / clears; we never
+  /// delete a path the writer has not first written to.
+  final Set<String> _ownedFiles = <String>{};
+
   /// Serializes all file IO so two notify ticks cannot interleave a rewrite
   /// with an append.
   Future<void> _ioChain = Future.value();
@@ -67,20 +72,30 @@ class LyricsStreamWriter {
     final lyrics = provider.lyrics;
     final currentIndex = provider.currentIndex;
 
-    // Both off → nothing to do, but keep state in sync so a later enable
-    // does a clean full rewrite up to currentIndex.
-    if (lyricsPath.isEmpty && translationPath.isEmpty) {
-      _lastLyricsPath = lyricsPath;
-      _lastTranslationPath = translationPath;
-      return;
+    final lyricsPathChanged = lyricsPath != _lastLyricsPath;
+    final translationPathChanged = translationPath != _lastTranslationPath;
+
+    // When a path changes (including being cleared), delete the previous
+    // file if we were the ones who created it. We never delete a path the
+    // writer did not materialise — that would risk wiping user data.
+    if (lyricsPathChanged && _lastLyricsPath.isNotEmpty) {
+      _enqueueDeleteIfOwned(_lastLyricsPath);
+    }
+    if (translationPathChanged && _lastTranslationPath.isNotEmpty) {
+      _enqueueDeleteIfOwned(_lastTranslationPath);
     }
 
-    final pathsChanged =
-        lyricsPath != _lastLyricsPath ||
-        translationPath != _lastTranslationPath;
     _lastLyricsPath = lyricsPath;
     _lastTranslationPath = translationPath;
 
+    // Both off → nothing left to do beyond the deletions above.
+    if (lyricsPath.isEmpty && translationPath.isEmpty) {
+      _lastLyricsRef = lyrics;
+      _lastWrittenIndex = -1;
+      return;
+    }
+
+    final pathsChanged = lyricsPathChanged || translationPathChanged;
     final lyricsChanged = !identical(lyrics, _lastLyricsRef);
     final indexRewound = currentIndex < _lastWrittenIndex;
 
@@ -160,12 +175,31 @@ class LyricsStreamWriter {
     });
   }
 
+  void _enqueueDeleteIfOwned(String path) {
+    if (path.isEmpty) return;
+    if (!_ownedFiles.contains(path)) return;
+    _ownedFiles.remove(path);
+    _ioChain = _ioChain.then((_) async {
+      try {
+        final file = File(path);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e, st) {
+        AppLogger.debug(
+          'LyricsStreamWriter: failed to delete $path: $e\n$st',
+        );
+      }
+    });
+  }
+
   Future<void> _writeFull(String path, String content) async {
     if (path.isEmpty) return;
     try {
       final file = File(path);
       if (!await _ensureParent(file)) return;
       await file.writeAsString(content, flush: true, encoding: utf8);
+      _ownedFiles.add(path);
     } catch (e, st) {
       AppLogger.debug('LyricsStreamWriter._writeFull($path) failed: $e\n$st');
     }
@@ -186,6 +220,7 @@ class LyricsStreamWriter {
         flush: true,
         encoding: utf8,
       );
+      _ownedFiles.add(path);
     } catch (e, st) {
       AppLogger.debug('LyricsStreamWriter._appendChunk($path) failed: $e\n$st');
     }
