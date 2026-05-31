@@ -21,6 +21,7 @@ class MyHttpOverrides extends HttpOverrides {
 }
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides();
   LicenseRegistry.addLicense(() async* {
     final String license = await rootBundle.loadString(
@@ -38,7 +39,6 @@ Future<void> main() async {
   // Android so the app keeps booting like before.
   TrayService? trayService;
   if (trayPlatformSupported) {
-    WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
     trayService = TrayService(
       onShowWindow: () async {
