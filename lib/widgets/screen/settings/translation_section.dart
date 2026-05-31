@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_section.dart';
@@ -11,16 +12,17 @@ class TranslationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = t.settings.translation;
     return Consumer<LyricsProvider>(
       builder: (context, provider, child) {
         return SettingsSection(
-          title: 'Translation Configuration',
-          description: 'Configure translation settings.',
+          title: i18n.sectionTitle,
+          description: i18n.sectionDescription,
           children: [
             // Translation Toggle
             SettingsToggleCard(
-              title: 'Enable Translation',
-              subtitle: 'Show translated lyrics if available.',
+              title: i18n.enable,
+              subtitle: i18n.enableSubtitle,
               value: provider.translationEnabled.current,
               onChanged: (value) => provider.setTranslationEnabled(value),
             ),
@@ -28,8 +30,8 @@ class TranslationSection extends StatelessWidget {
               const SizedBox(height: 24),
               // Highlight Only
               SettingsToggleCard(
-                title: 'Show Translation Only When Highlighted',
-                subtitle: 'Hide translation for non-active lines.',
+                title: i18n.highlightOnly,
+                subtitle: i18n.highlightOnlySubtitle,
                 value: provider.translationHighlightOnly.current,
                 onChanged: (value) =>
                     provider.setTranslationHighlightOnly(value),
@@ -40,42 +42,54 @@ class TranslationSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Target Language Code',
-                      style: TextStyle(
+                    Text(
+                      i18n.targetLanguageTitle,
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Enter language codes separated by commas. The app will try to find the first available translation in the specified order. Values are case-sensitive.',
-                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                    Text(
+                      i18n.targetLanguageDescription,
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      '* Musixmatch uses "zht" for Chinese (Traditional) and "zh" for Chinese (Simplified)',
-                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                    Text(
+                      i18n.targetLanguageNoteMusixmatch,
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      '* LLM requires netural language input, use prefix "llm: [English]" to indicate the target language',
-                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                    Text(
+                      i18n.targetLanguageNoteLlm,
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      '* QQ Music and Netease Music only supports "zh_CN"',
-                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                    Text(
+                      i18n.targetLanguageNoteCJK,
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       initialValue: provider.translationTargetLanguages.current
                           .join(', '),
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        hintText: 'e.g. en, zht, zh, jp',
-                        hintStyle: TextStyle(color: Colors.white24),
+                      decoration: InputDecoration(
+                        hintText: i18n.targetLanguageHint,
+                        hintStyle: const TextStyle(color: Colors.white24),
                         filled: true,
                         fillColor: Colors.black26,
                       ),
@@ -101,8 +115,8 @@ class TranslationSection extends StatelessWidget {
               const SizedBox(height: 24),
               // Bias
               SettingsSliderCard(
-                title: 'Translation Bias',
-                subtitle: 'Adjust timing of translation lines (ms).',
+                title: i18n.bias,
+                subtitle: i18n.biasSubtitle,
                 value: provider.translationBias.current.toDouble(),
                 min: 0,
                 max: 1000,
@@ -116,14 +130,13 @@ class TranslationSection extends StatelessWidget {
                         provider.translationBias.defaultValue,
                       )
                     : null,
-                resetTooltip: 'Reset to 50ms',
+                resetTooltip: i18n.biasReset,
               ),
               const SizedBox(height: 24),
               // Alignment Threshold
               SettingsSliderCard(
-                title: 'Alignment Similarity Threshold',
-                subtitle:
-                    'Min % similarity required to pair translation with original line.',
+                title: i18n.alignmentThreshold,
+                subtitle: i18n.alignmentThresholdSubtitle,
                 value: provider.translationAlignmentThreshold.current
                     .toDouble(),
                 min: 0,
@@ -138,14 +151,13 @@ class TranslationSection extends StatelessWidget {
                         provider.translationAlignmentThreshold.defaultValue,
                       )
                     : null,
-                resetTooltip: 'Reset to 80%',
+                resetTooltip: i18n.alignmentThresholdReset,
               ),
               const SizedBox(height: 24),
               // Coverage Threshold (cache validation)
               SettingsSliderCard(
-                title: 'Cache Coverage Threshold',
-                subtitle:
-                    'Min % of current lyric lines that must match a cached translation. Only used when source providers differ.',
+                title: i18n.coverageThreshold,
+                subtitle: i18n.coverageThresholdSubtitle,
                 value: provider.translationCoverageThreshold.current.toDouble(),
                 min: 0,
                 max: 100,
@@ -159,7 +171,7 @@ class TranslationSection extends StatelessWidget {
                         provider.translationCoverageThreshold.defaultValue,
                       )
                     : null,
-                resetTooltip: 'Reset to 80%',
+                resetTooltip: i18n.coverageThresholdReset,
               ),
               const SizedBox(height: 24),
               // LLM Configuration
@@ -179,13 +191,14 @@ class LlmConfigurationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = t.settings.translation;
     return SettingsCardFrame(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'LLM Configuration',
-            style: TextStyle(
+          Text(
+            i18n.llmTitle,
+            style: const TextStyle(
               color: Colors.white70,
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -196,11 +209,11 @@ class LlmConfigurationCard extends StatelessWidget {
           TextFormField(
             initialValue: provider.llmApiEndpoint.current,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              labelText: 'OpenAI Compatible API Base URL',
-              labelStyle: TextStyle(color: Colors.white54),
-              hintText: 'https://api.openai.com/v1',
-              hintStyle: TextStyle(color: Colors.white24),
+            decoration: InputDecoration(
+              labelText: i18n.llmEndpointLabel,
+              labelStyle: const TextStyle(color: Colors.white54),
+              hintText: i18n.llmEndpointHint,
+              hintStyle: const TextStyle(color: Colors.white24),
               filled: true,
               fillColor: Colors.black26,
             ),
@@ -211,9 +224,9 @@ class LlmConfigurationCard extends StatelessWidget {
           TextFormField(
             initialValue: provider.llmApiKey.current,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              labelText: 'API Key',
-              labelStyle: TextStyle(color: Colors.white54),
+            decoration: InputDecoration(
+              labelText: i18n.llmApiKeyLabel,
+              labelStyle: const TextStyle(color: Colors.white54),
               filled: true,
               fillColor: Colors.black26,
             ),
@@ -225,11 +238,11 @@ class LlmConfigurationCard extends StatelessWidget {
           TextFormField(
             initialValue: provider.llmModel.current,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              labelText: 'Model Name',
-              labelStyle: TextStyle(color: Colors.white54),
-              hintText: 'openai/gpt-oss-120b',
-              hintStyle: TextStyle(color: Colors.white24),
+            decoration: InputDecoration(
+              labelText: i18n.llmModelLabel,
+              labelStyle: const TextStyle(color: Colors.white54),
+              hintText: i18n.llmModelHint,
+              hintStyle: const TextStyle(color: Colors.white24),
               filled: true,
               fillColor: Colors.black26,
             ),
@@ -240,18 +253,21 @@ class LlmConfigurationCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Reasoning Effort',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      i18n.llmReasoningTitle,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Set the model\'s reasoning effort level. Select "auto" to use default parameters without explicitly passing the reasoning field.',
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                      i18n.llmReasoningSubtitle,
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -262,12 +278,27 @@ class LlmConfigurationCard extends StatelessWidget {
                 dropdownColor: Colors.black87,
                 style: const TextStyle(color: Colors.white),
                 underline: const SizedBox(),
-                items: const [
-                  DropdownMenuItem(value: 'none', child: Text('None')),
-                  DropdownMenuItem(value: 'low', child: Text('Low')),
-                  DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                  DropdownMenuItem(value: 'high', child: Text('High')),
-                  DropdownMenuItem(value: 'auto', child: Text('Auto')),
+                items: [
+                  DropdownMenuItem(
+                    value: 'none',
+                    child: Text(i18n.llmReasoningNone),
+                  ),
+                  DropdownMenuItem(
+                    value: 'low',
+                    child: Text(i18n.llmReasoningLow),
+                  ),
+                  DropdownMenuItem(
+                    value: 'medium',
+                    child: Text(i18n.llmReasoningMedium),
+                  ),
+                  DropdownMenuItem(
+                    value: 'high',
+                    child: Text(i18n.llmReasoningHigh),
+                  ),
+                  DropdownMenuItem(
+                    value: 'auto',
+                    child: Text(i18n.llmReasoningAuto),
+                  ),
                 ],
                 onChanged: (value) {
                   if (value != null) {

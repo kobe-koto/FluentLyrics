@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../i18n/strings.g.dart';
 import '../../widgets/settings_scaffold.dart';
 import '../../widgets/screen/settings/experimental_section.dart';
 
@@ -7,9 +8,9 @@ class ExperimentalScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SettingsScaffold(
-      title: 'Experimental',
-      child: ExperimentalSettingsContent(),
+    return SettingsScaffold(
+      title: t.settings.destinations.experimental.title,
+      child: const ExperimentalSettingsContent(),
     );
   }
 }

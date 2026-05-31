@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../i18n/strings.g.dart';
 import 'settings_card_frame.dart';
 
 class SettingsSliderCard extends StatelessWidget {
@@ -52,7 +53,7 @@ class SettingsSliderCard extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.refresh, color: Colors.blue),
                       onPressed: onReset,
-                      tooltip: resetTooltip ?? 'Reset',
+                      tooltip: resetTooltip ?? t.common.reset,
                       style: IconButton.styleFrom(
                         iconSize: 20,
                         padding: EdgeInsets.zero,

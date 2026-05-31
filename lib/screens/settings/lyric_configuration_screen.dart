@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../services/providers/musixmatch_service.dart';
 import '../../widgets/settings_scaffold.dart';
@@ -15,9 +16,9 @@ class LyricConfigurationScreen extends StatefulWidget {
 class _LyricConfigurationScreenState extends State<LyricConfigurationScreen> {
   @override
   Widget build(BuildContext context) {
-    return const SettingsScaffold(
-      title: 'Lyric Configuration',
-      child: LyricConfigurationSettingsContent(),
+    return SettingsScaffold(
+      title: t.settings.destinations.lyricConfiguration.title,
+      child: const LyricConfigurationSettingsContent(),
     );
   }
 }
@@ -61,7 +62,7 @@ class _LyricConfigurationSettingsContentState
 
   Future<void> _saveToken() async {
     await _settingsService.setMusixmatchToken(_tokenController.text);
-    if (mounted) _showSnackBar('Token saved');
+    if (mounted) _showSnackBar(t.settings.lyricConfig.tokenSaved);
   }
 
   Future<void> _getNewToken() async {
@@ -71,9 +72,9 @@ class _LyricConfigurationSettingsContentState
       if (newToken != null) {
         setState(() => _tokenController.text = newToken);
         await _settingsService.setMusixmatchToken(newToken);
-        if (mounted) _showSnackBar('New token acquired');
+        if (mounted) _showSnackBar(t.settings.lyricConfig.tokenAcquired);
       } else {
-        if (mounted) _showSnackBar('Failed to get new token');
+        if (mounted) _showSnackBar(t.settings.lyricConfig.tokenFailed);
       }
     } finally {
       setState(() => _isFetchingToken = false);

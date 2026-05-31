@@ -34,6 +34,7 @@ class SettingsService {
   static const String _hideToTrayOnCloseKey = 'hide_to_tray_on_close';
   static const String _lyricsStreamPathKey = 'lyrics_stream_path';
   static const String _translationStreamPathKey = 'translation_stream_path';
+  static const String _localeKey = 'app_locale';
 
   Future<Setting<List<LyricProviderType>>> getAllProvidersOrdered() async {
     final prefs = await _prefs;
@@ -607,5 +608,20 @@ class SettingsService {
   Future<void> setTranslationStreamPath(String path) async {
     final prefs = await _prefs;
     await prefs.setString(_translationStreamPathKey, path);
+  }
+
+  /// Returns the saved locale tag (e.g. 'en', 'zh_CN'), or null for system default.
+  Future<String?> getLocale() async {
+    final prefs = await _prefs;
+    return prefs.getString(_localeKey);
+  }
+
+  Future<void> setLocale(String? localeTag) async {
+    final prefs = await _prefs;
+    if (localeTag == null) {
+      await prefs.remove(_localeKey);
+    } else {
+      await prefs.setString(_localeKey, localeTag);
+    }
   }
 }

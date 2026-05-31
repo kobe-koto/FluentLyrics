@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../i18n/strings.g.dart';
 import '../../widgets/settings_scaffold.dart';
 import '../../widgets/screen/settings/display_section.dart';
 
@@ -7,9 +8,9 @@ class DisplayScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SettingsScaffold(
-      title: 'Display',
-      child: DisplaySettingsContent(),
+    return SettingsScaffold(
+      title: t.settings.destinations.display.title,
+      child: const DisplaySettingsContent(),
     );
   }
 }

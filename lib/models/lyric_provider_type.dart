@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../i18n/strings.g.dart';
 
 enum LyricProviderType { lrclib, musixmatch, netease, qqmusic, cache, llm }
 
@@ -66,6 +67,46 @@ extension LyricProviderTypeMetadata on LyricProviderType {
           'name': 'Cache',
           'description': 'Cached lyrics',
         };
+    }
+  }
+
+  /// Localized display name for the provider. Brand names (LRCLIB,
+  /// Musixmatch) stay constant across locales; generic names (Cache,
+  /// LLM Translation, Netease Music, QQ Music) are translated.
+  String localizedName(Translations i18n) {
+    final p = i18n.settings.priority.providers;
+    switch (this) {
+      case LyricProviderType.lrclib:
+        return p.lrclibName;
+      case LyricProviderType.musixmatch:
+        return p.musixmatchName;
+      case LyricProviderType.netease:
+        return p.neteaseName;
+      case LyricProviderType.qqmusic:
+        return p.qqmusicName;
+      case LyricProviderType.llm:
+        return p.llmName;
+      case LyricProviderType.cache:
+        return p.cacheName;
+    }
+  }
+
+  /// Localized one-line description of the provider.
+  String localizedDescription(Translations i18n) {
+    final p = i18n.settings.priority.providers;
+    switch (this) {
+      case LyricProviderType.lrclib:
+        return p.lrclibDescription;
+      case LyricProviderType.musixmatch:
+        return p.musixmatchDescription;
+      case LyricProviderType.netease:
+        return p.neteaseDescription;
+      case LyricProviderType.qqmusic:
+        return p.qqmusicDescription;
+      case LyricProviderType.llm:
+        return p.llmDescription;
+      case LyricProviderType.cache:
+        return p.cacheDescription;
     }
   }
 }

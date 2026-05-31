@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../i18n/strings.g.dart';
 import '../../widgets/settings_scaffold.dart';
 import '../../widgets/screen/settings/misc_section.dart';
 
@@ -7,7 +8,10 @@ class MiscScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SettingsScaffold(title: 'Misc', child: MiscSettingsContent());
+    return SettingsScaffold(
+      title: t.settings.destinations.misc.title,
+      child: const MiscSettingsContent(),
+    );
   }
 }
 

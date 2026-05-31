@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../utils/app_logger.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../../screens/settings_screen.dart';
@@ -40,7 +41,7 @@ class LyricsHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  metadata?.title ?? 'No Media Playing',
+                  metadata?.title ?? t.lyrics.noMedia,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -50,7 +51,7 @@ class LyricsHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  metadata?.artist.join(', ') ?? 'Wait for music...',
+                  metadata?.artist.join(', ') ?? t.lyrics.waitForMusic,
                   style: TextStyle(
                     color: Colors.white.withAlpha(136),
                     fontSize: 14,
@@ -65,7 +66,7 @@ class LyricsHeader extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
             onPressed: onRefresh,
-            tooltip: 'Clear cache & reload',
+            tooltip: t.lyrics.clearCacheTooltip,
           ),
           _CandidatesButton(provider: provider),
           IconButton(
@@ -76,7 +77,7 @@ class LyricsHeader extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
-            tooltip: 'Settings',
+            tooltip: t.lyrics.settingsTooltip,
           ),
         ],
       ),
@@ -106,7 +107,7 @@ class LyricsHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      metadata?.title ?? 'No Media Playing',
+                      metadata?.title ?? t.lyrics.noMedia,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -117,7 +118,7 @@ class LyricsHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      metadata?.artist.join(', ') ?? 'Wait for music...',
+                      metadata?.artist.join(', ') ?? t.lyrics.waitForMusic,
                       style: TextStyle(
                         color: Colors.white.withAlpha(150),
                         fontSize: 16,
@@ -133,7 +134,7 @@ class LyricsHeader extends StatelessWidget {
                 icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
                 iconSize: 28,
                 onPressed: onRefresh,
-                tooltip: 'Clear cache & reload',
+                tooltip: t.lyrics.clearCacheTooltip,
               ),
               _CandidatesButton(provider: provider, iconSize: 28),
               IconButton(
@@ -147,7 +148,7 @@ class LyricsHeader extends StatelessWidget {
                     ),
                   );
                 },
-                tooltip: 'Settings',
+                tooltip: t.lyrics.settingsTooltip,
               ),
             ],
           ),
@@ -223,7 +224,7 @@ class _CandidatesButton extends StatelessWidget {
                 : Colors.white.withValues(alpha: 0.75),
           ),
           iconSize: iconSize ?? 24,
-          tooltip: 'Choose lyrics',
+          tooltip: t.lyrics.chooseLyricsTooltip,
           onPressed: () => showLyricsCandidateSheet(context, provider),
         ),
       ],

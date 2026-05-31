@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../i18n/strings.g.dart';
 
 class SettingsAppBar extends StatelessWidget {
   final VoidCallback onBackPressed;
@@ -20,9 +21,9 @@ class SettingsAppBar extends StatelessWidget {
             onPressed: onBackPressed,
           ),
           const SizedBox(width: 8),
-          const Text(
-            'Lyrics Configuration',
-            style: TextStyle(
+          Text(
+            t.settings.appBar.lyricsConfiguration,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,

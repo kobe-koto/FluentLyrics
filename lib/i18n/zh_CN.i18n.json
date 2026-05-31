@@ -1,0 +1,245 @@
+{
+  "language": {
+    "name": "简体中文",
+    "english": "英语",
+    "chineseSimplified": "简体中文",
+    "chineseTraditional": "繁体中文"
+  },
+  "common": {
+    "cancel": "取消",
+    "clearAll": "全部清除",
+    "reset": "重置"
+  },
+  "settings": {
+    "title": "设置",
+    "preferences": "偏好设置",
+    "language": {
+      "title": "语言",
+      "subtitle": "选择界面语言",
+      "system": "跟随系统"
+    },
+    "destinations": {
+      "priority": {
+        "title": "源优先级",
+        "subtitle": "调整顺序并启用/禁用歌词源"
+      },
+      "display": {
+        "title": "显示",
+        "subtitle": "字体大小、模糊、背景动效、滚动行为"
+      },
+      "translation": {
+        "title": "翻译",
+        "subtitle": "翻译目标语言、LLM 配置、对齐"
+      },
+      "lyricConfiguration": {
+        "title": "歌词配置",
+        "subtitle": "Rich sync、偏移、元数据修剪、Musixmatch token"
+      },
+      "cache": {
+        "title": "缓存管理",
+        "subtitle": "清理歌词与封面缓存"
+      },
+      "experimental": {
+        "title": "实验性",
+        "subtitle": "不稳定的功能与修复"
+      },
+      "misc": {
+        "title": "杂项",
+        "subtitle": "系统托盘及其他杂项选项"
+      }
+    },
+    "display": {
+      "sectionTitle": "显示配置",
+      "sectionDescription": "调整歌词的显示方式。",
+      "fontSize": "字体大小",
+      "fontSizeSubtitle": "歌词文本的像素大小。",
+      "fontSizeReset": "重置为 36px",
+      "inactiveScale": "非活动行缩放",
+      "inactiveScaleSubtitle": "非高亮行的缩放比例。",
+      "inactiveScaleReset": "重置为 85%",
+      "blur": "模糊效果",
+      "blurSubtitle": "模糊非活动歌词行以聚焦当前行。",
+      "backgroundMotion": "背景动效",
+      "backgroundMotionSubtitle": "对背景应用碎片化封面图并缓慢漂移。",
+      "linesBefore": "活动行前显示数",
+      "linesBeforeSubtitle": "自动滚动时活动行之前显示的行数。",
+      "linesBeforeReset": "重置为 2",
+      "autoResumeDelay": "自动恢复延迟",
+      "autoResumeDelaySubtitle": "手动滚动后,等待多少时间再恢复自动滚动。",
+      "autoResumeDelayReset": "重置为 5 秒",
+      "keepScreenOn": "屏幕常亮",
+      "keepScreenOnSubtitle": "歌词页面活跃时阻止设备休眠。"
+    },
+    "translation": {
+      "sectionTitle": "翻译配置",
+      "sectionDescription": "配置翻译相关设置。",
+      "enable": "启用翻译",
+      "enableSubtitle": "在可用时显示翻译后的歌词。",
+      "highlightOnly": "仅在高亮行显示翻译",
+      "highlightOnlySubtitle": "对非活动行隐藏翻译。",
+      "targetLanguageTitle": "目标语言代码",
+      "targetLanguageDescription": "用逗号分隔语言代码。应用会按指定顺序尝试查找第一个可用的翻译。区分大小写。",
+      "targetLanguageNoteMusixmatch": "* Musixmatch 使用 \"zht\" 代表繁体中文，\"zh\" 代表简体中文",
+      "targetLanguageNoteLlm": "* LLM 需要自然语言输入，使用 \"llm: [English]\" 前缀来指定目标语言",
+      "targetLanguageNoteCJK": "* QQ 音乐和网易云只支持 \"zh_CN\"",
+      "targetLanguageHint": "例如 en, zht, zh, jp",
+      "bias": "翻译时间偏移",
+      "biasSubtitle": "调整翻译行的时间偏移 (毫秒)。",
+      "biasReset": "重置为 50ms",
+      "alignmentThreshold": "对齐相似度阈值",
+      "alignmentThresholdSubtitle": "将翻译与原文行配对所需的最小相似度百分比。",
+      "alignmentThresholdReset": "重置为 80%",
+      "coverageThreshold": "缓存覆盖率阈值",
+      "coverageThresholdSubtitle": "缓存翻译需要匹配当前歌词行的最小百分比。仅当来源不同时使用。",
+      "coverageThresholdReset": "重置为 80%",
+      "llmTitle": "LLM 配置",
+      "llmEndpointLabel": "OpenAI 兼容 API Base URL",
+      "llmEndpointHint": "https://api.openai.com/v1",
+      "llmApiKeyLabel": "API Key",
+      "llmModelLabel": "模型名称",
+      "llmModelHint": "openai/gpt-oss-120b",
+      "llmReasoningTitle": "推理强度",
+      "llmReasoningSubtitle": "设置模型推理强度等级。选择 \"自动\" 将使用默认参数,不显式传递 reasoning 字段。",
+      "llmReasoningNone": "无",
+      "llmReasoningLow": "低",
+      "llmReasoningMedium": "中",
+      "llmReasoningHigh": "高",
+      "llmReasoningAuto": "自动"
+    },
+    "lyricConfig": {
+      "sectionTitle": "歌词配置",
+      "sectionDescription": "配置歌词的获取与处理方式。",
+      "richSync": "Rich Sync",
+      "richSyncSubtitle": "启用逐词同步。",
+      "globalOffset": "全局歌词偏移",
+      "globalOffsetSubtitle": "为所有歌词设置默认偏移 (例如设备存在音频延迟)。",
+      "globalOffsetReset": "重置为 0 秒",
+      "trimTitle": "修剪元数据行",
+      "trimSubtitle": "尝试从选定源中移除制作人员/元数据行。",
+      "musixmatchTitle": "Musixmatch Token",
+      "musixmatchSubtitle": "Musixmatch 源所必需。",
+      "musixmatchHint": "输入你的 User Token",
+      "getNewToken": "获取新 Token",
+      "tokenSaved": "Token 已保存",
+      "tokenAcquired": "已获取新 Token",
+      "tokenFailed": "获取新 Token 失败"
+    },
+    "cache": {
+      "sectionTitle": "缓存管理",
+      "sectionDescription": "管理本地歌词存储。",
+      "lyricsCacheTitle": "歌词缓存",
+      "lyricsCacheDescription": "清除缓存将强制应用重新搜索歌词。",
+      "lyricsCacheStats": "{{count}} 项，{{size}} (估算)",
+      "clearDialogTitle": "清除缓存",
+      "clearDialogContent": "确定要清除所有已缓存的歌词吗?",
+      "cleared": "缓存已清除",
+      "clearLyricsCacheButton": "清除所有歌词缓存",
+      "artworkCacheTitle": "封面缓存",
+      "artworkCacheDescription": "清除缓存将强制应用重新下载封面。",
+      "artworkCacheStats": "{{count}} 项，{{size}}",
+      "artworkClearDialogTitle": "清除封面缓存",
+      "artworkClearDialogContent": "确定要清除所有已缓存的封面吗？",
+      "artworkCleared": "封面缓存已清除",
+      "clearArtworkCacheButton": "清除所有封面缓存"
+    },
+    "experimental": {
+      "sectionTitle": "实验性",
+      "sectionDescription": "试用新功能,部分可能不稳定。",
+      "richInlineFix": "Rich 字体大小错位修复",
+      "richInlineFixSubtitle": "为 rich inline 歌词启用字体大小调整 (除以 0.9)。可修复某些字体或设备上的对齐问题。"
+    },
+    "priority": {
+      "sectionTitle": "源优先级",
+      "sectionDescription": "调整源顺序以优先从哪里获取歌词。拖到 \"已禁用区域\" 下方即可禁用。",
+      "lyricsCacheTitle": "歌词缓存",
+      "lyricsCacheSubtitle": "启用时始终优先",
+      "disabledArea": "已禁用区域",
+      "updated": "优先级已更新",
+      "cacheEnabled": "缓存已启用",
+      "cacheDisabled": "缓存已禁用",
+      "providers": {
+        "lrclibName": "LRCLIB",
+        "lrclibDescription": "开源歌词数据库",
+        "musixmatchName": "Musixmatch",
+        "musixmatchDescription": "全球最大的歌词目录",
+        "neteaseName": "网易云音乐",
+        "neteaseDescription": "中国音乐服务,社区驱动的歌词目录",
+        "qqmusicName": "QQ 音乐",
+        "qqmusicDescription": "腾讯旗下的中国音乐流媒体服务",
+        "llmName": "LLM 翻译",
+        "llmDescription": "OpenAI 兼容的 LLM API",
+        "cacheName": "缓存",
+        "cacheDescription": "已缓存的歌词"
+      }
+    },
+    "misc": {
+      "sectionTitle": "杂项",
+      "sectionDescription": "杂项选项。",
+      "tray": "系统托盘图标",
+      "traySubtitle": "在系统托盘显示 Fluent Lyrics 图标，提供快速显隐和退出操作。Linux 需要 AppIndicator (如 libayatana-appindicator)。",
+      "hideToTray": "关闭时隐藏到托盘",
+      "hideToTraySubtitle": "关闭主窗口时隐藏到托盘而非退出。后台仍会继续获取歌词与翻译;隐藏时 UI 渲染暂停。请使用托盘菜单退出。",
+      "unsupported": "当前平台暂无此类选项 — 系统托盘和歌词输出仅在 Linux 和 macOS 桌面端可用。",
+      "streamTitle": "歌词输出",
+      "streamDescription": "随播放进度将当前演唱的歌词行追加写入纯文本文件。翻译文件与歌词文件逐行对应；无翻译的行写为空行，便于外部工具按行号索引。留空即可禁用对应输出 — 之前的文件 (若由 Fluent Lyrics 创建) 将被删除。",
+      "lyricsPathLabel": "歌词文件路径",
+      "translationPathLabel": "翻译文件路径"
+    },
+    "appBar": {
+      "lyricsConfiguration": "歌词配置"
+    },
+    "version": {
+      "label": "Fluent Lyrics {{version}}"
+    }
+  },
+  "lyrics": {
+    "noMedia": "未在播放",
+    "waitForMusic": "等待音乐...",
+    "clearCacheTooltip": "清除缓存并重新加载",
+    "settingsTooltip": "设置",
+    "chooseLyricsTooltip": "选择歌词",
+    "noLyricsFound": "未找到本曲目的歌词",
+    "startPlaying": "请开始播放音乐",
+    "pureMusic": "纯音乐 / 器乐",
+    "info": {
+      "source": "来源：{{value}}",
+      "writtenBy": "作词：{{value}}",
+      "composer": "作曲：{{value}}",
+      "contributor": "贡献者：{{value}}",
+      "copyright": "版权：{{value}}",
+      "translationProvider": "翻译来源：{{value}}",
+      "translationContributor": "翻译贡献者：{{value}}"
+    }
+  },
+  "permission": {
+    "title": "需要通知访问权限",
+    "description": "Fluent Lyrics 需要通知访问权限以从其他应用读取媒体元数据。",
+    "grantAccess": "授予权限",
+    "alreadyGranted": "已授权？点这里立即重新检测。"
+  },
+  "candidateSheet": {
+    "title": "歌词选择器",
+    "lyricsTab": "歌词",
+    "translationTab": "翻译",
+    "searchingProviders": "正在搜索源...",
+    "noCandidates": "未找到候选项",
+    "refreshLyrics": "刷新歌词",
+    "markAsPureMusic": "标记为纯音乐",
+    "searchingTranslations": "正在搜索翻译...",
+    "noAlternatives": "未找到候选项",
+    "refreshTranslations": "刷新翻译",
+    "markAsSkipped": "标记为跳过",
+    "syncInstrumental": "纯音乐",
+    "syncRich": "Rich Sync",
+    "syncSynced": "已同步",
+    "syncPlain": "纯文本",
+    "noLyricsPreview": "(无歌词)",
+    "noTranslationPreview": "(无预览)",
+    "chooseRichSource": "选择 Rich Sync 来源",
+    "richLines": "{{count}} 个 rich 行",
+    "instrumentalTrack": "纯音乐曲目",
+    "lines": "{{count}} 行",
+    "unknownProvider": "未知",
+    "richify": "Richify"
+  }
+}

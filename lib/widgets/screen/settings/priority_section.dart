@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_section.dart';
@@ -40,9 +41,8 @@ class PrioritySection extends StatelessWidget {
     }
 
     return SettingsSection(
-      title: 'Provider Priority',
-      description:
-          'Reorder providers to prioritize where we fetch lyrics from first. Drag below "DISABLED AREA" to disable.',
+      title: t.settings.priority.sectionTitle,
+      description: t.settings.priority.sectionDescription,
       children: [
         _buildCacheButton(),
         const SizedBox(height: 16),
@@ -103,17 +103,17 @@ class PrioritySection extends StatelessWidget {
           ),
           child: const Icon(Icons.storage, color: Colors.grey),
         ),
-        title: const Text(
-          'Lyrics Cache',
-          style: TextStyle(
+        title: Text(
+          t.settings.priority.lyricsCacheTitle,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
         ),
-        subtitle: const Text(
-          'Always prioritized if enabled',
-          style: TextStyle(color: Colors.white38, fontSize: 12),
+        subtitle: Text(
+          t.settings.priority.lyricsCacheSubtitle,
+          style: const TextStyle(color: Colors.white38, fontSize: 12),
         ),
         trailing: Switch(
           value: cacheEnabled,
@@ -129,16 +129,16 @@ class PrioritySection extends StatelessWidget {
       key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Row(
             children: [
-              Expanded(child: Divider(color: Colors.white10)),
+              const Expanded(child: Divider(color: Colors.white10)),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
-                  'DISABLED AREA',
-                  style: TextStyle(
+                  t.settings.priority.disabledArea,
+                  style: const TextStyle(
                     color: Colors.white24,
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
@@ -146,7 +146,7 @@ class PrioritySection extends StatelessWidget {
                   ),
                 ),
               ),
-              Expanded(child: Divider(color: Colors.white10)),
+              const Expanded(child: Divider(color: Colors.white10)),
             ],
           ),
         ),
@@ -161,8 +161,8 @@ class PrioritySection extends StatelessWidget {
   }) {
     final metadata = type.metadata;
     final Color color = metadata['color'];
-    final String name = metadata['name'];
-    final String description = metadata['description'];
+    final String name = type.localizedName(t);
+    final String description = type.localizedDescription(t);
 
     return Opacity(
       opacity: isEnabled ? 1.0 : 0.4,

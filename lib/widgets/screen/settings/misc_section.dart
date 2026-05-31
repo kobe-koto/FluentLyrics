@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_section.dart';
@@ -13,32 +14,26 @@ class MiscSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = t.settings.misc;
     return Consumer<LyricsProvider>(
       builder: (context, provider, child) {
         final isDesktop = Platform.isLinux || Platform.isMacOS;
         return SettingsSection(
-          title: 'Misc',
-          description: 'Miscellaneous options.',
+          title: i18n.sectionTitle,
+          description: i18n.sectionDescription,
           children: [
             if (isDesktop) ...[
               SettingsToggleCard(
-                title: 'System Tray Icon',
-                subtitle:
-                    'Show a Fluent Lyrics icon in the system tray with quick '
-                    'show/hide and quit actions. Requires AppIndicator on '
-                    'Linux (libayatana-appindicator).',
+                title: i18n.tray,
+                subtitle: i18n.traySubtitle,
                 value: provider.trayEnabled.current,
                 onChanged: (value) => provider.setTrayEnabled(value),
               ),
               const SizedBox(height: 16),
               if (provider.trayEnabled.current) ...[
                 SettingsToggleCard(
-                  title: 'Hide to Tray on Close',
-                  subtitle:
-                      'When you close the main window, hide it to the tray '
-                      'instead of quitting. Lyrics and translations keep '
-                      'fetching in the background; UI rendering pauses while '
-                      'hidden. Use the tray menu to quit.',
+                  title: i18n.hideToTray,
+                  subtitle: i18n.hideToTraySubtitle,
                   value: provider.hideToTrayOnClose.current,
                   onChanged: (value) => provider.setHideToTrayOnClose(value),
                 ),
@@ -46,12 +41,7 @@ class MiscSection extends StatelessWidget {
               ],
               const _LyricsStreamCard(),
             ] else
-              const _UnsupportedNotice(
-                message:
-                    'There is nothing here on this platform yet — system tray '
-                    'and lyrics streaming are only available on Linux and '
-                    'macOS desktops.',
-              ),
+              _UnsupportedNotice(message: i18n.unsupported),
           ],
         );
       },
@@ -201,24 +191,18 @@ class _LyricsStreamCardState extends State<_LyricsStreamCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Lyrics Stream Output',
-            style: TextStyle(
+          Text(
+            t.settings.misc.streamTitle,
+            style: const TextStyle(
               color: Colors.white70,
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Append the currently-sung lyric line to a plain text file as '
-            'playback advances. The translation file mirrors the lyrics '
-            'file line-for-line; lines without a translation become empty '
-            'lines so external tools can index by line number. Useful for '
-            'OBS, status bars, or `tail -n 1`. Leave a path empty to '
-            'disable that output — the previous file (if Fluent Lyrics '
-            'created it) will be removed.',
-            style: TextStyle(
+          Text(
+            t.settings.misc.streamDescription,
+            style: const TextStyle(
               color: Colors.white54,
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -229,11 +213,11 @@ class _LyricsStreamCardState extends State<_LyricsStreamCard> {
             controller: _lyricsController,
             focusNode: _lyricsFocus,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              labelText: 'Lyrics file path',
-              labelStyle: TextStyle(color: Colors.white54),
+            decoration: InputDecoration(
+              labelText: t.settings.misc.lyricsPathLabel,
+              labelStyle: const TextStyle(color: Colors.white54),
               hintText: '/tmp/fluent-lyrics.txt',
-              hintStyle: TextStyle(color: Colors.white24),
+              hintStyle: const TextStyle(color: Colors.white24),
               filled: true,
               fillColor: Colors.black26,
             ),
@@ -249,11 +233,11 @@ class _LyricsStreamCardState extends State<_LyricsStreamCard> {
             controller: _translationController,
             focusNode: _translationFocus,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              labelText: 'Translation file path',
-              labelStyle: TextStyle(color: Colors.white54),
+            decoration: InputDecoration(
+              labelText: t.settings.misc.translationPathLabel,
+              labelStyle: const TextStyle(color: Colors.white54),
               hintText: '/tmp/fluent-lyrics-translation.txt',
-              hintStyle: TextStyle(color: Colors.white24),
+              hintStyle: const TextStyle(color: Colors.white24),
               filled: true,
               fillColor: Colors.black26,
             ),

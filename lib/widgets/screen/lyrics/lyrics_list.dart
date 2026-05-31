@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_model.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../lyric_line.dart';
@@ -233,11 +234,11 @@ class _LyricsListState extends State<LyricsList>
     }
 
     if (lyrics.isEmpty) {
-      String message = 'No lyrics found for this track';
+      String message = t.lyrics.noLyricsFound;
       if (metadata == null) {
-        message = 'Start playing music';
+        message = t.lyrics.startPlaying;
       } else if (lyricsResult.isPureMusic) {
-        message = 'Pure Music / Instrumental';
+        message = t.lyrics.pureMusic;
       }
 
       return Center(
@@ -386,32 +387,35 @@ class _LyricsListState extends State<LyricsList>
     final provider = widget.provider;
     final result = provider.lyricsResult;
     final transResult = provider.translationResult;
+    final info = t.lyrics.info;
     final List<String> infoParts = [];
     if (result.source.isNotEmpty) {
-      infoParts.add('Source: ${result.source}');
+      infoParts.add(info.source(value: result.source));
     }
     if (result.writtenBy != null && result.writtenBy!.isNotEmpty) {
-      infoParts.add('Written by: ${result.writtenBy}');
+      infoParts.add(info.writtenBy(value: result.writtenBy!));
     }
     if (result.composer != null && result.composer!.isNotEmpty) {
-      infoParts.add('Composer: ${result.composer}');
+      infoParts.add(info.composer(value: result.composer!));
     }
     if (result.contributor != null && result.contributor!.isNotEmpty) {
-      infoParts.add('Contributor: ${result.contributor}');
+      infoParts.add(info.contributor(value: result.contributor!));
     }
     if (result.copyright != null && result.copyright!.isNotEmpty) {
-      infoParts.add('Copyright: ${result.copyright}');
+      infoParts.add(info.copyright(value: result.copyright!));
     }
     if (transResult != null &&
         transResult.translationProvider != null &&
         transResult.translationProvider!.isNotEmpty) {
-      infoParts.add('Translation Provider: ${transResult.translationProvider}');
+      infoParts.add(
+        info.translationProvider(value: transResult.translationProvider!),
+      );
     }
     if (transResult != null &&
         transResult.translationContributor != null &&
         transResult.translationContributor!.isNotEmpty) {
       infoParts.add(
-        'Translation Contributor: ${transResult.translationContributor}',
+        info.translationContributor(value: transResult.translationContributor!),
       );
     }
 

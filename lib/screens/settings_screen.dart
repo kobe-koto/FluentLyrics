@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../i18n/strings.g.dart';
 import '../widgets/settings_scaffold.dart';
 import '../widgets/screen/settings/version_section.dart';
 import 'settings/priority_screen.dart';
@@ -10,6 +11,7 @@ import 'settings/lyric_configuration_screen.dart';
 import 'settings/cache_screen.dart';
 import 'settings/experimental_screen.dart';
 import 'settings/misc_screen.dart';
+import 'settings/language_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -35,28 +37,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = t;
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide =
             constraints.maxWidth >= 960 &&
             constraints.maxWidth > constraints.maxHeight;
         return SettingsScaffold(
-          title: 'Settings',
+          title: i18n.settings.title,
           child: isWide
-              ? _buildWideLayout(context)
-              : _buildCompactLayout(context),
+              ? _buildWideLayout(context, i18n)
+              : _buildCompactLayout(context, i18n),
         );
       },
     );
   }
 
-  Widget _buildCompactLayout(BuildContext context) {
+  Widget _buildCompactLayout(BuildContext context, Translations i18n) {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       children: [
         for (final destination in _SettingsDestination.values)
           _SettingsEntry(
             destination: destination,
+            i18n: i18n,
             selected: false,
             showAccentBar: false,
             trailing: Icon(
@@ -72,7 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildWideLayout(BuildContext context) {
+  Widget _buildWideLayout(BuildContext context, Translations i18n) {
     final destination = _selectedDestination;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -98,7 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
                           child: Text(
-                            'Preferences',
+                            i18n.settings.preferences,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 13,
@@ -116,6 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               final item = _SettingsDestination.values[index];
                               return _SettingsEntry(
                                 destination: item,
+                                i18n: i18n,
                                 selected: item == destination,
                                 showAccentBar: true,
                                 trailing: null,
@@ -180,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                destination.title,
+                                destination.localizedTitle(i18n),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 28,
@@ -189,7 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                destination.subtitle,
+                                destination.localizedSubtitle(i18n),
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.45),
                                   fontSize: 14,
@@ -223,6 +228,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 class _SettingsEntry extends StatelessWidget {
   final _SettingsDestination destination;
+  final Translations i18n;
   final bool selected;
   final bool showAccentBar;
   final Widget? trailing;
@@ -230,6 +236,7 @@ class _SettingsEntry extends StatelessWidget {
 
   const _SettingsEntry({
     required this.destination,
+    required this.i18n,
     required this.selected,
     required this.showAccentBar,
     required this.trailing,
@@ -281,7 +288,7 @@ class _SettingsEntry extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              destination.title,
+                              destination.localizedTitle(i18n),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -290,7 +297,7 @@ class _SettingsEntry extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              destination.subtitle,
+                              destination.localizedSubtitle(i18n),
                               style: TextStyle(
                                 color: Colors.white.withValues(
                                   alpha: selected ? 0.72 : 0.4,
@@ -361,73 +368,87 @@ enum _SettingsDestination {
   priority(
     icon: Icons.sort,
     color: Colors.blue,
-    title: 'Provider Priority',
-    subtitle: 'Reorder and enable/disable lyrics providers',
     screen: PriorityScreen(),
     content: PrioritySettingsContent(),
   ),
   display(
     icon: Icons.display_settings,
     color: Colors.purple,
-    title: 'Display',
-    subtitle: 'Font size, blur, background motion, scroll behavior',
     screen: DisplayScreen(),
     content: DisplaySettingsContent(),
   ),
   translation(
     icon: Icons.translate,
     color: Colors.teal,
-    title: 'Translation',
-    subtitle: 'Translation targets, LLM config, alignment',
     screen: TranslationScreen(),
     content: TranslationSettingsContent(),
   ),
   lyricConfiguration(
     icon: Icons.music_note,
     color: Colors.orange,
-    title: 'Lyric Configuration',
-    subtitle: 'Rich sync, offset, metadata trim, Musixmatch token',
     screen: LyricConfigurationScreen(),
     content: LyricConfigurationSettingsContent(),
   ),
   cache(
     icon: Icons.storage,
     color: Colors.red,
-    title: 'Cache Management',
-    subtitle: 'Clear lyrics and artwork cache',
     screen: CacheScreen(),
     content: CacheSettingsContent(),
   ),
   experimental(
     icon: Icons.science,
     color: Colors.amber,
-    title: 'Experimental',
-    subtitle: 'Unstable features and fixes',
     screen: ExperimentalScreen(),
     content: ExperimentalSettingsContent(),
   ),
   misc(
     icon: Icons.tune,
     color: Colors.green,
-    title: 'Misc',
-    subtitle: 'System tray and other miscellaneous options',
     screen: MiscScreen(),
     content: MiscSettingsContent(),
+  ),
+  language(
+    icon: Icons.language,
+    color: Colors.cyan,
+    screen: LanguageScreen(),
+    content: LanguageSettingsContent(),
   );
 
   final IconData icon;
   final Color color;
-  final String title;
-  final String subtitle;
   final Widget screen;
   final Widget content;
 
   const _SettingsDestination({
     required this.icon,
     required this.color,
-    required this.title,
-    required this.subtitle,
     required this.screen,
     required this.content,
   });
+
+  String localizedTitle(Translations t) {
+    return switch (this) {
+      priority => t.settings.destinations.priority.title,
+      display => t.settings.destinations.display.title,
+      translation => t.settings.destinations.translation.title,
+      lyricConfiguration => t.settings.destinations.lyricConfiguration.title,
+      cache => t.settings.destinations.cache.title,
+      experimental => t.settings.destinations.experimental.title,
+      misc => t.settings.destinations.misc.title,
+      language => t.settings.language.title,
+    };
+  }
+
+  String localizedSubtitle(Translations t) {
+    return switch (this) {
+      priority => t.settings.destinations.priority.subtitle,
+      display => t.settings.destinations.display.subtitle,
+      translation => t.settings.destinations.translation.subtitle,
+      lyricConfiguration => t.settings.destinations.lyricConfiguration.subtitle,
+      cache => t.settings.destinations.cache.subtitle,
+      experimental => t.settings.destinations.experimental.subtitle,
+      misc => t.settings.destinations.misc.subtitle,
+      language => t.settings.language.subtitle,
+    };
+  }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../i18n/strings.g.dart';
 import '../../models/lyric_provider_type.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings_scaffold.dart';
@@ -14,9 +15,9 @@ class PriorityScreen extends StatefulWidget {
 class _PriorityScreenState extends State<PriorityScreen> {
   @override
   Widget build(BuildContext context) {
-    return const SettingsScaffold(
-      title: 'Provider Priority',
-      child: PrioritySettingsContent(),
+    return SettingsScaffold(
+      title: t.settings.destinations.priority.title,
+      child: const PrioritySettingsContent(),
     );
   }
 }
@@ -59,14 +60,18 @@ class _PrioritySettingsContentState extends State<PrioritySettingsContent> {
   Future<void> _savePriority() async {
     await _settingsService.setPriority(_allProviders);
     await _settingsService.setEnabledCount(_enabledCount);
-    if (mounted) _showSnackBar('Priority updated');
+    if (mounted) _showSnackBar(t.settings.priority.updated);
   }
 
   Future<void> _toggleCache(bool enabled) async {
     setState(() => _cacheEnabled = enabled);
     await _settingsService.setCacheEnabled(enabled);
     if (mounted) {
-      _showSnackBar(enabled ? 'Cache enabled' : 'Cache disabled');
+      _showSnackBar(
+        enabled
+            ? t.settings.priority.cacheEnabled
+            : t.settings.priority.cacheDisabled,
+      );
     }
   }
 

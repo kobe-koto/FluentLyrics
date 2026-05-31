@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../settings_section.dart';
 import '../../settings_slider_card.dart';
@@ -11,15 +12,16 @@ class DisplaySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = t.settings.display;
     return Consumer<LyricsProvider>(
       builder: (context, provider, child) {
         return SettingsSection(
-          title: 'Display Configuration',
-          description: 'Adjust how lyrics are displayed.',
+          title: i18n.sectionTitle,
+          description: i18n.sectionDescription,
           children: [
             SettingsSliderCard(
-              title: 'Font Size',
-              subtitle: 'Size of the lyric text in pixels.',
+              title: i18n.fontSize,
+              subtitle: i18n.fontSizeSubtitle,
               value: provider.fontSize.current,
               min: 12,
               max: 64,
@@ -30,12 +32,12 @@ class DisplaySection extends StatelessWidget {
               onReset: provider.fontSize.changed
                   ? () => provider.setFontSize(provider.fontSize.defaultValue)
                   : null,
-              resetTooltip: 'Reset to 36px',
+              resetTooltip: i18n.fontSizeReset,
             ),
             const SizedBox(height: 24),
             SettingsSliderCard(
-              title: 'Inactive Line Scale',
-              subtitle: 'Scale factor for non-highlighted lines.',
+              title: i18n.inactiveScale,
+              subtitle: i18n.inactiveScaleSubtitle,
               value: provider.inactiveScale.current,
               min: 0.5,
               max: 1.0,
@@ -48,28 +50,26 @@ class DisplaySection extends StatelessWidget {
                       provider.inactiveScale.defaultValue,
                     )
                   : null,
-              resetTooltip: 'Reset to 85%',
+              resetTooltip: i18n.inactiveScaleReset,
             ),
             const SizedBox(height: 24),
             SettingsToggleCard(
-              title: 'Blur Effect',
-              subtitle: 'Blur non-active lyric lines for focus.',
+              title: i18n.blur,
+              subtitle: i18n.blurSubtitle,
               value: provider.blurEnabled.current,
               onChanged: (value) => provider.setBlurEnabled(value),
             ),
             const SizedBox(height: 24),
             SettingsToggleCard(
-              title: 'Background Motion',
-              subtitle:
-                  'Apply fragmented artwork with slow drifting motion to the background.',
+              title: i18n.backgroundMotion,
+              subtitle: i18n.backgroundMotionSubtitle,
               value: provider.backgroundMotionEnabled.current,
               onChanged: (value) => provider.setBackgroundMotionEnabled(value),
             ),
             const SizedBox(height: 24),
             SettingsSliderCard(
-              title: 'Lines Before Active',
-              subtitle:
-                  'Number of preceding lines to show when auto-scrolling.',
+              title: i18n.linesBefore,
+              subtitle: i18n.linesBeforeSubtitle,
               value: provider.linesBefore.current.toDouble(),
               min: 0,
               max: 5,
@@ -82,13 +82,12 @@ class DisplaySection extends StatelessWidget {
                       provider.linesBefore.defaultValue,
                     )
                   : null,
-              resetTooltip: 'Reset to 2',
+              resetTooltip: i18n.linesBeforeReset,
             ),
             const SizedBox(height: 24),
             SettingsSliderCard(
-              title: 'Auto-Resume Delay',
-              subtitle:
-                  'Time to wait before auto-scrolling resumes after you manual scroll.',
+              title: i18n.autoResumeDelay,
+              subtitle: i18n.autoResumeDelaySubtitle,
               value: provider.scrollAutoResumeDelay.current.toDouble(),
               min: 0,
               max: 30,
@@ -102,14 +101,13 @@ class DisplaySection extends StatelessWidget {
                       provider.scrollAutoResumeDelay.defaultValue,
                     )
                   : null,
-              resetTooltip: 'Reset to 5s',
+              resetTooltip: i18n.autoResumeDelayReset,
             ),
             if (Platform.isAndroid) ...[
               const SizedBox(height: 24),
               SettingsToggleCard(
-                title: 'Keep Screen On',
-                subtitle:
-                    'Prevent device from sleeping while lyrics screen is active.',
+                title: i18n.keepScreenOn,
+                subtitle: i18n.keepScreenOnSubtitle,
                 value: provider.keepScreenOn.current,
                 onChanged: (value) => provider.setKeepScreenOn(value),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../utils/version_display_helper.dart';
 
 class VersionSection extends StatelessWidget {
@@ -22,7 +23,7 @@ class VersionSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
-          'Fluent Lyrics $versionDisplay',
+          t.settings.version.label(version: versionDisplay),
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.3),
             fontSize: 12,

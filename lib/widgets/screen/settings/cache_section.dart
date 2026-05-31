@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../settings_section.dart';
 import '../../settings_card_frame.dart';
@@ -22,17 +23,17 @@ class CacheSection extends StatefulWidget {
 class _CacheSectionState extends State<CacheSection> {
   @override
   Widget build(BuildContext context) {
+    final i18n = t.settings.cache;
     return SettingsSection(
-      title: 'Cache Management',
-      description: 'Manage local storage for lyrics.',
+      title: i18n.sectionTitle,
+      description: i18n.sectionDescription,
       children: [
         SettingsCardFrame(
           child: Consumer<LyricsProvider>(
             builder: (context, provider, child) {
               return _CacheActionCard(
-                title: 'Lyrics Cache',
-                description:
-                    'Clearing the cache will force the app to search for lyrics again.',
+                title: i18n.lyricsCacheTitle,
+                description: i18n.lyricsCacheDescription,
                 stats: FutureBuilder<Map<String, dynamic>>(
                   future: provider.getCacheStats(),
                   builder: (context, snapshot) {
@@ -40,7 +41,10 @@ class _CacheSectionState extends State<CacheSection> {
                       final count = snapshot.data!['count'];
                       final size = snapshot.data!['size'];
                       return Text(
-                        '$count items, ${CacheHelper.formatSize(size)} (Est.)',
+                        i18n.lyricsCacheStats(
+                          count: count.toString(),
+                          size: CacheHelper.formatSize(size),
+                        ),
                         style: const TextStyle(
                           color: Colors.blue,
                           fontSize: 13,
@@ -57,24 +61,24 @@ class _CacheSectionState extends State<CacheSection> {
                       context: context,
                       builder: (context) => AlertDialog(
                         backgroundColor: const Color(0xFF1A1A1A),
-                        title: const Text(
-                          'Clear Cache',
-                          style: TextStyle(color: Colors.white),
+                        title: Text(
+                          i18n.clearDialogTitle,
+                          style: const TextStyle(color: Colors.white),
                         ),
-                        content: const Text(
-                          'Are you sure you want to clear all cached lyrics?',
-                          style: TextStyle(color: Colors.white70),
+                        content: Text(
+                          i18n.clearDialogContent,
+                          style: const TextStyle(color: Colors.white70),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context, false),
-                            child: const Text('CANCEL'),
+                            child: Text(t.common.cancel),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context, true),
-                            child: const Text(
-                              'CLEAR ALL',
-                              style: TextStyle(color: Colors.red),
+                            child: Text(
+                              t.common.clearAll,
+                              style: const TextStyle(color: Colors.red),
                             ),
                           ),
                         ],
@@ -86,14 +90,14 @@ class _CacheSectionState extends State<CacheSection> {
                       if (mounted) {
                         setState(() {});
                         widget.onRefresh();
-                        widget.showSnackBar('Cache cleared');
+                        widget.showSnackBar(i18n.cleared);
                       }
                     }
                   },
                   icon: const Icon(Icons.delete_sweep, size: 18),
-                  label: const Text(
-                    'Clear All Lyrics Cache',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  label: Text(
+                    i18n.clearLyricsCacheButton,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red.withValues(alpha: 0.2),
@@ -111,9 +115,8 @@ class _CacheSectionState extends State<CacheSection> {
         const SizedBox(height: 16),
         SettingsCardFrame(
           child: _CacheActionCard(
-            title: 'Artwork Cache',
-            description:
-                'Clearing the cache will force the app to download artwork again.',
+            title: i18n.artworkCacheTitle,
+            description: i18n.artworkCacheDescription,
             stats: FutureBuilder<Map<String, int>>(
               future: CacheHelper.getArtworkCacheStats(),
               builder: (context, snapshot) {
@@ -121,7 +124,10 @@ class _CacheSectionState extends State<CacheSection> {
                   final count = snapshot.data!['count']!;
                   final size = snapshot.data!['size']!;
                   return Text(
-                    '$count items, ${CacheHelper.formatSize(size)}',
+                    i18n.artworkCacheStats(
+                      count: count.toString(),
+                      size: CacheHelper.formatSize(size),
+                    ),
                     style: const TextStyle(
                       color: Colors.blue,
                       fontSize: 13,
@@ -138,24 +144,24 @@ class _CacheSectionState extends State<CacheSection> {
                   context: context,
                   builder: (context) => AlertDialog(
                     backgroundColor: const Color(0xFF1A1A1A),
-                    title: const Text(
-                      'Clear Artwork Cache',
-                      style: TextStyle(color: Colors.white),
+                    title: Text(
+                      i18n.artworkClearDialogTitle,
+                      style: const TextStyle(color: Colors.white),
                     ),
-                    content: const Text(
-                      'Are you sure you want to clear all cached artwork?',
-                      style: TextStyle(color: Colors.white70),
+                    content: Text(
+                      i18n.artworkClearDialogContent,
+                      style: const TextStyle(color: Colors.white70),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('CANCEL'),
+                        child: Text(t.common.cancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text(
-                          'CLEAR ALL',
-                          style: TextStyle(color: Colors.red),
+                        child: Text(
+                          t.common.clearAll,
+                          style: const TextStyle(color: Colors.red),
                         ),
                       ),
                     ],
@@ -167,14 +173,14 @@ class _CacheSectionState extends State<CacheSection> {
                   if (mounted) {
                     setState(() {});
                     widget.onRefresh();
-                    widget.showSnackBar('Artwork cache cleared');
+                    widget.showSnackBar(i18n.artworkCleared);
                   }
                 }
               },
               icon: const Icon(Icons.delete_sweep, size: 18),
-              label: const Text(
-                'Clear All Artwork Cache',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              label: Text(
+                i18n.clearArtworkCacheButton,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red.withValues(alpha: 0.2),

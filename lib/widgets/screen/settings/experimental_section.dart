@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../settings_section.dart';
 import '../../settings_toggle_card.dart';
@@ -9,16 +10,16 @@ class ExperimentalSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = t.settings.experimental;
     return Consumer<LyricsProvider>(
       builder: (context, provider, child) {
         return SettingsSection(
-          title: 'Experimental',
-          description: 'Try out new features. Some may be unstable.',
+          title: i18n.sectionTitle,
+          description: i18n.sectionDescription,
           children: [
             SettingsToggleCard(
-              title: 'Rich Parts Fonts Size Glitching Fix',
-              subtitle:
-                  'Enable the font size adjustment (divide by 0.9) for rich inline lyrics. This fixes alignment issues with certain fonts, or on some devices.',
+              title: i18n.richInlineFix,
+              subtitle: i18n.richInlineFixSubtitle,
               value: provider.experimentalRichInlineFontSizeGlitching.current,
               onChanged: (value) =>
                   provider.setExperimentalRichInlineFontSizeGlitching(value),

@@ -3,11 +3,14 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'i18n/strings.g.dart';
 import 'providers/lyrics_provider.dart';
 import 'screens/lyrics_screen.dart';
 import 'services/lyrics_stream_writer.dart';
+import 'services/settings_service.dart';
 import 'services/tray_service.dart';
 
 class MyHttpOverrides extends HttpOverrides {
@@ -85,10 +88,24 @@ Future<void> main() async {
     LyricsStreamWriter(provider: lyricsProvider).start();
   }
 
+  // Restore persisted locale (null = follow system).
+  final settingsService = SettingsService();
+  final savedLocaleTag = await settingsService.getLocale();
+  if (savedLocaleTag != null) {
+    final match = AppLocale.values.where(
+      (l) => l.languageTag == savedLocaleTag,
+    );
+    if (match.isNotEmpty) {
+      LocaleSettings.setLocale(match.first);
+    }
+  }
+
   runApp(
-    MultiProvider(
-      providers: [ChangeNotifierProvider.value(value: lyricsProvider)],
-      child: const MyApp(),
+    TranslationProvider(
+      child: MultiProvider(
+        providers: [ChangeNotifierProvider.value(value: lyricsProvider)],
+        child: const MyApp(),
+      ),
     ),
   );
 }
@@ -204,6 +221,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Fluent Lyrics',
       debugShowCheckedModeBanner: false,
+      locale: TranslationProvider.of(context).flutterLocale,
+      supportedLocales: AppLocaleUtils.supportedLocales,
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,

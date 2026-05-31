@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../i18n/strings.g.dart';
 import '../../widgets/settings_scaffold.dart';
 import '../../widgets/screen/settings/cache_section.dart';
 
@@ -8,7 +9,7 @@ class CacheScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(
-      title: 'Cache Management',
+      title: t.settings.destinations.cache.title,
       child: const CacheSettingsContent(),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_model.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../../providers/lyrics_provider.dart';
@@ -135,9 +136,9 @@ class _LyricsCandidateSheetState extends State<_LyricsCandidateSheet>
                             size: 20,
                           ),
                           const SizedBox(width: 10),
-                          const Text(
-                            'Lyrics Picker',
-                            style: TextStyle(
+                          Text(
+                            t.candidateSheet.title,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
@@ -266,7 +267,7 @@ class _TabBar extends StatelessWidget {
               children: [
                 const Icon(Icons.music_note_rounded, size: 14),
                 const SizedBox(width: 6),
-                const Text('Lyrics'),
+                Text(t.candidateSheet.lyricsTab),
                 if (lyricsCount > 0) ...[
                   const SizedBox(width: 5),
                   _CountBadge(lyricsCount),
@@ -280,7 +281,7 @@ class _TabBar extends StatelessWidget {
               children: [
                 const Icon(Icons.translate_rounded, size: 14),
                 const SizedBox(width: 6),
-                const Text('Translation'),
+                Text(t.candidateSheet.translationTab),
                 if (translationCount > 0) ...[
                   const SizedBox(width: 5),
                   _CountBadge(translationCount),
@@ -355,8 +356,8 @@ class _LyricsTab extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               provider.isLoading
-                  ? 'Searching providers…'
-                  : 'No candidates found',
+                  ? t.candidateSheet.searchingProviders
+                  : t.candidateSheet.noCandidates,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 14,
@@ -371,7 +372,7 @@ class _LyricsTab extends StatelessWidget {
                     TextButton.icon(
                       onPressed: () => provider.refetchLyrics(),
                       icon: const Icon(Icons.refresh_rounded, size: 16),
-                      label: const Text('Refresh Lyrics'),
+                      label: Text(t.candidateSheet.refreshLyrics),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.lightBlue.withValues(
                           alpha: 0.8,
@@ -384,7 +385,7 @@ class _LyricsTab extends StatelessWidget {
                         Navigator.of(context).pop();
                       },
                       icon: const Icon(Icons.music_off_rounded, size: 16),
-                      label: const Text('Mark as pure music'),
+                      label: Text(t.candidateSheet.markAsPureMusic),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.purpleAccent.withValues(
                           alpha: 0.8,
@@ -423,7 +424,7 @@ class _LyricsTab extends StatelessWidget {
                         TextButton.icon(
                           onPressed: () => provider.refetchLyrics(),
                           icon: const Icon(Icons.refresh_rounded, size: 16),
-                          label: const Text('Refresh Lyrics'),
+                          label: Text(t.candidateSheet.refreshLyrics),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.lightBlue.withValues(
                               alpha: 0.8,
@@ -436,7 +437,7 @@ class _LyricsTab extends StatelessWidget {
                             Navigator.of(context).pop();
                           },
                           icon: const Icon(Icons.music_off_rounded, size: 16),
-                          label: const Text('Mark as pure music'),
+                          label: Text(t.candidateSheet.markAsPureMusic),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.purpleAccent.withValues(
                               alpha: 0.8,
@@ -544,8 +545,8 @@ class _TranslationTab extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               provider.isFetching
-                  ? 'Searching translations...'
-                  : 'No alternatives found',
+                  ? t.candidateSheet.searchingTranslations
+                  : t.candidateSheet.noAlternatives,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 14,
@@ -561,7 +562,7 @@ class _TranslationTab extends StatelessWidget {
                     TextButton.icon(
                       onPressed: () => provider.refetchTranslations(),
                       icon: const Icon(Icons.refresh_rounded, size: 16),
-                      label: const Text('Refresh Translations'),
+                      label: Text(t.candidateSheet.refreshTranslations),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.teal.withValues(alpha: 0.8),
                       ),
@@ -572,7 +573,7 @@ class _TranslationTab extends StatelessWidget {
                         Navigator.of(context).pop();
                       },
                       icon: const Icon(Icons.block_rounded, size: 16),
-                      label: const Text('Mark as skipped'),
+                      label: Text(t.candidateSheet.markAsSkipped),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.orange.withValues(alpha: 0.8),
                       ),
@@ -609,7 +610,7 @@ class _TranslationTab extends StatelessWidget {
                         TextButton.icon(
                           onPressed: () => provider.refetchTranslations(),
                           icon: const Icon(Icons.refresh_rounded, size: 16),
-                          label: const Text('Refresh Translations'),
+                          label: Text(t.candidateSheet.refreshTranslations),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.teal.withValues(alpha: 0.8),
                           ),
@@ -620,7 +621,7 @@ class _TranslationTab extends StatelessWidget {
                             Navigator.of(context).pop();
                           },
                           icon: const Icon(Icons.block_rounded, size: 16),
-                          label: const Text('Mark as skipped'),
+                          label: Text(t.candidateSheet.markAsSkipped),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.orange.withValues(
                               alpha: 0.8,
@@ -685,10 +686,10 @@ class _CandidateTile extends StatelessWidget {
   }
 
   String _syncLabel() {
-    if (candidate.isPureMusic) return 'Instrumental';
-    if (candidate.isRichSync) return 'Rich Sync';
-    if (candidate.isSynced) return 'Synced';
-    return 'Plain';
+    if (candidate.isPureMusic) return t.candidateSheet.syncInstrumental;
+    if (candidate.isRichSync) return t.candidateSheet.syncRich;
+    if (candidate.isSynced) return t.candidateSheet.syncSynced;
+    return t.candidateSheet.syncPlain;
   }
 
   IconData _syncIcon() {
@@ -711,7 +712,7 @@ class _CandidateTile extends StatelessWidget {
         .take(2)
         .map((l) => l.text.trim())
         .join('  /  ');
-    return lines.isEmpty ? '(no lyrics)' : lines;
+    return lines.isEmpty ? t.candidateSheet.noLyricsPreview : lines;
   }
 
   /// Shows a source-picker dialog when multiple rich-sync candidates exist,
@@ -728,13 +729,17 @@ class _CandidateTile extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.auto_awesome_rounded, color: Colors.amber, size: 18),
-            SizedBox(width: 8),
+            const Icon(
+              Icons.auto_awesome_rounded,
+              color: Colors.amber,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
             Text(
-              'Choose Rich Sync Source',
-              style: TextStyle(
+              t.candidateSheet.chooseRichSource,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -752,7 +757,15 @@ class _CandidateTile extends StatelessWidget {
                 style: const TextStyle(color: Colors.white, fontSize: 13),
               ),
               subtitle: Text(
-                '${src.lyrics.where((l) => l.inlineParts != null && l.inlineParts!.isNotEmpty).length} rich lines',
+                t.candidateSheet.richLines(
+                  count: src.lyrics
+                      .where(
+                        (l) =>
+                            l.inlineParts != null && l.inlineParts!.isNotEmpty,
+                      )
+                      .length
+                      .toString(),
+                ),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 11,
@@ -838,8 +851,10 @@ class _CandidateTile extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 candidate.isPureMusic
-                    ? 'Instrumental track'
-                    : '${candidate.lyrics.length} lines',
+                    ? t.candidateSheet.instrumentalTrack
+                    : t.candidateSheet.lines(
+                        count: candidate.lyrics.length.toString(),
+                      ),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.3),
                   fontSize: 11,
@@ -886,13 +901,15 @@ class _TranslationTile extends StatelessWidget {
 
   /// Return the first non-empty translated line as a preview.
   String _preview() {
-    if (candidate.rawTranslation == null) return '(no preview)';
+    if (candidate.rawTranslation == null) {
+      return t.candidateSheet.noTranslationPreview;
+    }
     final first = candidate.rawTranslation!
         .where((m) => (m['translated'] ?? '').trim().isNotEmpty)
         .take(2)
         .map((m) => m['translated']!.trim())
         .join('  /  ');
-    return first.isEmpty ? '(no preview)' : first;
+    return first.isEmpty ? t.candidateSheet.noTranslationPreview : first;
   }
 
   @override
@@ -902,8 +919,9 @@ class _TranslationTile extends StatelessWidget {
         ? (providerType.metadata['color'] as Color)
         : Colors.teal;
 
-    final providerLabel = (candidate.translationProvider ?? 'Unknown')
-        .replaceAll(' (cached)', '');
+    final providerLabel =
+        (candidate.translationProvider ?? t.candidateSheet.unknownProvider)
+            .replaceAll(' (cached)', '');
     final langLabel = candidate.language?.toUpperCase() ?? '?';
 
     final coverage = totalLines == 0 ? 0.0 : matchedLines / totalLines;
@@ -1093,7 +1111,7 @@ class _RichifyButton extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              'Richify',
+              t.candidateSheet.richify,
               style: TextStyle(
                 color: Colors.amber.withValues(alpha: 0.9),
                 fontSize: 10,

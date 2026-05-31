@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
 
 class PermissionOverlay extends StatelessWidget {
@@ -10,6 +11,7 @@ class PermissionOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     if (provider.androidPermissionGranted) return const SizedBox.shrink();
 
+    final i18n = t.permission;
     return Material(
       color: Colors.black.withValues(alpha: 0.8),
       child: Container(
@@ -19,9 +21,9 @@ class PermissionOverlay extends StatelessWidget {
           children: [
             const Icon(Icons.security, color: Colors.white, size: 64),
             const SizedBox(height: 24),
-            const Text(
-              'Notification Access Required',
-              style: TextStyle(
+            Text(
+              i18n.title,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -29,9 +31,9 @@ class PermissionOverlay extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Fluent Lyrics needs notification access to read media metadata from other apps.',
-              style: TextStyle(color: Colors.white70, fontSize: 16),
+            Text(
+              i18n.description,
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -45,14 +47,14 @@ class PermissionOverlay extends StatelessWidget {
                   vertical: 16,
                 ),
               ),
-              child: const Text('GRANT ACCESS'),
+              child: Text(i18n.grantAccess),
             ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => provider.checkAndroidPermission(),
-              child: const Text(
-                'Already granted? Tap to check now.',
-                style: TextStyle(color: Colors.white38, fontSize: 12),
+              child: Text(
+                i18n.alreadyGranted,
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
               ),
             ),
           ],

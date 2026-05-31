@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../../utils/lyric_configuration_helper.dart';
@@ -24,23 +25,23 @@ class LyricConfigurationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = t.settings.lyricConfig;
     return Consumer<LyricsProvider>(
       builder: (context, provider, child) {
         return SettingsSection(
-          title: 'Lyric Configuration',
-          description: 'Configure how lyrics are fetched and processed.',
+          title: i18n.sectionTitle,
+          description: i18n.sectionDescription,
           children: [
             SettingsToggleCard(
-              title: 'Rich Sync',
-              subtitle: 'Enable word-level synchronization.',
+              title: i18n.richSync,
+              subtitle: i18n.richSyncSubtitle,
               value: provider.richSyncEnabled.current,
               onChanged: (value) => provider.setRichSyncEnabled(value),
             ),
             const SizedBox(height: 24),
             SettingsSliderCard(
-              title: 'Global Lyrics Offset',
-              subtitle:
-                  'Set a default offset for all lyrics (e.g. if your device has audio latency).',
+              title: i18n.globalOffset,
+              subtitle: i18n.globalOffsetSubtitle,
               value: (provider.globalOffset.inMilliseconds / 100).toDouble(),
               min: -50,
               max: 50,
@@ -57,25 +58,25 @@ class LyricConfigurationSection extends StatelessWidget {
               onReset: provider.globalOffsetSetting.changed
                   ? () => provider.setGlobalOffset(Duration.zero)
                   : null,
-              resetTooltip: 'Reset to 0s',
+              resetTooltip: i18n.globalOffsetReset,
             ),
             const SizedBox(height: 24),
             SettingsCardFrame(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Trim Metadata Lines',
-                    style: TextStyle(
+                  Text(
+                    i18n.trimTitle,
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Attempt to remove staff/metadata lines from selected providers.',
-                    style: TextStyle(
+                  Text(
+                    i18n.trimSubtitle,
+                    style: const TextStyle(
                       color: Colors.white38,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -123,7 +124,7 @@ class LyricConfigurationSection extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    providerType.metadata['name'],
+                                    providerType.localizedName(t),
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 14,
@@ -145,18 +146,18 @@ class LyricConfigurationSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Musixmatch Token',
-                    style: TextStyle(
+                  Text(
+                    i18n.musixmatchTitle,
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Required for Musixmatch provider.',
-                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                  Text(
+                    i18n.musixmatchSubtitle,
+                    style: const TextStyle(color: Colors.white38, fontSize: 12),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -167,7 +168,7 @@ class LyricConfigurationSection extends StatelessWidget {
                       fontFamily: 'monospace',
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Enter your User Token',
+                      hintText: i18n.musixmatchHint,
                       hintStyle: const TextStyle(color: Colors.white24),
                       filled: true,
                       fillColor: Colors.black26,
@@ -198,9 +199,9 @@ class LyricConfigurationSection extends StatelessWidget {
                                   ),
                                 )
                               : const Icon(Icons.refresh, size: 18),
-                          label: const Text(
-                            'Get New Token',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          label: Text(
+                            i18n.getNewToken,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange.withValues(
