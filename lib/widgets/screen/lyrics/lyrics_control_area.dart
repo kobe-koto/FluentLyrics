@@ -115,39 +115,46 @@ class LyricsControlArea extends StatelessWidget {
                       overlayColor: Colors.white.withValues(alpha: 0.1),
                       trackShape: _CustomSliderTrackShape(),
                     ),
-                    child: Slider(
-                      value: isScrubbing ? scrubValue : progress,
-                      onChanged: provider.controlAbility.canSeek
-                          ? (value) => onScrubChanged(value)
-                          : null,
-                      onChangeEnd: (value) => onScrubEnd(value),
+                    child: RepaintBoundary(
+                      child: Slider(
+                        value: isScrubbing ? scrubValue : progress,
+                        onChanged: provider.controlAbility.canSeek
+                            ? (value) => onScrubChanged(value)
+                            : null,
+                        onChangeEnd: (value) => onScrubEnd(value),
+                      ),
                     ),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _formatDuration(
-                          isScrubbing
-                              ? Duration(
-                                  milliseconds: (scrubValue * totalMs).round(),
-                                )
-                              : currentPosition,
-                        ),
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                      RepaintBoundary(
+                        child: Text(
+                          _formatDuration(
+                            isScrubbing
+                                ? Duration(
+                                    milliseconds: (scrubValue * totalMs)
+                                        .round(),
+                                  )
+                                : currentPosition,
+                          ),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ),
-                      Text(
-                        _formatDuration(metadata?.duration ?? Duration.zero),
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                      RepaintBoundary(
+                        child: Text(
+                          _formatDuration(metadata?.duration ?? Duration.zero),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ),
                     ],

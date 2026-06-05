@@ -492,46 +492,48 @@ class _RichPartState extends State<_RichPart>
                   RegExp(r'[\p{P}\p{S}]', unicode: true),
                 )); // check for punctuation
 
-        return AnimatedContainer(
-          duration: isShort
-              ? _defaultProgressAnimationDuration
-              : duration + const Duration(milliseconds: 150),
-          curve: Curves.easeOutQuint,
-          transform: Matrix4.translationValues(0, isLifting ? -2 : 0, 0),
-          child: Stack(
-            children: [
-              Opacity(
-                opacity: (isShort && isLifting) ? 1.0 : 0.4,
-                child: child!,
-              ),
-              if (isLifting && !isShort)
-                Positioned.fill(
-                  child: ShaderMask(
-                    blendMode: BlendMode.srcIn,
-                    shaderCallback: (Rect bounds) {
-                      if (bounds.width <= 0) {
-                        return const LinearGradient(
-                          colors: [Colors.transparent, Colors.transparent],
-                        ).createShader(bounds);
-                      }
-                      final totalWidth = bounds.width;
-                      final fadeWidth = totalWidth * 0.15;
-                      final pRight = totalWidth * progress * 1.15;
-                      final pLeft = pRight - fadeWidth;
-
-                      final alignLeft = (pLeft / totalWidth) * 2 - 1;
-                      final alignRight = (pRight / totalWidth) * 2 - 1;
-
-                      return LinearGradient(
-                        begin: Alignment(alignLeft, 0),
-                        end: Alignment(alignRight, 0),
-                        colors: const [Colors.white, Colors.transparent],
-                      ).createShader(bounds);
-                    },
-                    child: child, // Uses the exact same cached Text layout
-                  ),
+        return RepaintBoundary(
+          child: AnimatedContainer(
+            duration: isShort
+                ? _defaultProgressAnimationDuration
+                : duration + const Duration(milliseconds: 150),
+            curve: Curves.easeOutQuint,
+            transform: Matrix4.translationValues(0, isLifting ? -2 : 0, 0),
+            child: Stack(
+              children: [
+                Opacity(
+                  opacity: (isShort && isLifting) ? 1.0 : 0.4,
+                  child: child!,
                 ),
-            ],
+                if (isLifting && !isShort)
+                  Positioned.fill(
+                    child: ShaderMask(
+                      blendMode: BlendMode.srcIn,
+                      shaderCallback: (Rect bounds) {
+                        if (bounds.width <= 0) {
+                          return const LinearGradient(
+                            colors: [Colors.transparent, Colors.transparent],
+                          ).createShader(bounds);
+                        }
+                        final totalWidth = bounds.width;
+                        final fadeWidth = totalWidth * 0.15;
+                        final pRight = totalWidth * progress * 1.15;
+                        final pLeft = pRight - fadeWidth;
+
+                        final alignLeft = (pLeft / totalWidth) * 2 - 1;
+                        final alignRight = (pRight / totalWidth) * 2 - 1;
+
+                        return LinearGradient(
+                          begin: Alignment(alignLeft, 0),
+                          end: Alignment(alignRight, 0),
+                          colors: const [Colors.white, Colors.transparent],
+                        ).createShader(bounds);
+                      },
+                      child: child, // Uses the exact same cached Text layout
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },

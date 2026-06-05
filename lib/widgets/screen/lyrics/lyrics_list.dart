@@ -213,19 +213,23 @@ class _LyricsListState extends State<LyricsList>
             const SizedBox(
               width: 40,
               height: 40,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
+              child: RepaintBoundary(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 4,
+                ),
               ),
             ),
             const SizedBox(height: 32),
-            Text(
-              provider.loadingStatus.toUpperCase(),
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 2.0,
+            RepaintBoundary(
+              child: Text(
+                provider.loadingStatus.toUpperCase(),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2.0,
+                ),
               ),
             ),
           ],
@@ -295,11 +299,13 @@ class _LyricsListState extends State<LyricsList>
                             ? () => provider.seek(lyric.startTime)
                             : null,
                         behavior: HitTestBehavior.translucent,
-                        child: InterludeIndicator(
-                          progress: provider.interludeProgressForPosition(
-                            currentPosition,
+                        child: RepaintBoundary(
+                          child: InterludeIndicator(
+                            progress: provider.interludeProgressForPosition(
+                              currentPosition,
+                            ),
+                            duration: provider.interludeDuration,
                           ),
-                          duration: provider.interludeDuration,
                         ),
                       );
                     },
