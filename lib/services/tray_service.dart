@@ -175,10 +175,7 @@ class TrayService with TrayListener {
   }
 
   String _iconPath() {
-    // assets/icons/logo.png is bundled via flutter_launcher_icons input and is
-    // the only icon shipped today; reuse it for the tray. macOS users may
-    // later swap in a template variant in assets/icons/.
-    return 'assets/icons/logo.png';
+    return 'assets/icons/logo-rounded.png';
   }
 
   Future<void> _refreshMenu() async {
