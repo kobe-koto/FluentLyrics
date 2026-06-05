@@ -42,23 +42,23 @@ void main() {
     );
   });
 
-  test('breathing cycle duration fits an integer count into the breathing window', () {
-    expect(
-      InterludeIndicatorHelper.breathingWindowForDuration(duration),
-      const Duration(milliseconds: 4550),
-    );
-    expect(
-      InterludeIndicatorHelper.breathingCycleDurationForDuration(duration),
-      const Duration(milliseconds: 1138),
-    );
-  });
+  test(
+    'breathing cycle duration fits an integer count into the breathing window',
+    () {
+      expect(
+        InterludeIndicatorHelper.breathingWindowForDuration(duration),
+        const Duration(milliseconds: 4550),
+      );
+      expect(
+        InterludeIndicatorHelper.breathingCycleDurationForDuration(duration),
+        const Duration(milliseconds: 1138),
+      );
+    },
+  );
 
   test('targetScale stays at one during the quiet gap', () {
     expect(
-      InterludeIndicatorHelper.targetScale(
-        progress: 0.925,
-        duration: duration,
-      ),
+      InterludeIndicatorHelper.targetScale(progress: 0.925, duration: duration),
       1.0,
     );
   });

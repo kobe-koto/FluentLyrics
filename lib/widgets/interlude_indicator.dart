@@ -74,8 +74,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     final durationMs = widget.duration.inMilliseconds;
     if (durationMs <= 0) return false;
 
-    final jumpedMs =
-        (widget.progress - oldWidget.progress).abs() * durationMs;
+    final jumpedMs = (widget.progress - oldWidget.progress).abs() * durationMs;
     return jumpedMs >= _snapJumpThresholdMs;
   }
 
@@ -221,7 +220,11 @@ class _AnimatedDot extends StatelessWidget {
   final double progress;
   final Duration duration;
   final bool lastDot;
-  const _AnimatedDot({required this.progress, required this.duration, required this.lastDot});
+  const _AnimatedDot({
+    required this.progress,
+    required this.duration,
+    required this.lastDot,
+  });
 
   @override
   Widget build(BuildContext context) {

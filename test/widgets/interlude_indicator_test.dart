@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('snaps dots immediately on large progress jumps', (
-    tester,
-  ) async {
+  testWidgets('snaps dots immediately on large progress jumps', (tester) async {
     const duration = Duration(seconds: 5);
 
     await tester.pumpWidget(
