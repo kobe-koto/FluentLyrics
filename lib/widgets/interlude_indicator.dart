@@ -139,6 +139,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
                     duration: widget.duration,
                   ),
                   duration: dotDuration,
+                  lastDot: false,
                 ),
                 _AnimatedDot(
                   progress: InterludeIndicatorHelper.dotProgress(
@@ -147,6 +148,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
                     duration: widget.duration,
                   ),
                   duration: dotDuration,
+                  lastDot: false,
                 ),
                 _AnimatedDot(
                   progress: InterludeIndicatorHelper.dotProgress(
@@ -155,6 +157,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
                     duration: widget.duration,
                   ),
                   duration: dotDuration,
+                  lastDot: true,
                 ),
               ],
             ),
@@ -168,7 +171,8 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
 class _AnimatedDot extends StatelessWidget {
   final double progress;
   final Duration duration;
-  const _AnimatedDot({required this.progress, required this.duration});
+  final bool lastDot;
+  const _AnimatedDot({required this.progress, required this.duration, required this.lastDot});
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +186,7 @@ class _AnimatedDot extends StatelessWidget {
         baseOpacity + (activeOpacity - baseOpacity) * progress;
 
     return Padding(
-      padding: const EdgeInsets.only(right: 12),
+      padding: lastDot ? EdgeInsets.zero : const EdgeInsets.only(right: 12),
       child: SizedBox(
         width: n2,
         height: n2,
