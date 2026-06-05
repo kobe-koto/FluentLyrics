@@ -163,9 +163,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
               // Background Layer
               LyricsBackground(
                 artProvider: bgArt,
-                motionEnabled:
-                    provider.backgroundMotionEnabled.current &&
-                    provider.isPlaying,
+                motionEnabled: provider.backgroundMotionEnabled.current,
+                animate: provider.isPlaying,
               ),
 
               // Content Layer

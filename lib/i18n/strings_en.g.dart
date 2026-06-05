@@ -318,8 +318,8 @@ class Translations$settings$display$en {
 	/// en: 'Background Motion'
 	String get backgroundMotion => 'Background Motion';
 
-	/// en: 'Apply fragmented artwork with slow drifting motion to the background.'
-	String get backgroundMotionSubtitle => 'Apply fragmented artwork with slow drifting motion to the background.';
+	/// en: 'Apply fluid motion effect to the background, which may have significant performance impact.'
+	String get backgroundMotionSubtitle => 'Apply fluid motion effect to the background, which may have significant performance impact.';
 
 	/// en: 'Lines Before Active'
 	String get linesBefore => 'Lines Before Active';

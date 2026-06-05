@@ -197,7 +197,7 @@ class Translations$settings$display$zh_CN extends Translations$settings$display$
 	@override String get blur => '模糊效果';
 	@override String get blurSubtitle => '模糊非活动歌词行以聚焦当前行。';
 	@override String get backgroundMotion => '背景动效';
-	@override String get backgroundMotionSubtitle => '对背景应用碎片化封面图并缓慢漂移。';
+	@override String get backgroundMotionSubtitle => '对背景应用流体动效，对性能影响较大。\'';
 	@override String get linesBefore => '活动行前显示数';
 	@override String get linesBeforeSubtitle => '自动滚动时活动行之前显示的行数。';
 	@override String get linesBeforeReset => '重置为 2';
