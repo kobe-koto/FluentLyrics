@@ -27,7 +27,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
       duration: const Duration(milliseconds: 1350),
     )..repeat(reverse: true);
 
-    _breathingAnimation = Tween<double>(begin: 0.98, end: 1.02).animate(
+    _breathingAnimation = Tween<double>(begin: 0.96, end: 1.04).animate(
       CurvedAnimation(
         parent: _breathingController,
         curve: Curves.easeInOutSine,
