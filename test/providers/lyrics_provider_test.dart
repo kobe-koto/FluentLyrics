@@ -460,6 +460,46 @@ class _StaleTranslationLyricsService extends LyricsService {
   }
 }
 
+class _PausedCandidateLyricsService extends LyricsService {
+  final Completer<void> pauseReached = Completer<void>();
+  final Completer<void> resumed = Completer<void>();
+
+  @override
+  Stream<LyricsResult> fetchLyrics({
+    required String title,
+    required List<String> artist,
+    required String album,
+    required int durationSeconds,
+    Function(String)? onStatusUpdate,
+    Function(bool)? onFetchStatusUpdate,
+    bool Function()? isCancelled,
+    required List<LyricProviderType> trimMetadataProviders,
+    required bool richSyncEnabled,
+    Function(LyricsResult)? onTranslation,
+    void Function(LyricsResult)? onCandidate,
+    Future<bool> Function()? onPauseForCandidates,
+  }) async* {
+    final initial = LyricsResult(
+      lyrics: [lyric('first line', 1)],
+      source: 'Initial',
+    );
+    onCandidate?.call(initial);
+    yield initial;
+
+    pauseReached.complete();
+    final shouldContinue = await onPauseForCandidates!.call();
+    if (!shouldContinue) return;
+
+    final resumedResult = LyricsResult(
+      lyrics: [lyric('resumed line', 2)],
+      source: 'Resumed',
+    );
+    onCandidate?.call(resumedResult);
+    resumed.complete();
+    yield resumedResult;
+  }
+}
+
 Lyric lyric(String text, int seconds) {
   return Lyric(
     startTime: Duration(seconds: seconds),
@@ -504,6 +544,47 @@ void main() {
       expect(provider.lyricsResult.source, 'Manual');
       expect(provider.lyricsResult.lyrics.last.text, 'manual line');
 
+    provider.dispose();
+  },
+  );
+
+  test(
+    'open candidate sheet early keeps fetch flowing when pause point is reached later',
+    () async {
+      final lyricsService = _PausedCandidateLyricsService();
+      final mediaService = _FakeMediaService(
+        MediaMetadata(
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          duration: const Duration(seconds: 120),
+          artUrl: 'fallback',
+        ),
+      );
+      final provider = LyricsProvider(
+        mediaService: mediaService,
+        lyricsService: lyricsService,
+        settingsService: _FakeSettingsService(translationEnabled: false),
+        cacheService: _FakeLyricsCacheService(),
+      );
+
+      provider.setCandidateSheetOpen(true);
+
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      mediaService.emitChange();
+
+      await lyricsService.pauseReached.future;
+      await lyricsService.resumed.future;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(provider.candidates.map((item) => item.source), [
+        'Initial',
+        'Resumed',
+      ]);
+      expect(provider.lyricsResult.source, 'Resumed');
+
+      provider.setCandidateSheetOpen(false);
       provider.dispose();
     },
   );

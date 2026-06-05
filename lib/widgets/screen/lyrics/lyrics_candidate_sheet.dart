@@ -12,6 +12,7 @@ Future<void> showLyricsCandidateSheet(
   BuildContext context,
   LyricsProvider provider,
 ) {
+  provider.setCandidateSheetOpen(true);
   // If the fetch is paused waiting for this sheet, resume it now so remaining
   // providers are queried while the user browses the list.
   provider.resumeCandidateFetch();
@@ -21,7 +22,9 @@ Future<void> showLyricsCandidateSheet(
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (_) => _LyricsCandidateSheet(provider: provider),
-  );
+  ).whenComplete(() {
+    provider.setCandidateSheetOpen(false);
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

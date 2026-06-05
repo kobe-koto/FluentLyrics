@@ -158,6 +158,7 @@ class LyricsProvider with ChangeNotifier {
   /// Set to true when the sheet is opened before the stream reaches the pause
   /// point, so the pause skips waiting and continues immediately.
   bool _candidateSheetOpenedEarly = false;
+  bool _isCandidateSheetOpen = false;
 
   // Translation candidates
   List<LyricsResult> _translationCandidates = [];
@@ -1285,6 +1286,9 @@ class LyricsProvider with ChangeNotifier {
         },
         onPauseForCandidates: () async {
           if (!_canAcceptLyricsResult(metadata, requestVersion)) return false;
+          if (_isCandidateSheetOpen) {
+            return true;
+          }
           // If the sheet was opened before we reached this point, skip waiting.
           if (_candidateSheetOpenedEarly) {
             _candidateSheetOpenedEarly = false;
@@ -1344,17 +1348,35 @@ class LyricsProvider with ChangeNotifier {
   /// If the stream is already paused, completes the Completer to resume.
   /// If the stream hasn't reached the pause point yet, sets a flag so it
   /// skips the wait when it eventually does.
+  void setCandidateSheetOpen(bool isOpen) {
+    _isCandidateSheetOpen = isOpen;
+    if (isOpen) {
+      _resumePausedCandidateFetch();
+    }
+  }
+
   void resumeCandidateFetch() {
+    if (_resumePausedCandidateFetch()) {
+      return;
+    }
+
+    if (!_isPausedForCandidates && _candidatePauseCompleter == null) {
+      // Sheet opened before the stream reached the pause point.
+      _candidateSheetOpenedEarly = true;
+    }
+  }
+
+  bool _resumePausedCandidateFetch() {
     if (_isPausedForCandidates && _candidatePauseCompleter != null) {
       // Already paused — wake it up.
       _isPausedForCandidates = false;
       _candidatePauseCompleter!.complete(true);
       _candidatePauseCompleter = null;
       notifyListeners();
-    } else if (!_isPausedForCandidates && _candidatePauseCompleter == null) {
-      // Sheet opened before the stream reached the pause point.
-      _candidateSheetOpenedEarly = true;
+      return true;
     }
+
+    return false;
   }
 
   /// Replaces the current lyrics display with [candidate] and persists it to
