@@ -1,4 +1,5 @@
 import 'package:fluent_lyrics/main.dart';
+import 'package:fluent_lyrics/i18n/strings.g.dart';
 import 'package:fluent_lyrics/providers/lyrics_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,11 +13,14 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
+    LocaleSettings.setLocaleSync(AppLocale.en);
 
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => LyricsProvider(),
-        child: const MyApp(),
+      TranslationProvider(
+        child: ChangeNotifierProvider(
+          create: (_) => LyricsProvider(),
+          child: const MyApp(),
+        ),
       ),
     );
     await tester.pump();
