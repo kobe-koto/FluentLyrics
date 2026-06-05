@@ -24,7 +24,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     super.initState();
     _breathingController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1350),
+      duration: _effectiveBreathingCycleDuration,
     )..repeat(reverse: true);
 
     _breathingAnimation = Tween<double>(begin: 0.96, end: 1.04).animate(
@@ -40,6 +40,9 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
   @override
   void didUpdateWidget(covariant InterludeIndicator oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.duration != widget.duration) {
+      _breathingController.duration = _effectiveBreathingCycleDuration;
+    }
     _syncBreathingAnimation();
   }
 
@@ -57,6 +60,15 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     } else if (!_breathingController.isAnimating) {
       _breathingController.repeat(reverse: true);
     }
+  }
+
+  Duration get _effectiveBreathingCycleDuration {
+    final duration = InterludeIndicatorHelper.breathingCycleDurationForDuration(
+      widget.duration,
+    );
+    return duration == Duration.zero
+        ? const Duration(milliseconds: 1)
+        : duration;
   }
 
   bool get _isBreathingPhase {
@@ -114,7 +126,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
         scale: targetScale,
         duration: scaleDuration,
         curve: Curves.easeInCirc,
-        alignment: Alignment.centerLeft,
+        alignment: _isBreathingPhase ? Alignment.center : Alignment.centerLeft,
         child: AnimatedOpacity(
           opacity: targetOpacity,
           duration: const Duration(
@@ -125,7 +137,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
             builder: (context, child) {
               return Transform.scale(
                 scale: _isBreathingPhase ? _breathingAnimation.value : 1.0,
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.center,
                 child: child,
               );
             },
