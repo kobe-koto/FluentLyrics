@@ -1,6 +1,7 @@
 class InterludeIndicatorHelper {
   const InterludeIndicatorHelper._();
 
+  static const int maxBreathingCycleDurationMs = 1350;
   static const int quietGapDurationMs = 150;
   static const int tailSwellDurationMs = 140;
   static const int tailShrinkDurationMs = 160;
@@ -40,6 +41,21 @@ class InterludeIndicatorHelper {
       duration: duration,
       millisecondsFromEnd: quietGapDurationMs + tailDurationMs,
     );
+  }
+
+  static Duration breathingWindowForDuration(Duration duration) {
+    if (duration.inMilliseconds <= 0) return Duration.zero;
+    final breathingWindowMs =
+        duration.inMilliseconds - quietGapDurationMs - tailDurationMs;
+    return Duration(milliseconds: breathingWindowMs < 0 ? 0 : breathingWindowMs);
+  }
+
+  static Duration breathingCycleDurationForDuration(Duration duration) {
+    final breathingWindowMs = breathingWindowForDuration(duration).inMilliseconds;
+    if (breathingWindowMs <= 0) return Duration.zero;
+
+    final cycleCount = (breathingWindowMs / maxBreathingCycleDurationMs).ceil();
+    return Duration(milliseconds: (breathingWindowMs / cycleCount).ceil());
   }
 
   static double tailStartForDuration(Duration duration) {

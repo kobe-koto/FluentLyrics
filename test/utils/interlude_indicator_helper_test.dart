@@ -15,19 +15,19 @@ void main() {
   });
 
   test('dots and breathing end before gap and tail begin', () {
-    expect(InterludeIndicatorHelper.totalDotWindowForDuration(duration), 0.94);
-    expect(InterludeIndicatorHelper.tailStartForDuration(duration), 0.95);
-    expect(InterludeIndicatorHelper.swellEndForDuration(duration), 0.97);
+    expect(InterludeIndicatorHelper.totalDotWindowForDuration(duration), 0.91);
+    expect(InterludeIndicatorHelper.tailStartForDuration(duration), 0.94);
+    expect(InterludeIndicatorHelper.swellEndForDuration(duration), 0.968);
     expect(
       InterludeIndicatorHelper.isBreathingPhase(
-        progress: 0.939,
+        progress: 0.909,
         duration: duration,
       ),
       isTrue,
     );
     expect(
       InterludeIndicatorHelper.isBreathingPhase(
-        progress: 0.94,
+        progress: 0.91,
         duration: duration,
       ),
       isFalse,
@@ -42,10 +42,21 @@ void main() {
     );
   });
 
+  test('breathing cycle duration fits an integer count into the breathing window', () {
+    expect(
+      InterludeIndicatorHelper.breathingWindowForDuration(duration),
+      const Duration(milliseconds: 4550),
+    );
+    expect(
+      InterludeIndicatorHelper.breathingCycleDurationForDuration(duration),
+      const Duration(milliseconds: 1138),
+    );
+  });
+
   test('targetScale stays at one during the quiet gap', () {
     expect(
       InterludeIndicatorHelper.targetScale(
-        progress: 0.945,
+        progress: 0.925,
         duration: duration,
       ),
       1.0,
@@ -54,7 +65,7 @@ void main() {
 
   test('targetScale swells during tail swell phase', () {
     final scale = InterludeIndicatorHelper.targetScale(
-      progress: 0.96,
+      progress: 0.95,
       duration: duration,
     );
 
@@ -64,11 +75,11 @@ void main() {
 
   test('targetScale and opacity shrink and fade during tail shrink phase', () {
     final scale = InterludeIndicatorHelper.targetScale(
-      progress: 0.985,
+      progress: 0.98,
       duration: duration,
     );
     final opacity = InterludeIndicatorHelper.targetOpacity(
-      progress: 0.985,
+      progress: 0.98,
       duration: duration,
     );
 
