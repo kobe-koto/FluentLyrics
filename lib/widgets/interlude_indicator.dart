@@ -16,8 +16,11 @@ class InterludeIndicator extends StatefulWidget {
 
 class _InterludeIndicatorState extends State<InterludeIndicator>
     with SingleTickerProviderStateMixin {
+  static const int _snapJumpThresholdMs = 120;
+
   late AnimationController _breathingController;
   late Animation<double> _breathingAnimation;
+  bool _snapAnimations = false;
 
   @override
   void initState() {
@@ -40,6 +43,9 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
   @override
   void didUpdateWidget(covariant InterludeIndicator oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_shouldSnapForProgressJump(oldWidget)) {
+      _enableSnapAnimationsForFrame();
+    }
     if (oldWidget.duration != widget.duration) {
       _breathingController.duration = _effectiveBreathingCycleDuration;
     }
@@ -60,6 +66,30 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     } else if (!_breathingController.isAnimating) {
       _breathingController.repeat(reverse: true);
     }
+  }
+
+  bool _shouldSnapForProgressJump(InterludeIndicator oldWidget) {
+    if (oldWidget.duration != widget.duration) return true;
+
+    final durationMs = widget.duration.inMilliseconds;
+    if (durationMs <= 0) return false;
+
+    final jumpedMs =
+        (widget.progress - oldWidget.progress).abs() * durationMs;
+    return jumpedMs >= _snapJumpThresholdMs;
+  }
+
+  void _enableSnapAnimationsForFrame() {
+    if (_snapAnimations) return;
+    setState(() {
+      _snapAnimations = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_snapAnimations) return;
+      setState(() {
+        _snapAnimations = false;
+      });
+    });
   }
 
   Duration get _effectiveBreathingCycleDuration {
@@ -118,20 +148,27 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
             milliseconds: InterludeIndicatorHelper.tailShrinkDurationMs,
           )
         : Duration.zero;
+    final effectiveScaleDuration = _snapAnimations
+        ? Duration.zero
+        : scaleDuration;
+    final effectiveOpacityDuration = _snapAnimations
+        ? Duration.zero
+        : const Duration(
+            milliseconds: InterludeIndicatorHelper.tailShrinkDurationMs,
+          );
+    final effectiveDotDuration = _snapAnimations ? Duration.zero : dotDuration;
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
       alignment: Alignment.centerLeft,
       child: AnimatedScale(
         scale: targetScale,
-        duration: scaleDuration,
+        duration: effectiveScaleDuration,
         curve: Curves.easeInCirc,
         alignment: _isBreathingPhase ? Alignment.center : Alignment.centerLeft,
         child: AnimatedOpacity(
           opacity: targetOpacity,
-          duration: const Duration(
-            milliseconds: InterludeIndicatorHelper.tailShrinkDurationMs,
-          ),
+          duration: effectiveOpacityDuration,
           child: AnimatedBuilder(
             animation: _breathingAnimation,
             builder: (context, child) {
@@ -150,7 +187,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
                     dotIndex: 0,
                     duration: widget.duration,
                   ),
-                  duration: dotDuration,
+                  duration: effectiveDotDuration,
                   lastDot: false,
                 ),
                 _AnimatedDot(
@@ -159,7 +196,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
                     dotIndex: 1,
                     duration: widget.duration,
                   ),
-                  duration: dotDuration,
+                  duration: effectiveDotDuration,
                   lastDot: false,
                 ),
                 _AnimatedDot(
@@ -168,7 +205,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
                     dotIndex: 2,
                     duration: widget.duration,
                   ),
-                  duration: dotDuration,
+                  duration: effectiveDotDuration,
                   lastDot: true,
                 ),
               ],
