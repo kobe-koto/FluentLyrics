@@ -1,7 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_model.dart';
@@ -40,8 +41,7 @@ class LyricsList extends StatefulWidget {
   State<LyricsList> createState() => _LyricsListState();
 }
 
-class _LyricsListState extends State<LyricsList>
-    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+class _LyricsListState extends State<LyricsList> {
   /// Deduplicated set of indices currently considered in-viewport.
   ///
   /// Driven by [ItemPositionsListener.itemPositions] but only notifies when
@@ -54,35 +54,14 @@ class _LyricsListState extends State<LyricsList>
   /// happens to keep the same constraints).
   Size? _lastViewportSize;
 
-  /// Last window logical size observed via any source (didChangeMetrics or
-  /// the polling Ticker). Some Wayland compositors (notably Niri's
-  /// switch-preset-size action) reconfigure the surface in a way where
-  /// neither LayoutBuilder constraints nor didChangeMetrics fire reliably,
-  /// so a per-frame poll catches what the event paths miss. The compare is
-  /// cheap (two doubles) and the Ticker is silent when no frame is being
-  /// produced.
-  Size? _lastWindowSize;
-  late final Ticker _viewportPollTicker;
+  static const Duration _viewportResizeDebounce = Duration(milliseconds: 50);
 
-  /// Monotonic counter incremented on every resize. The post-frame callback
-  /// only fires the resize notification if its captured value is still the
-  /// latest, which collapses a burst of intermediate resizes (e.g. while the
-  /// user drags a window edge, or multiple channels reporting the same
-  /// resize) into a single jump.
-  int _resizeNonce = 0;
+  Timer? _viewportResizeTimer;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     widget.itemPositionsListener.itemPositions.addListener(_recomputeViewport);
-    // Per-frame fallback resize detector. Niri's switch-preset-size and
-    // similar compositor actions sometimes change the surface size without
-    // firing didChangeMetrics or rebuilding the LayoutBuilder; polling
-    // catches whatever the event channels miss. The Ticker is muted by the
-    // engine when no frame is being produced, so an idle hidden window
-    // costs nothing.
-    _viewportPollTicker = createTicker(_pollWindowSize)..start();
     // Seed initial value once positions are populated post-mount.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -106,41 +85,12 @@ class _LyricsListState extends State<LyricsList>
 
   @override
   void dispose() {
-    _viewportPollTicker.dispose();
-    WidgetsBinding.instance.removeObserver(this);
+    _viewportResizeTimer?.cancel();
     widget.itemPositionsListener.itemPositions.removeListener(
       _recomputeViewport,
     );
     _inViewport.dispose();
     super.dispose();
-  }
-
-  /// Per-frame poll of the OS view size. Cheap (two doubles compared) and
-  /// the safety net for compositors that drop resize events.
-  void _pollWindowSize(Duration _) {
-    if (!mounted) return;
-    final view = View.maybeOf(context);
-    if (view == null) return;
-    final size = view.physicalSize / view.devicePixelRatio;
-    if (!size.isFinite) return;
-    if (_lastWindowSize == size) return;
-    _lastWindowSize = size;
-    _scheduleResnap();
-  }
-
-  @override
-  void didChangeMetrics() {
-    // Engine-level signal that the OS/compositor changed the window
-    // geometry. This is the fast path; the per-frame Ticker is a fallback
-    // for compositor paths that drop the metrics event on the floor.
-    if (!mounted) return;
-    final view = View.maybeOf(context);
-    if (view == null) return;
-    final size = view.physicalSize / view.devicePixelRatio;
-    if (!size.isFinite) return;
-    if (_lastWindowSize == size) return;
-    _lastWindowSize = size;
-    _scheduleResnap();
   }
 
   void _recomputeViewport() {
@@ -168,8 +118,8 @@ class _LyricsListState extends State<LyricsList>
 
   /// Called from the LayoutBuilder on every layout pass. Detects an actual
   /// viewport size change (window resize, orientation flip, pane re-layout)
-  /// and dispatches a single [onViewportResized] notification after the
-  /// frame settles. Skipped on the first pass so we don't fire on mount.
+  /// and debounces [onViewportResized]. Skipped on the first pass so we don't
+  /// fire on mount.
   void _handleConstraints(BoxConstraints constraints) {
     final size = constraints.biggest;
     // Ignore unbounded / not-yet-laid-out constraints.
@@ -184,14 +134,12 @@ class _LyricsListState extends State<LyricsList>
     _scheduleResnap();
   }
 
-  /// Coalesce a burst of resize events (LayoutBuilder + didChangeMetrics
-  /// reporting the same compositor reconfigure, or many intermediate
-  /// drag-resize frames) into a single post-frame resnap.
+  /// Coalesce a burst of resize-driven layouts into a single resnap.
   void _scheduleResnap() {
-    final myNonce = ++_resizeNonce;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    _viewportResizeTimer?.cancel();
+    _viewportResizeTimer = Timer(_viewportResizeDebounce, () {
+      _viewportResizeTimer = null;
       if (!mounted) return;
-      if (_resizeNonce != myNonce) return;
       widget.onViewportResized?.call();
     });
   }

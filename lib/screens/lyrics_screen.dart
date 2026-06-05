@@ -57,6 +57,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
   LyricsProvider? _wakelockProvider;
   bool? _lastKeepScreenOn;
   List<Lyric>? _lastLyricsRef;
+  bool? _lastLayoutIsLandscape;
 
   @override
   void didChangeDependencies() {
@@ -172,6 +173,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                 child: OrientationBuilder(
                   builder: (context, orientation) {
                     final isLandscape = orientation == Orientation.landscape;
+                    _handleLayoutModeChanged(isLandscape, provider);
 
                     Future<void> onRefresh() async {
                       setState(() {
@@ -312,6 +314,13 @@ class _LyricsScreenState extends State<LyricsScreen> {
     }
 
     _syncCurrentIndex(provider.currentIndex, provider.linesBefore.current);
+  }
+
+  void _handleLayoutModeChanged(bool isLandscape, LyricsProvider provider) {
+    final previous = _lastLayoutIsLandscape;
+    _lastLayoutIsLandscape = isLandscape;
+    if (previous == null || previous == isLandscape) return;
+    _resnapToCurrentIndex(provider);
   }
 
   /// Re-anchor the viewport to the current line without animation after the
