@@ -33,6 +33,8 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
         curve: Curves.easeInOutSine,
       ),
     );
+
+    _syncBreathingAnimation();
   }
 
   @override
@@ -48,7 +50,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
   }
 
   void _syncBreathingAnimation() {
-    if (_isSwellPhase) {
+    if (!_isBreathingPhase) {
       if (_breathingController.isAnimating) {
         _breathingController.stop();
       }
@@ -57,8 +59,22 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     }
   }
 
+  bool get _isBreathingPhase {
+    return InterludeIndicatorHelper.isBreathingPhase(
+      progress: widget.progress,
+      duration: widget.duration,
+    );
+  }
+
   bool get _isSwellPhase {
     return InterludeIndicatorHelper.isSwellPhase(
+      progress: widget.progress,
+      duration: widget.duration,
+    );
+  }
+
+  bool get _isShrinkPhase {
+    return InterludeIndicatorHelper.isShrinkPhase(
       progress: widget.progress,
       duration: widget.duration,
     );
@@ -77,27 +93,38 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
       progress: widget.progress,
       duration: widget.duration,
     );
+    final targetOpacity = InterludeIndicatorHelper.targetOpacity(
+      progress: widget.progress,
+      duration: widget.duration,
+    );
+    final scaleDuration = _isSwellPhase
+        ? const Duration(
+            milliseconds: InterludeIndicatorHelper.tailSwellDurationMs,
+          )
+        : _isShrinkPhase
+        ? const Duration(
+            milliseconds: InterludeIndicatorHelper.tailShrinkDurationMs,
+          )
+        : Duration.zero;
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
       alignment: Alignment.centerLeft,
       child: AnimatedScale(
         scale: targetScale,
-        duration: const Duration(
-          milliseconds: InterludeIndicatorHelper.shrinkDurationMs,
-        ),
+        duration: scaleDuration,
         curve: Curves.easeInCirc,
         alignment: Alignment.centerLeft,
         child: AnimatedOpacity(
-          opacity: targetScale.clamp(0.0, 1.0),
+          opacity: targetOpacity,
           duration: const Duration(
-            milliseconds: InterludeIndicatorHelper.shrinkDurationMs,
+            milliseconds: InterludeIndicatorHelper.tailShrinkDurationMs,
           ),
           child: AnimatedBuilder(
             animation: _breathingAnimation,
             builder: (context, child) {
               return Transform.scale(
-                scale: _breathingAnimation.value,
+                scale: _isBreathingPhase ? _breathingAnimation.value : 1.0,
                 alignment: Alignment.centerLeft,
                 child: child,
               );
