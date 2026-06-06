@@ -6,7 +6,7 @@ class InterludeIndicatorHelper {
   static const int tailSwellDurationMs = 140;
   static const int tailShrinkDurationMs = 160;
   static const int tailDurationMs = tailSwellDurationMs + tailShrinkDurationMs;
-  static const double overlap = 0.3;
+  static const double overlap = 0.45;
   static const double swellScale = 1.2;
 
   static bool isBreathingPhase({
