@@ -11,16 +11,16 @@ class TranslationHelper {
     int translationBias = 0,
   }) {
     final List<Map<String, String>> rawTranslation = [];
-    // Try to pair with original lyrics based on timestamps
+    // Try to pair with translation based on timestamps
     int nextSearchStartIndex = 0;
-    for (var transLine in translatedLyrics) {
-      // Find matching original line
+    for (var origLine in originalLyrics) {
+      // Find matching translated line
       Lyric? bestMatch;
 
       // 1. Try perfect match first
-      for (int i = nextSearchStartIndex; i < originalLyrics.length; i++) {
-        final l = originalLyrics[i];
-        if (l.startTime.inMilliseconds == transLine.startTime.inMilliseconds) {
+      for (int i = nextSearchStartIndex; i < translatedLyrics.length; i++) {
+        final l = translatedLyrics[i];
+        if (l.startTime.inMilliseconds == origLine.startTime.inMilliseconds) {
           bestMatch = l;
           nextSearchStartIndex = i;
           break;
@@ -32,10 +32,10 @@ class TranslationHelper {
         // Use bias magnitude as tolerance window
         final int tolerance = translationBias.abs();
         int minDiff = tolerance;
-        for (int i = nextSearchStartIndex; i < originalLyrics.length; i++) {
-          final l = originalLyrics[i];
+        for (int i = nextSearchStartIndex; i < translatedLyrics.length; i++) {
+          final l = translatedLyrics[i];
           final diff =
-              (l.startTime.inMilliseconds - transLine.startTime.inMilliseconds)
+              (l.startTime.inMilliseconds - origLine.startTime.inMilliseconds)
                   .abs();
 
           if (bestMatch != null && diff > tolerance) {
@@ -51,12 +51,12 @@ class TranslationHelper {
         }
       }
 
-      if (bestMatch != null && bestMatch.text.isNotEmpty) {
-        rawTranslation.add({
-          'original': bestMatch.text,
-          'translated': transLine.text,
-        });
-      }
+      final lineCovered = bestMatch != null && bestMatch.text.trim().isNotEmpty;
+
+      rawTranslation.add({
+        'original': origLine.text,
+        'translated': lineCovered ? bestMatch.text : '',
+      });
     }
     return rawTranslation;
   }
