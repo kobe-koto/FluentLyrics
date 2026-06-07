@@ -69,6 +69,13 @@ class _LyricsScreenState extends State<LyricsScreen> {
       _scrollSyncProvider = provider;
       _scrollSyncProvider!.addListener(_handleProviderChanged);
       _lastLyricsRef = provider.lyrics;
+      // Seed art providers once at mount so the first frame already shows the
+      // correct artwork without waiting for a provider notification.
+      _updateArtProviders(
+        provider.currentMetadata,
+        provider.mediaService,
+        provider.artworkUrlsNotifier.value,
+      );
       _syncCurrentIndex(provider.currentIndex, provider.linesBefore.current);
     }
 
@@ -139,159 +146,162 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LyricsProvider>(
-      builder: (context, provider, child) {
-        final metadata = provider.currentMetadata;
-        _updateArtProviders(
-          metadata,
-          provider.mediaService,
-          provider.artworkUrlsNotifier.value,
-          forceReload: _isForceReloading,
-        );
-        if (_isForceReloading) _isForceReloading = false;
+    // The screen itself does not listen to the provider. Each subtree below
+    // listens to the minimum set of fields it actually renders, so a
+    // notifyListeners() call from media polling does not force the entire
+    // screen's element tree to rebuild.
+    final provider = context.read<LyricsProvider>();
 
-        final bgArt =
-            _backgroundArtProvider ??
-            _foregroundArtProvider ??
-            const AssetImage('assets/album_art.png');
-        final fgArt =
-            _foregroundArtProvider ?? const AssetImage('assets/album_art.png');
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Background Layer. Only rebuilds when art, motion setting, or
+          // playing state changes. Position ticks do NOT rebuild it.
+          _BackgroundSection(
+            provider: provider,
+            getBackgroundArt: () => _backgroundArtProvider,
+            getForegroundArt: () => _foregroundArtProvider,
+          ),
 
-        return Scaffold(
-          body: Stack(
-            children: [
-              // Background Layer
-              LyricsBackground(
-                artProvider: bgArt,
-                motionEnabled: provider.backgroundMotionEnabled.current,
-                animate: provider.isPlaying,
-              ),
+          // Content Layer
+          SafeArea(
+            child: OrientationBuilder(
+              builder: (context, orientation) {
+                final isLandscape = orientation == Orientation.landscape;
+                _handleLayoutModeChanged(isLandscape, provider);
 
-              // Content Layer
-              SafeArea(
-                child: OrientationBuilder(
-                  builder: (context, orientation) {
-                    final isLandscape = orientation == Orientation.landscape;
-                    _handleLayoutModeChanged(isLandscape, provider);
+                final lyricsListWidget = ShaderMask(
+                  shaderCallback: (Rect bounds) {
+                    return _maskGradient.createShader(bounds);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 1),
+                    // LyricsList reads many provider fields directly inside
+                    // its own build; wrap it in a Consumer so it rebuilds on
+                    // provider notifications without dragging the rest of
+                    // the screen with it.
+                    child: Consumer<LyricsProvider>(
+                      builder: (context, p, _) => LyricsList(
+                        provider: p,
+                        itemScrollController: _itemScrollController,
+                        itemPositionsListener: _itemPositionsListener,
+                        isManualScrolling: _isManualScrolling,
+                        onUserInteraction: _handleUserInteraction,
+                        onViewportResized: () => _resnapToCurrentIndex(p),
+                      ),
+                    ),
+                  ),
+                );
 
-                    Future<void> onRefresh() async {
-                      setState(() {
-                        _isForceReloading = true;
-                        _lastArtUrl = null;
-                        _failedArtUrls.clear();
-                      });
-                      if (_foregroundArtProvider != null) {
-                        _foregroundArtProvider!.evict();
-                      }
-                      if (_backgroundArtProvider != null) {
-                        _backgroundArtProvider!.evict();
-                      }
-                      await provider.clearCurrentTrackCache();
-                    }
+                final headerWidget = _HeaderSection(
+                  provider: provider,
+                  getForegroundArt: () => _foregroundArtProvider,
+                  onRefresh: _handleRefresh,
+                  isLandscape: isLandscape,
+                );
 
-                    final lyricsListWidget = ShaderMask(
-                      shaderCallback: (Rect bounds) {
-                        return _maskGradient.createShader(bounds);
-                      },
-                      blendMode: BlendMode.dstIn,
+                final controlAreaWidget = _ControlSection(
+                  provider: provider,
+                  isScrubbing: _isScrubbing,
+                  scrubValue: _scrubValue,
+                  onScrubChanged: (value) {
+                    setState(() {
+                      _isScrubbing = true;
+                      _scrubValue = value;
+                    });
+                  },
+                  onScrubEnd: (value) {
+                    final totalMs =
+                        provider.currentMetadata?.duration.inMilliseconds ??
+                        1;
+                    final ms = (value * totalMs).round();
+                    provider.seek(Duration(milliseconds: ms));
+                    setState(() {
+                      _isScrubbing = false;
+                    });
+                  },
+                );
+
+                if (isLandscape) {
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 1),
-                        child: LyricsList(
-                          provider: provider,
-                          itemScrollController: _itemScrollController,
-                          itemPositionsListener: _itemPositionsListener,
-                          isManualScrolling: _isManualScrolling,
-                          onUserInteraction: _handleUserInteraction,
-                          onViewportResized: () =>
-                              _resnapToCurrentIndex(provider),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 48.0,
+                          horizontal: 16.0,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 1,
+                              child: Column(
+                                children: [
+                                  Expanded(child: headerWidget),
+                                  controlAreaWidget,
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(flex: 1, child: lyricsListWidget),
+                          ],
                         ),
                       ),
-                    );
+                    ),
+                  );
+                }
 
-                    final controlAreaWidget = LyricsControlArea(
-                      provider: provider,
-                      isScrubbing: _isScrubbing,
-                      scrubValue: _scrubValue,
-                      onScrubChanged: (value) {
-                        setState(() {
-                          _isScrubbing = true;
-                          _scrubValue = value;
-                        });
-                      },
-                      onScrubEnd: (value) {
-                        final totalMs =
-                            provider.currentMetadata?.duration.inMilliseconds ??
-                            1;
-                        final ms = (value * totalMs).round();
-                        provider.seek(Duration(milliseconds: ms));
-                        setState(() {
-                          _isScrubbing = false;
-                        });
-                      },
-                    );
-
-                    if (isLandscape) {
-                      return Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1200),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 48.0,
-                              horizontal: 16.0,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 1,
-                                  child: Column(
-                                    children: [
-                                      Expanded(
-                                        child: LyricsHeader(
-                                          provider: provider,
-                                          artProvider: fgArt,
-                                          isLandscape: true,
-                                          onRefresh: onRefresh,
-                                        ),
-                                      ),
-                                      controlAreaWidget,
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 24),
-                                Expanded(flex: 1, child: lyricsListWidget),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-
-                    return Column(
-                      children: [
-                        LyricsHeader(
-                          provider: provider,
-                          artProvider: fgArt,
-                          onRefresh: onRefresh,
-                        ),
-                        Expanded(child: lyricsListWidget),
-                        controlAreaWidget,
-                      ],
-                    );
-                  },
-                ),
-              ),
-              // Permission Overlay
-              PermissionOverlay(provider: provider),
-            ],
+                return Column(
+                  children: [
+                    headerWidget,
+                    Expanded(child: lyricsListWidget),
+                    controlAreaWidget,
+                  ],
+                );
+              },
+            ),
           ),
-        );
-      },
+          // Permission Overlay
+          _PermissionOverlaySection(provider: provider),
+        ],
+      ),
     );
+  }
+
+  Future<void> _handleRefresh() async {
+    final provider = context.read<LyricsProvider>();
+    setState(() {
+      _isForceReloading = true;
+      _lastArtUrl = null;
+      _failedArtUrls.clear();
+    });
+    if (_foregroundArtProvider != null) {
+      _foregroundArtProvider!.evict();
+    }
+    if (_backgroundArtProvider != null) {
+      _backgroundArtProvider!.evict();
+    }
+    await provider.clearCurrentTrackCache();
   }
 
   void _handleProviderChanged() {
     final provider = _scrollSyncProvider;
     if (provider == null) return;
+
+    // Keep the art providers in sync with whatever the provider reports.
+    // Doing this here (rather than during build) means the surrounding
+    // widget tree no longer has to listen to the full provider just to
+    // notice an art-url change; ValueNotifier-driven sub-widgets that
+    // read _foregroundArtProvider / _backgroundArtProvider get them via
+    // setState below when they actually swap.
+    _updateArtProviders(
+      provider.currentMetadata,
+      provider.mediaService,
+      provider.artworkUrlsNotifier.value,
+      forceReload: _isForceReloading,
+    );
+    if (_isForceReloading) _isForceReloading = false;
 
     // Detect display-content changes (new lyrics fetched, translation
     // arrived/cleared, rich-sync stripping toggled). LyricsProvider's `lyrics`
@@ -507,5 +517,142 @@ class _LyricsScreenState extends State<LyricsScreen> {
       unawaited(WakelockPlus.disable());
     }
     super.dispose();
+  }
+}
+
+/// Background subtree. Rebuilds only when the visually relevant fields
+/// (motion setting, isPlaying, art identity) change; positional ticks from
+/// media polling do not trigger a rebuild here.
+class _BackgroundSection extends StatelessWidget {
+  final LyricsProvider provider;
+  final ImageProvider? Function() getBackgroundArt;
+  final ImageProvider? Function() getForegroundArt;
+
+  const _BackgroundSection({
+    required this.provider,
+    required this.getBackgroundArt,
+    required this.getForegroundArt,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<LyricsProvider, ({bool motion, bool isPlaying})>(
+      selector: (_, p) =>
+          (motion: p.backgroundMotionEnabled.current, isPlaying: p.isPlaying),
+      builder: (context, s, child) {
+        final bgArt =
+            getBackgroundArt() ??
+            getForegroundArt() ??
+            const AssetImage('assets/album_art.png');
+        return LyricsBackground(
+          artProvider: bgArt,
+          motionEnabled: s.motion,
+          animate: s.isPlaying,
+        );
+      },
+    );
+  }
+}
+
+/// Header subtree. Listens only to fields the header actually renders:
+/// the metadata identity (title/artist/album/artUrl) and the number of
+/// candidates (to update the badge state).
+class _HeaderSection extends StatelessWidget {
+  final LyricsProvider provider;
+  final ImageProvider? Function() getForegroundArt;
+  final VoidCallback onRefresh;
+  final bool isLandscape;
+
+  const _HeaderSection({
+    required this.provider,
+    required this.getForegroundArt,
+    required this.onRefresh,
+    required this.isLandscape,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<LyricsProvider,
+        ({MediaMetadata? metadata, int candidatesLen})>(
+      selector: (_, p) =>
+          (metadata: p.currentMetadata, candidatesLen: p.candidates.length),
+      // Custom shouldRebuild because MediaMetadata implements ==, and we want
+      // record-shape comparison.
+      shouldRebuild: (prev, next) =>
+          prev.metadata != next.metadata ||
+          prev.candidatesLen != next.candidatesLen,
+      builder: (context, _, _) {
+        final fg =
+            getForegroundArt() ?? const AssetImage('assets/album_art.png');
+        return LyricsHeader(
+          provider: provider,
+          artProvider: fg,
+          isLandscape: isLandscape,
+          onRefresh: onRefresh,
+        );
+      },
+    );
+  }
+}
+
+/// Control area subtree. Listens to the smallest possible footprint:
+/// play/pause state, control ability, track offset, and total duration.
+/// Position ticks are handled inside via `currentPositionNotifier` and do
+/// not rebuild this Selector.
+class _ControlSection extends StatelessWidget {
+  final LyricsProvider provider;
+  final bool isScrubbing;
+  final double scrubValue;
+  final Function(double) onScrubChanged;
+  final Function(double) onScrubEnd;
+
+  const _ControlSection({
+    required this.provider,
+    required this.isScrubbing,
+    required this.scrubValue,
+    required this.onScrubChanged,
+    required this.onScrubEnd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<LyricsProvider,
+        ({
+          bool isPlaying,
+          MediaControlAbility ability,
+          int offsetMs,
+          int durationMs,
+        })>(
+      selector: (_, p) => (
+        isPlaying: p.isPlaying,
+        ability: p.controlAbility,
+        offsetMs: p.trackOffset.inMilliseconds,
+        durationMs: p.currentMetadata?.duration.inMilliseconds ?? 0,
+      ),
+      builder: (context, _, _) {
+        return LyricsControlArea(
+          provider: provider,
+          isScrubbing: isScrubbing,
+          scrubValue: scrubValue,
+          onScrubChanged: onScrubChanged,
+          onScrubEnd: onScrubEnd,
+        );
+      },
+    );
+  }
+}
+
+/// Permission overlay subtree. Only rebuilds when grant state flips.
+class _PermissionOverlaySection extends StatelessWidget {
+  final LyricsProvider provider;
+
+  const _PermissionOverlaySection({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<LyricsProvider, bool>(
+      selector: (_, p) => p.androidPermissionGranted,
+      builder: (context, _, _) => PermissionOverlay(provider: provider),
+    );
   }
 }
