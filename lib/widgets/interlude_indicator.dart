@@ -32,7 +32,12 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
   bool _snapAnimations = false;
 
   // — Progress interpolation state —
-  double _smoothProgress = 0.0;
+  /// Notifier carrying the smoothed progress for this interlude.
+  /// Using a ValueNotifier instead of setState in the ticker keeps the
+  /// indicator's own widget tree (Transform.scale + Row + dots + shadows)
+  /// from being rebuilt every frame; only the ValueListenableBuilders that
+  /// actually need the value rebuild.
+  final ValueNotifier<double> _smoothProgress = ValueNotifier<double>(0.0);
   double _lastRealProgress = 0.0;
   final Stopwatch _interpolationWatch = Stopwatch();
   bool _hasRealProgress = false;
@@ -57,6 +62,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     // Seed interpolation from the initial progress so the Ticker can advance
     // smoothly even before the first real position update arrives.
     _lastRealProgress = widget.progress;
+    _smoothProgress.value = widget.progress;
     _interpolationWatch.start();
     _hasRealProgress = true;
 
@@ -64,24 +70,28 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
   }
 
   void _onProgressTick(Duration elapsed) {
+    final double next;
     if (widget.duration.inMilliseconds <= 0) {
-      _smoothProgress = widget.progress;
+      next = widget.progress;
     } else if (_snapAnimations) {
-      _smoothProgress = widget.progress;
+      next = widget.progress;
     } else if (_hasRealProgress) {
       final wallElapsed = _interpolationWatch.elapsed;
       if (wallElapsed > _interpolationTimeout) {
-        _smoothProgress = _lastRealProgress;
+        next = _lastRealProgress;
       } else {
         final delta =
             wallElapsed.inMilliseconds / widget.duration.inMilliseconds;
-        _smoothProgress =
-            (_lastRealProgress + delta).clamp(0.0, 1.0);
+        next = (_lastRealProgress + delta).clamp(0.0, 1.0);
       }
     } else {
-      _smoothProgress = widget.progress;
+      next = widget.progress;
     }
-    setState(() {});
+    if (_smoothProgress.value != next) {
+      _smoothProgress.value = next;
+      // Update breathing animation state if the phase boundary was crossed.
+      _syncBreathingAnimation();
+    }
   }
 
   @override
@@ -106,6 +116,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
   void dispose() {
     _breathingController.dispose();
     _progressTicker.dispose();
+    _smoothProgress.dispose();
     super.dispose();
   }
 
@@ -157,7 +168,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
 
   bool get _isBreathingPhase {
     return InterludeIndicatorHelper.isBreathingPhase(
-      progress: _smoothProgress,
+      progress: _smoothProgress.value,
       duration: widget.duration,
     );
   }
@@ -172,68 +183,81 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
       return const SizedBox.shrink();
     }
 
-    final progress = _smoothProgress;
-
-    final targetScale = InterludeIndicatorHelper.targetScale(
-      progress: progress,
-      duration: widget.duration,
-    );
-    final targetOpacity = InterludeIndicatorHelper.targetOpacity(
-      progress: progress,
-      duration: widget.duration,
-    );
-    final isBreathing = _isBreathingPhase;
-
-    return Container(
+    // The fixed outer footprint (padding + alignment) is set up here once.
+    // Everything inside that depends on smoothProgress is rebuilt by the
+    // inner ValueListenableBuilder, so a position tick only repaints the
+    // dots + the two Transform.scales -- not the surrounding row, padding,
+    // breathing controller, or AnimatedDot SizedBox.
+    return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-      alignment: Alignment.centerLeft,
-      child: Transform.scale(
-        scale: targetScale,
-        alignment: isBreathing ? Alignment.center : Alignment.centerLeft,
-        child: Opacity(
-          opacity: targetOpacity,
-          child: AnimatedBuilder(
-            animation: _breathingAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: isBreathing ? _breathingAnimation.value : 1.0,
-                alignment: Alignment.center,
-                child: child,
-              );
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _AnimatedDot(
-                  key: const ValueKey('interlude_dot_0'),
-                  progress: InterludeIndicatorHelper.dotProgress(
-                    progress: progress,
-                    dotIndex: 0,
-                    duration: widget.duration,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: ValueListenableBuilder<double>(
+          valueListenable: _smoothProgress,
+          builder: (context, progress, _) {
+            final targetScale = InterludeIndicatorHelper.targetScale(
+              progress: progress,
+              duration: widget.duration,
+            );
+            final targetOpacity = InterludeIndicatorHelper.targetOpacity(
+              progress: progress,
+              duration: widget.duration,
+            );
+            final isBreathing = InterludeIndicatorHelper.isBreathingPhase(
+              progress: progress,
+              duration: widget.duration,
+            );
+
+            return Transform.scale(
+              scale: targetScale,
+              alignment: isBreathing ? Alignment.center : Alignment.centerLeft,
+              child: Opacity(
+                opacity: targetOpacity,
+                child: AnimatedBuilder(
+                  animation: _breathingAnimation,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: isBreathing ? _breathingAnimation.value : 1.0,
+                      alignment: Alignment.center,
+                      child: child,
+                    );
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _AnimatedDot(
+                        key: const ValueKey('interlude_dot_0'),
+                        progress: InterludeIndicatorHelper.dotProgress(
+                          progress: progress,
+                          dotIndex: 0,
+                          duration: widget.duration,
+                        ),
+                        lastDot: false,
+                      ),
+                      _AnimatedDot(
+                        key: const ValueKey('interlude_dot_1'),
+                        progress: InterludeIndicatorHelper.dotProgress(
+                          progress: progress,
+                          dotIndex: 1,
+                          duration: widget.duration,
+                        ),
+                        lastDot: false,
+                      ),
+                      _AnimatedDot(
+                        key: const ValueKey('interlude_dot_2'),
+                        progress: InterludeIndicatorHelper.dotProgress(
+                          progress: progress,
+                          dotIndex: 2,
+                          duration: widget.duration,
+                        ),
+                        lastDot: true,
+                      ),
+                    ],
                   ),
-                  lastDot: false,
                 ),
-                _AnimatedDot(
-                  key: const ValueKey('interlude_dot_1'),
-                  progress: InterludeIndicatorHelper.dotProgress(
-                    progress: progress,
-                    dotIndex: 1,
-                    duration: widget.duration,
-                  ),
-                  lastDot: false,
-                ),
-                _AnimatedDot(
-                  key: const ValueKey('interlude_dot_2'),
-                  progress: InterludeIndicatorHelper.dotProgress(
-                    progress: progress,
-                    dotIndex: 2,
-                    duration: widget.duration,
-                  ),
-                  lastDot: true,
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -253,6 +277,12 @@ class _AnimatedDot extends StatelessWidget {
     required this.lastDot,
   });
 
+  /// Below this progress threshold the glow shadow is effectively invisible
+  /// (alpha 0.3 * progress < 0.1, blurRadius < 1.5px). Skipping the shadow
+  /// entirely under that threshold avoids per-frame mask regeneration in
+  /// Skia for an imperceptible visual.
+  static const double _shadowThreshold = 0.15;
+
   @override
   Widget build(BuildContext context) {
     const double n1 = 8.0; // Base size
@@ -263,9 +293,12 @@ class _AnimatedDot extends StatelessWidget {
     final double size = n1 + (n2 - n1) * progress;
     final double opacity =
         baseOpacity + (activeOpacity - baseOpacity) * progress;
+    final bool showShadow = progress > _shadowThreshold;
 
     return Padding(
       padding: lastDot ? EdgeInsets.zero : const EdgeInsets.only(right: 12),
+      // SizedBox here pins the layout footprint to n2 x n2 so the inner
+      // size animation cannot bubble into the parent Row's layout.
       child: SizedBox(
         width: n2,
         height: n2,
@@ -277,13 +310,15 @@ class _AnimatedDot extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: opacity),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.white.withValues(alpha: progress * 0.3),
-                  blurRadius: 8 * progress,
-                  spreadRadius: 1 * progress,
-                ),
-              ],
+              boxShadow: showShadow
+                  ? [
+                      BoxShadow(
+                        color: Colors.white.withValues(alpha: progress * 0.3),
+                        blurRadius: 8 * progress,
+                        spreadRadius: 1 * progress,
+                      ),
+                    ]
+                  : null,
             ),
           ),
         ),
