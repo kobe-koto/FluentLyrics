@@ -83,23 +83,27 @@ void main() {
     expect(selected?.isRichSync, isTrue);
   });
 
-  test('prefers candidate with more artwork URLs', () {
-    final best = result(
-      source: 'LRCLIB',
-      lyrics: [lyric('hello', 1000)],
-      artworkUrls: ['cover-a'],
-    );
-    final candidate = result(
-      source: 'QQ Music',
-      lyrics: [lyric('hello', 1000)],
-      artworkUrls: ['cover-a', 'cover-b'],
-    );
+  test(
+    'keeps current best when both sit at the same sync tier even if '
+    'candidate has more artwork URLs',
+    () {
+      final best = result(
+        source: 'LRCLIB',
+        lyrics: [lyric('hello', 1000)],
+        artworkUrls: ['cover-a'],
+      );
+      final candidate = result(
+        source: 'QQ Music',
+        lyrics: [lyric('hello', 1000)],
+        artworkUrls: ['cover-a', 'cover-b'],
+      );
 
-    final selected = selectBetterCandidate(candidate, best, true);
+      final selected = selectBetterCandidate(candidate, best, true);
 
-    expect(selected?.source, 'QQ Music');
-    expect(selected?.artworkUrls?.length, 2);
-  });
+      expect(selected, same(best));
+      expect(selected?.artworkUrls?.length, 1);
+    },
+  );
 
   test('treats rich sync result as good enough when rich sync is enabled', () {
     final best = result(

@@ -33,9 +33,6 @@ LyricsResult? selectBetterCandidate(
       candidate.isSynced &&
       !best.isSynced) {
     candidateIsBetter = true;
-  } else if ((candidate.artworkUrls?.length ?? 0) >
-      (best.artworkUrls?.length ?? 0)) {
-    candidateIsBetter = true;
   } else {
     candidateIsBetter = false;
   }
