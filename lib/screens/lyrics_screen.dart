@@ -170,25 +170,33 @@ class _LyricsScreenState extends State<LyricsScreen> {
                 final isLandscape = orientation == Orientation.landscape;
                 _handleLayoutModeChanged(isLandscape, provider);
 
-                final lyricsListWidget = ShaderMask(
-                  shaderCallback: (Rect bounds) {
-                    return _maskGradient.createShader(bounds);
-                  },
-                  blendMode: BlendMode.dstIn,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 1),
-                    // LyricsList reads many provider fields directly inside
-                    // its own build; wrap it in a Consumer so it rebuilds on
-                    // provider notifications without dragging the rest of
-                    // the screen with it.
-                    child: Consumer<LyricsProvider>(
-                      builder: (context, p, _) => LyricsList(
-                        provider: p,
-                        itemScrollController: _itemScrollController,
-                        itemPositionsListener: _itemPositionsListener,
-                        isManualScrolling: _isManualScrolling,
-                        onUserInteraction: _handleUserInteraction,
-                        onViewportResized: () => _resnapToCurrentIndex(p),
+                final lyricsListWidget = RepaintBoundary(
+                  // RepaintBoundary around the ShaderMask + list keeps the
+                  // mask's saveLayer cost isolated from the rest of the
+                  // Scaffold. Without it, any sibling repaint (header,
+                  // control area, permission overlay, background ticks) can
+                  // invalidate the parent layer and force the masked region
+                  // to recomposite even though its contents are unchanged.
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return _maskGradient.createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 1),
+                      // LyricsList reads many provider fields directly inside
+                      // its own build; wrap it in a Consumer so it rebuilds
+                      // on provider notifications without dragging the rest
+                      // of the screen with it.
+                      child: Consumer<LyricsProvider>(
+                        builder: (context, p, _) => LyricsList(
+                          provider: p,
+                          itemScrollController: _itemScrollController,
+                          itemPositionsListener: _itemPositionsListener,
+                          isManualScrolling: _isManualScrolling,
+                          onUserInteraction: _handleUserInteraction,
+                          onViewportResized: () => _resnapToCurrentIndex(p),
+                        ),
                       ),
                     ),
                   ),
@@ -213,8 +221,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                   },
                   onScrubEnd: (value) {
                     final totalMs =
-                        provider.currentMetadata?.duration.inMilliseconds ??
-                        1;
+                        provider.currentMetadata?.duration.inMilliseconds ?? 1;
                     final ms = (value * totalMs).round();
                     provider.seek(Duration(milliseconds: ms));
                     setState(() {
@@ -572,8 +579,10 @@ class _HeaderSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<LyricsProvider,
-        ({MediaMetadata? metadata, int candidatesLen})>(
+    return Selector<
+      LyricsProvider,
+      ({MediaMetadata? metadata, int candidatesLen})
+    >(
       selector: (_, p) =>
           (metadata: p.currentMetadata, candidatesLen: p.candidates.length),
       // Custom shouldRebuild because MediaMetadata implements ==, and we want
@@ -616,13 +625,15 @@ class _ControlSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<LyricsProvider,
-        ({
-          bool isPlaying,
-          MediaControlAbility ability,
-          int offsetMs,
-          int durationMs,
-        })>(
+    return Selector<
+      LyricsProvider,
+      ({
+        bool isPlaying,
+        MediaControlAbility ability,
+        int offsetMs,
+        int durationMs,
+      })
+    >(
       selector: (_, p) => (
         isPlaying: p.isPlaying,
         ability: p.controlAbility,
