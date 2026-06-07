@@ -220,6 +220,20 @@ class _LyricsListState extends State<LyricsList> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           _handleConstraints(constraints);
+          // Compute the padding from the viewport constraints once per
+          // layout pass. Previously we hit MediaQuery.of three times in
+          // the inline EdgeInsets expression below, which subscribed this
+          // widget to every MediaQueryData field (text scale, keyboard
+          // insets, etc.) and burned a small amount of CPU on each build.
+          final viewportHeight = constraints.maxHeight.isFinite
+              ? constraints.maxHeight
+              : MediaQuery.sizeOf(context).height;
+          final isLandscape =
+              MediaQuery.orientationOf(context) == Orientation.landscape;
+          final listPadding = EdgeInsets.only(
+            top: isLandscape ? viewportHeight * 0.3 : 0.0,
+            bottom: viewportHeight / 3,
+          );
           return ScrollConfiguration(
             behavior: ScrollConfiguration.of(
               context,
@@ -298,12 +312,7 @@ class _LyricsListState extends State<LyricsList> {
                   },
                 );
               },
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).orientation == Orientation.landscape
-                    ? MediaQuery.of(context).size.height * 0.3
-                    : 0.0,
-                bottom: MediaQuery.of(context).size.height / 3,
-              ),
+              padding: listPadding,
             ),
           );
         },
