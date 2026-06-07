@@ -61,21 +61,28 @@ class LyricLine extends StatelessWidget {
     final inactiveScale = this.inactiveScale;
     final translationHighlightOnly = this.translationHighlightOnly;
 
+    final mergedInlineParts = _getMergedInlineParts(lyric.inlineParts ?? []);
+    final isRichLine =
+        mergedInlineParts.isNotEmpty &&
+        lyric.text.trim().isNotEmpty && // empty text check
+        mergedInlineParts.length > 1; // multiple parts check
+
     const double minOpacity = 0.4;
 
     // Calculate opacity and blur based on distance
     // Current line (distance 0) has full opacity and no blur.
     // Further lines fade and blur out.
-    final double opacity = !inViewport
+    final double opacity =
+        !inViewport // not in viewport
         ? minOpacity
-        : isHighlighted
+        : isHighlighted // highlighted line
         ? 1.0
         : (isManualScrolling
-              ? 0.55
+              ? 0.55 // non-highlighted line during manual scrolling
               : (minOpacity / (distance.abs() * 0.5 + 1)).clamp(
                   0.05,
                   minOpacity,
-                ));
+                )); // non-highlighted line
     final double blur = !inViewport
         ? 0.0
         : (isHighlighted || isManualScrolling || !blurEnabled)
@@ -91,7 +98,7 @@ class LyricLine extends StatelessWidget {
       fontFamily: 'Outfit',
       fontSize: fontSize,
       fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w700,
-      color: Colors.white,
+      color: isRichLine && isHighlighted ? Colors.white.withAlpha(128) : Colors.white,
       height: 1.2,
     );
 
@@ -190,6 +197,7 @@ class LyricLine extends StatelessWidget {
       );
     }
     final richTextStyle = DefaultTextStyle.of(context).style.copyWith(
+      color: Colors.white,
       fontSize: experimentalRichInlineFontSizeGlitching
           ? DefaultTextStyle.of(context).style.fontSize! / 0.9
           : DefaultTextStyle.of(context).style.fontSize!,
