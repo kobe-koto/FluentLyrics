@@ -144,6 +144,12 @@ class _LiquidFlowBackgroundState extends State<_LiquidFlowBackground>
   void _syncTicker() {
     if (widget.animate) {
       _elapsedOffset = _elapsed;
+      // The ticker's `elapsed` counter restarts from zero on every start(),
+      // so the throttle baseline must restart too. Without this, the first
+      // post-resume tick is compared against the pre-pause value and the
+      // background can stay frozen for the duration of the pause before
+      // the throttle gate opens again.
+      _lastTickElapsed = Duration.zero;
       _ticker.start();
       return;
     }
