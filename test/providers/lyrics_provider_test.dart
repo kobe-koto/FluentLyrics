@@ -544,8 +544,8 @@ void main() {
       expect(provider.lyricsResult.source, 'Manual');
       expect(provider.lyricsResult.lyrics.last.text, 'manual line');
 
-    provider.dispose();
-  },
+      provider.dispose();
+    },
   );
 
   test(
