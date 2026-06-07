@@ -168,11 +168,19 @@ class EnhancedLrcParser {
 }
 
 class QQRichParser {
+  // Strict timestamp pattern: '(offsetMs,durationMs)'.  We anchor on these
+  // and treat everything else (including any literal '(' in the lyric text)
+  // as plain text content.  This is the inverse of the previous approach,
+  // which used `([^\(]+)` and broke on lines like
+  //   `[3773,19]Mastered (3773,3)by：권남우 ((3776,3)Asst. (3779,3)유은진)`
+  // — a literal '(' in the lyric text would shift the part boundary and
+  // silently drop characters.
+  static final RegExp _lineRegex = RegExp(r'^\[(\d+),(\d+)\](.*)$');
+  static final RegExp _timestampRegex = RegExp(r'\((\d+),(\d+)\)');
+
   static List<Lyric> parse(String content) {
     try {
       final lyrics = <Lyric>[];
-      final lineRegex = RegExp(r'^\[(\d+),(\d+)\](.*)$');
-      final partRegex = RegExp(r'([^\(]+)\((\d+),(\d+)\)');
 
       for (final rawLine in content.split('\n')) {
         final line = rawLine.trim();
@@ -180,7 +188,7 @@ class QQRichParser {
           continue;
         }
 
-        final lineMatch = lineRegex.firstMatch(line);
+        final lineMatch = _lineRegex.firstMatch(line);
         if (lineMatch == null) {
           continue;
         }
@@ -189,30 +197,11 @@ class QQRichParser {
         final lineDurationMs = int.parse(lineMatch.group(2)!);
         final lineContent = lineMatch.group(3) ?? '';
 
-        final inlineParts = <LyricInlinePart>[];
-        final matches = partRegex.allMatches(lineContent).toList();
-        final plainText = StringBuffer();
+        final parsed = _parseLineContent(lineContent, lineStartMs);
+        final inlineParts = parsed.inlineParts;
+        final plainText = parsed.plainText;
 
-        for (final match in matches) {
-          final partOffsetMs = int.parse(match.group(2)!) - lineStartMs;
-          final partDurationMs = int.parse(match.group(3)!);
-          final partText = match.group(1) ?? '';
-
-          plainText.write(partText);
-          inlineParts.add(
-            LyricInlinePart(
-              startTime: Duration(milliseconds: lineStartMs + partOffsetMs),
-              endTime: Duration(
-                milliseconds: lineStartMs + partOffsetMs + partDurationMs,
-              ),
-              text: partText,
-            ),
-          );
-        }
-
-        final text = inlineParts.isNotEmpty
-            ? plainText.toString()
-            : lineContent.trim();
+        final text = inlineParts.isNotEmpty ? plainText : lineContent.trim();
         lyrics.add(
           Lyric(
             startTime: Duration(milliseconds: lineStartMs),
@@ -229,4 +218,88 @@ class QQRichParser {
       return [];
     }
   }
+
+  /// Split [lineContent] into `(text, (offset, duration))` parts by treating
+  /// every `(\d+,\d+)` group as a strict timestamp anchor.  The text owned by
+  /// a timestamp is everything from the end of the previous timestamp (or the
+  /// start of the line) up to the timestamp itself — literal parentheses in
+  /// that range are preserved verbatim.
+  ///
+  /// Edge cases:
+  /// - Text *before* the first timestamp is prepended to the first part's
+  ///   text.
+  /// - Text *after* the last timestamp (e.g. a trailing word without its own
+  ///   timing) is appended to the last part's text.
+  /// - A part whose text range is empty after stripping the timestamp itself
+  ///   is still kept so that downstream highlighting renders its glyphs (none
+  ///   in this case, but it keeps timing slot count == timestamp count).
+  static _ParsedLineContent _parseLineContent(
+    String lineContent,
+    int lineStartMs,
+  ) {
+    final matches = _timestampRegex.allMatches(lineContent).toList();
+    if (matches.isEmpty) {
+      return const _ParsedLineContent(inlineParts: [], plainText: '');
+    }
+
+    final inlineParts = <LyricInlinePart>[];
+    final plainText = StringBuffer();
+
+    int cursor = 0;
+    for (var i = 0; i < matches.length; i++) {
+      final match = matches[i];
+      final partText = lineContent.substring(cursor, match.start);
+      final partAbsMs = int.parse(match.group(1)!);
+      final partDurationMs = int.parse(match.group(2)!);
+
+      plainText.write(partText);
+      inlineParts.add(
+        LyricInlinePart(
+          startTime: Duration(milliseconds: partAbsMs),
+          endTime: Duration(milliseconds: partAbsMs + partDurationMs),
+          text: partText,
+        ),
+      );
+      cursor = match.end;
+    }
+
+    // Trailing text after the final timestamp — typically a tail like "Sound"
+    // in QQ's annotation lines.  Glue it to the last part so it isn't lost.
+    if (cursor < lineContent.length && inlineParts.isNotEmpty) {
+      final tail = lineContent.substring(cursor);
+      if (tail.isNotEmpty) {
+        final last = inlineParts.removeLast();
+        final mergedText = last.text + tail;
+        plainText.write(tail);
+        inlineParts.add(
+          LyricInlinePart(
+            startTime: last.startTime,
+            endTime: last.endTime,
+            text: mergedText,
+          ),
+        );
+      }
+    }
+
+    // Use lineStartMs purely as a sanity reference; the parts already carry
+    // absolute timings from the timestamp's `o` field.
+    if (lineStartMs < 0) {
+      AppLogger.debug('QQRichParser: negative lineStartMs $lineStartMs');
+    }
+
+    return _ParsedLineContent(
+      inlineParts: inlineParts,
+      plainText: plainText.toString(),
+    );
+  }
+}
+
+class _ParsedLineContent {
+  final List<LyricInlinePart> inlineParts;
+  final String plainText;
+
+  const _ParsedLineContent({
+    required this.inlineParts,
+    required this.plainText,
+  });
 }
