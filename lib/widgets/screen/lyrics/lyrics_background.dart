@@ -284,28 +284,21 @@ class _BaseTextureLayer extends StatelessWidget {
             (0.055 * sin(timeSeconds * 0.031 + 0.4) +
                 0.028 * cos(timeSeconds * 0.067 + 1.8));
 
-    // Wrap the per-frame painting in its own RepaintBoundary so the four
-    // _LiquidMaterialLayers above are composited from cached layers rather
-    // than re-rasterized together. `Transform.scale` is used instead of
-    // FractionallySizedBox(widthFactor: scale) so that scale changes do not
-    // invalidate this subtree's layout every frame -- only paint.
     return Positioned.fill(
-      child: RepaintBoundary(
-        child: Align(
-          alignment: alignment,
-          child: Transform.scale(
-            scale: scale,
-            child: SizedBox.expand(
-              child: Opacity(
-                opacity: 0.56,
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 34, sigmaY: 34),
-                  child: Image(
-                    image: artProvider,
-                    fit: BoxFit.cover,
-                    filterQuality: FilterQuality.low,
-                    errorBuilder: (_, _, _) => const SizedBox.expand(),
-                  ),
+      child: Align(
+        alignment: alignment,
+        child: Transform.scale(
+          scale: scale,
+          child: SizedBox.expand(
+            child: Opacity(
+              opacity: 0.56,
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 34, sigmaY: 34),
+                child: Image(
+                  image: artProvider,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.low,
+                  errorBuilder: (_, _, _) => const SizedBox.expand(),
                 ),
               ),
             ),
@@ -356,52 +349,47 @@ class _LiquidMaterialLayer extends StatelessWidget {
             sin(timeSeconds * layer.rotationSpeed + layer.phaseRotation);
 
     return Positioned.fill(
-      child: RepaintBoundary(
-        child: Align(
-          alignment: Alignment(
-            layer.baseX + motionStrength * motionX,
-            layer.baseY + motionStrength * motionY,
-          ),
-          child: Transform.rotate(
-            angle: rotation,
-            child: Transform.scale(
-              // Use Transform.scale rather than FractionallySizedBox so the
-              // per-frame scale changes only re-paint this layer, never
-              // bubbling layout work up the tree.
-              scaleX: layer.widthFactor * scale,
-              scaleY: layer.heightFactor * scale,
-              child: SizedBox.expand(
-                child: Opacity(
-                  opacity: layer.opacity,
-                  child: ImageFiltered(
-                    imageFilter: ImageFilter.blur(
-                      sigmaX: layer.blurSigma,
-                      sigmaY: layer.blurSigma,
-                    ),
-                    child: ShaderMask(
-                      shaderCallback: (Rect bounds) {
-                        return RadialGradient(
-                          center: Alignment(
-                            layer.maskCenterX,
-                            layer.maskCenterY,
-                          ),
-                          radius: layer.maskRadius,
-                          colors: [
-                            Colors.white,
-                            Colors.white,
-                            Colors.white.withValues(alpha: 0.84),
-                            Colors.transparent,
-                          ],
-                          stops: const [0.0, 0.34, 0.72, 1.0],
-                        ).createShader(bounds);
-                      },
-                      blendMode: BlendMode.dstIn,
-                      child: Image(
-                        image: artProvider,
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.low,
-                        errorBuilder: (_, _, _) => const SizedBox.expand(),
-                      ),
+      child: Align(
+        alignment: Alignment(
+          layer.baseX + motionStrength * motionX,
+          layer.baseY + motionStrength * motionY,
+        ),
+        child: Transform.rotate(
+          angle: rotation,
+          child: Transform.scale(
+            scaleX: layer.widthFactor * scale,
+            scaleY: layer.heightFactor * scale,
+            child: SizedBox.expand(
+              child: Opacity(
+                opacity: layer.opacity,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: layer.blurSigma,
+                    sigmaY: layer.blurSigma,
+                  ),
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return RadialGradient(
+                        center: Alignment(
+                          layer.maskCenterX,
+                          layer.maskCenterY,
+                        ),
+                        radius: layer.maskRadius,
+                        colors: [
+                          Colors.white,
+                          Colors.white,
+                          Colors.white.withValues(alpha: 0.84),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.34, 0.72, 1.0],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: Image(
+                      image: artProvider,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.low,
+                      errorBuilder: (_, _, _) => const SizedBox.expand(),
                     ),
                   ),
                 ),
