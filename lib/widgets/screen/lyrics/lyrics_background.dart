@@ -368,22 +368,7 @@ class _LiquidMaterialLayer extends StatelessWidget {
                     sigmaY: layer.blurSigma,
                   ),
                   child: ShaderMask(
-                    shaderCallback: (Rect bounds) {
-                      return RadialGradient(
-                        center: Alignment(
-                          layer.maskCenterX,
-                          layer.maskCenterY,
-                        ),
-                        radius: layer.maskRadius,
-                        colors: [
-                          Colors.white,
-                          Colors.white,
-                          Colors.white.withValues(alpha: 0.84),
-                          Colors.transparent,
-                        ],
-                        stops: const [0.0, 0.34, 0.72, 1.0],
-                      ).createShader(bounds);
-                    },
+                    shaderCallback: layer.shaderFor,
                     blendMode: BlendMode.dstIn,
                     child: Image(
                       image: artProvider,
@@ -479,7 +464,11 @@ class _FlowLayer {
   final double secondaryScaleSpeed;
   final double rotationSpeed;
 
-  const _FlowLayer({
+  final RadialGradient _maskGradient;
+  Rect? _cachedShaderBounds;
+  Shader? _cachedShader;
+
+  _FlowLayer({
     required this.widthFactor,
     required this.heightFactor,
     required this.baseX,
@@ -508,5 +497,26 @@ class _FlowLayer {
     required this.scaleSpeed,
     required this.secondaryScaleSpeed,
     required this.rotationSpeed,
-  });
+  }) : _maskGradient = RadialGradient(
+         center: Alignment(maskCenterX, maskCenterY),
+         radius: maskRadius,
+         colors: const [
+           Colors.white,
+           Colors.white,
+           Color(0xD6FFFFFF),
+           Color(0x00FFFFFF),
+         ],
+         stops: const [0.0, 0.34, 0.72, 1.0],
+       );
+
+  Shader shaderFor(Rect bounds) {
+    final cached = _cachedShader;
+    if (cached != null && _cachedShaderBounds == bounds) {
+      return cached;
+    }
+    final shader = _maskGradient.createShader(bounds);
+    _cachedShader = shader;
+    _cachedShaderBounds = bounds;
+    return shader;
+  }
 }
