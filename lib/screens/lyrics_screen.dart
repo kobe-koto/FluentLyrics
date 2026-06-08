@@ -553,8 +553,7 @@ class _BackgroundSection extends StatelessWidget {
             const AssetImage('assets/album_art.png');
         return LyricsBackground(
           artProvider: bgArt,
-          motionEnabled: s.motion,
-          animate: s.isPlaying,
+          motionEnabled: s.motion && s.isPlaying,
         );
       },
     );

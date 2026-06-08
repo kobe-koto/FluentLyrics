@@ -60,7 +60,7 @@
       "blur": "模糊效果",
       "blurSubtitle": "模糊非活动歌词行以聚焦当前行。",
       "backgroundMotion": "背景动效",
-      "backgroundMotionSubtitle": "对背景应用流体动效，对性能影响较大。'",
+      "backgroundMotionSubtitle": "对背景应用碎片化封面图并缓慢漂移。",
       "linesBefore": "活动行前显示数",
       "linesBeforeSubtitle": "自动滚动时活动行之前显示的行数。",
       "linesBeforeReset": "重置为 2",

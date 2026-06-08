@@ -60,7 +60,7 @@
       "blur": "Blur Effect",
       "blurSubtitle": "Blur non-active lyric lines for focus.",
       "backgroundMotion": "Background Motion",
-      "backgroundMotionSubtitle": "Apply fluid motion effect to the background, which may have significant performance impact.",
+      "backgroundMotionSubtitle": "Apply fragmented artwork with slow drifting motion to the background.",
       "linesBefore": "Lines Before Active",
       "linesBeforeSubtitle": "Number of preceding lines to show when auto-scrolling.",
       "linesBeforeReset": "Reset to 2",
