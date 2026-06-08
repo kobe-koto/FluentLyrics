@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -75,6 +76,7 @@ class _StaticBackgroundState extends State<_StaticBackground> {
       artProvider: _resizedArtProvider,
       layers: _layers,
       elapsed: Duration.zero,
+      elapsedListenable: null,
       motionStrength: 0,
     );
   }
@@ -103,6 +105,7 @@ class _LiquidFlowBackgroundState extends State<_LiquidFlowBackground>
   static const Duration _frameInterval = Duration(milliseconds: 33);
 
   late final Ticker _ticker;
+  final ValueNotifier<Duration> _elapsedNotifier = ValueNotifier(Duration.zero);
   Duration _elapsed = Duration.zero;
   Duration _elapsedOffset = Duration.zero;
   Duration _lastTickElapsed = Duration.zero;
@@ -117,9 +120,8 @@ class _LiquidFlowBackgroundState extends State<_LiquidFlowBackground>
       if (!mounted) return;
       if (elapsed - _lastTickElapsed < _frameInterval) return;
       _lastTickElapsed = elapsed;
-      setState(() {
-        _elapsed = _elapsedOffset + elapsed;
-      });
+      _elapsed = _elapsedOffset + elapsed;
+      _elapsedNotifier.value = _elapsed;
     });
     _syncTicker();
   }
@@ -165,6 +167,7 @@ class _LiquidFlowBackgroundState extends State<_LiquidFlowBackground>
   @override
   void dispose() {
     _ticker.dispose();
+    _elapsedNotifier.dispose();
     super.dispose();
   }
 
@@ -174,6 +177,7 @@ class _LiquidFlowBackgroundState extends State<_LiquidFlowBackground>
       artProvider: _resizedArtProvider,
       layers: _layers,
       elapsed: _elapsed,
+      elapsedListenable: _elapsedNotifier,
       motionStrength: 1,
     );
   }
@@ -183,17 +187,16 @@ class _LiquidBackgroundScene extends StatelessWidget {
   final ImageProvider artProvider;
   final List<_FlowLayer> layers;
   final Duration elapsed;
+  final ValueListenable<Duration>? elapsedListenable;
   final double motionStrength;
 
   const _LiquidBackgroundScene({
     required this.artProvider,
     required this.layers,
     required this.elapsed,
+    required this.elapsedListenable,
     required this.motionStrength,
   });
-
-  double get _timeSeconds =>
-      elapsed.inMicroseconds / Duration.microsecondsPerSecond;
 
   @override
   Widget build(BuildContext context) {
@@ -205,14 +208,16 @@ class _LiquidBackgroundScene extends StatelessWidget {
             const ColoredBox(color: Colors.black),
             _BaseTextureLayer(
               artProvider: artProvider,
-              timeSeconds: _timeSeconds,
+              elapsedListenable: elapsedListenable,
+              elapsed: elapsed,
               motionStrength: motionStrength,
             ),
             for (final layer in layers)
               _LiquidMaterialLayer(
                 artProvider: artProvider,
                 layer: layer,
-                timeSeconds: _timeSeconds,
+                elapsedListenable: elapsedListenable,
+                elapsed: elapsed,
                 motionStrength: motionStrength,
               ),
             Positioned.fill(
@@ -259,17 +264,47 @@ class _LiquidBackgroundScene extends StatelessWidget {
 
 class _BaseTextureLayer extends StatelessWidget {
   final ImageProvider artProvider;
-  final double timeSeconds;
+  final ValueListenable<Duration>? elapsedListenable;
+  final Duration elapsed;
   final double motionStrength;
 
   const _BaseTextureLayer({
     required this.artProvider,
-    required this.timeSeconds,
+    required this.elapsedListenable,
+    required this.elapsed,
     required this.motionStrength,
   });
 
   @override
   Widget build(BuildContext context) {
+    final child = SizedBox.expand(
+      child: Opacity(
+        opacity: 0.56,
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 34, sigmaY: 34),
+          child: Image(
+            image: artProvider,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.low,
+            errorBuilder: (_, _, _) => const SizedBox.expand(),
+          ),
+        ),
+      ),
+    );
+
+    final listenable = elapsedListenable;
+    if (listenable == null) {
+      return _buildPositioned(elapsed, child);
+    }
+    return AnimatedBuilder(
+      animation: listenable,
+      child: child,
+      builder: (context, child) => _buildPositioned(listenable.value, child!),
+    );
+  }
+
+  Widget _buildPositioned(Duration elapsed, Widget child) {
+    final timeSeconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
     final alignment = Alignment(
       motionStrength *
           (0.045 * sin(timeSeconds * 0.061) +
@@ -287,23 +322,7 @@ class _BaseTextureLayer extends StatelessWidget {
     return Positioned.fill(
       child: Align(
         alignment: alignment,
-        child: Transform.scale(
-          scale: scale,
-          child: SizedBox.expand(
-            child: Opacity(
-              opacity: 0.56,
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 34, sigmaY: 34),
-                child: Image(
-                  image: artProvider,
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.low,
-                  errorBuilder: (_, _, _) => const SizedBox.expand(),
-                ),
-              ),
-            ),
-          ),
-        ),
+        child: Transform.scale(scale: scale, child: child),
       ),
     );
   }
@@ -312,18 +331,55 @@ class _BaseTextureLayer extends StatelessWidget {
 class _LiquidMaterialLayer extends StatelessWidget {
   final ImageProvider artProvider;
   final _FlowLayer layer;
-  final double timeSeconds;
+  final ValueListenable<Duration>? elapsedListenable;
+  final Duration elapsed;
   final double motionStrength;
 
   const _LiquidMaterialLayer({
     required this.artProvider,
     required this.layer,
-    required this.timeSeconds,
+    required this.elapsedListenable,
+    required this.elapsed,
     required this.motionStrength,
   });
 
   @override
   Widget build(BuildContext context) {
+    final child = SizedBox.expand(
+      child: Opacity(
+        opacity: layer.opacity,
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(
+            sigmaX: layer.blurSigma,
+            sigmaY: layer.blurSigma,
+          ),
+          child: ShaderMask(
+            shaderCallback: layer.shaderFor,
+            blendMode: BlendMode.dstIn,
+            child: Image(
+              image: artProvider,
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.low,
+              errorBuilder: (_, _, _) => const SizedBox.expand(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final listenable = elapsedListenable;
+    if (listenable == null) {
+      return _buildPositioned(elapsed, child);
+    }
+    return AnimatedBuilder(
+      animation: listenable,
+      child: child,
+      builder: (context, child) => _buildPositioned(listenable.value, child!),
+    );
+  }
+
+  Widget _buildPositioned(Duration elapsed, Widget child) {
+    final timeSeconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
     final motionX =
         layer.driftX * sin(timeSeconds * layer.speedX + layer.phaseX) +
         layer.secondaryDriftX *
@@ -359,27 +415,7 @@ class _LiquidMaterialLayer extends StatelessWidget {
           child: Transform.scale(
             scaleX: layer.widthFactor * scale,
             scaleY: layer.heightFactor * scale,
-            child: SizedBox.expand(
-              child: Opacity(
-                opacity: layer.opacity,
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(
-                    sigmaX: layer.blurSigma,
-                    sigmaY: layer.blurSigma,
-                  ),
-                  child: ShaderMask(
-                    shaderCallback: layer.shaderFor,
-                    blendMode: BlendMode.dstIn,
-                    child: Image(
-                      image: artProvider,
-                      fit: BoxFit.cover,
-                      filterQuality: FilterQuality.low,
-                      errorBuilder: (_, _, _) => const SizedBox.expand(),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            child: child,
           ),
         ),
       ),
