@@ -98,11 +98,11 @@ class _LiquidFlowBackground extends StatefulWidget {
 
 class _LiquidFlowBackgroundState extends State<_LiquidFlowBackground>
     with SingleTickerProviderStateMixin {
-  /// Background animation runs at ~30 fps instead of the display refresh rate.
+  /// Background animation runs at ~20 fps instead of the display refresh rate.
   /// The visual motion is intentionally slow (sub-Hz sine frequencies in
-  /// _generateFlowLayers), so 30 fps is indistinguishable from 60 fps to the
-  /// eye but halves CPU/GPU work for the four blurred + shader-masked layers.
-  static const Duration _frameInterval = Duration(milliseconds: 33);
+  /// _generateFlowLayers), so 20 fps remains smooth while cutting CPU/GPU work
+  /// for the four blurred + shader-masked layers.
+  static const Duration _frameInterval = Duration(milliseconds: 50);
 
   late final Ticker _ticker;
   final ValueNotifier<Duration> _elapsedNotifier = ValueNotifier(Duration.zero);
@@ -278,16 +278,15 @@ class _BaseTextureLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = SizedBox.expand(
-      child: Opacity(
-        opacity: 0.56,
-        child: ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 34, sigmaY: 34),
-          child: Image(
-            image: artProvider,
-            fit: BoxFit.cover,
-            filterQuality: FilterQuality.low,
-            errorBuilder: (_, _, _) => const SizedBox.expand(),
-          ),
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Image(
+          image: artProvider,
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.low,
+          color: Colors.white.withValues(alpha: 0.56),
+          colorBlendMode: BlendMode.modulate,
+          errorBuilder: (_, _, _) => const SizedBox.expand(),
         ),
       ),
     );
@@ -346,22 +345,21 @@ class _LiquidMaterialLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = SizedBox.expand(
-      child: Opacity(
-        opacity: layer.opacity,
-        child: ImageFiltered(
-          imageFilter: ImageFilter.blur(
-            sigmaX: layer.blurSigma,
-            sigmaY: layer.blurSigma,
-          ),
-          child: ShaderMask(
-            shaderCallback: layer.shaderFor,
-            blendMode: BlendMode.dstIn,
-            child: Image(
-              image: artProvider,
-              fit: BoxFit.cover,
-              filterQuality: FilterQuality.low,
-              errorBuilder: (_, _, _) => const SizedBox.expand(),
-            ),
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(
+          sigmaX: layer.blurSigma,
+          sigmaY: layer.blurSigma,
+        ),
+        child: ShaderMask(
+          shaderCallback: layer.shaderFor,
+          blendMode: BlendMode.dstIn,
+          child: Image(
+            image: artProvider,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.low,
+            color: Colors.white.withValues(alpha: layer.opacity),
+            colorBlendMode: BlendMode.modulate,
+            errorBuilder: (_, _, _) => const SizedBox.expand(),
           ),
         ),
       ),
@@ -447,7 +445,7 @@ List<_FlowLayer> _generateFlowLayers(ImageProvider artProvider) {
       baseScale: 0.94 + rng.nextDouble() * 0.18,
       scaleDrift: motionDrift * (0.05 + rng.nextDouble() * 0.06),
       opacity: 0.17 + rng.nextDouble() * 0.11,
-      blurSigma: 24 + rng.nextDouble() * 18,
+      blurSigma: 7 + rng.nextDouble() * 6,
       maskRadius: 0.76 + rng.nextDouble() * 0.30,
       maskCenterX: _randomSignedRange(rng, 0.95),
       maskCenterY: _randomSignedRange(rng, 0.95),
