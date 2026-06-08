@@ -18,6 +18,43 @@ import java.io.ByteArrayOutputStream
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "cc.koto.fluent_lyrics/media"
 
+    // Cache the most recent artwork data-URL.  Without this, the 250 ms
+    // poll re-runs Bitmap.compress(JPEG) on the same album art ~4× per
+    // second, spamming SkJpegEncoder logs and burning CPU on Skia encode.
+    //
+    // Key uses metadata identity (title|artist|album|duration) only —
+    // bitmap.generationId is unreliable here because MediaSession may hand
+    // back a fresh Bitmap instance on each read even when the pixels are
+    // identical, defeating the cache entirely.  Bitmap dimensions are
+    // included as a cheap secondary signal so a rare in-track artwork
+    // resize (different resolution) still invalidates.
+    private var cachedArtKey: String? = null
+    private var cachedArtUrl: String? = null
+
+    private fun buildArtCacheKey(metadata: MediaMetadata, art: Bitmap): String {
+        val title = metadata.getString(MediaMetadata.METADATA_KEY_TITLE) ?: ""
+        val artist = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: ""
+        val album = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: ""
+        val duration = metadata.getLong(MediaMetadata.METADATA_KEY_DURATION)
+        return "$title|$artist|$album|$duration|${art.width}x${art.height}"
+    }
+
+    private fun encodeArtToDataUrl(metadata: MediaMetadata, art: Bitmap): String {
+        val key = buildArtCacheKey(metadata, art)
+        val cached = cachedArtUrl
+        if (cached != null && cachedArtKey == key) {
+            return cached
+        }
+        val stream = ByteArrayOutputStream()
+        art.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+        val byteArray = stream.toByteArray()
+        val base64String = Base64.encodeToString(byteArray, Base64.NO_WRAP)
+        val dataUrl = "data:image/jpeg;base64,$base64String"
+        cachedArtKey = key
+        cachedArtUrl = dataUrl
+        return dataUrl
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
@@ -52,11 +89,7 @@ class MainActivity : FlutterActivity() {
                             ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
 
                         if (art != null) {
-                            val stream = ByteArrayOutputStream()
-                            art.compress(Bitmap.CompressFormat.JPEG, 80, stream)
-                            val byteArray = stream.toByteArray()
-                            val base64String = Base64.encodeToString(byteArray, Base64.NO_WRAP)
-                            artUrl = "data:image/jpeg;base64,$base64String"
+                            artUrl = encodeArtToDataUrl(metadata, art)
                         } else {
                             val artUri = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
                                 ?: metadata.getString(MediaMetadata.METADATA_KEY_ART_URI)
