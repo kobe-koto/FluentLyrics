@@ -8,10 +8,18 @@ class LyricsBackground extends StatelessWidget {
   final ImageProvider artProvider;
   final bool motionEnabled;
 
+  /// Whether the fragmented motion is currently advancing. When false the
+  /// fragment layout freezes at its current position instead of falling back
+  /// to the static background – the controller is simply stopped while the
+  /// last frame remains on screen. Has no effect when [motionEnabled] is
+  /// false.
+  final bool animate;
+
   const LyricsBackground({
     super.key,
     required this.artProvider,
     this.motionEnabled = true,
+    this.animate = true,
   });
 
   @override
@@ -25,6 +33,7 @@ class LyricsBackground extends StatelessWidget {
           ? _FragmentedBackground(
               key: ValueKey(('fragmented', artProvider)),
               artProvider: artProvider,
+              animate: animate,
             )
           : _StaticBackground(
               key: ValueKey(('static', artProvider)),
@@ -93,8 +102,13 @@ class _StaticBackgroundState extends State<_StaticBackground> {
 ///   directly over the canvas.
 class _FragmentedBackground extends StatefulWidget {
   final ImageProvider artProvider;
+  final bool animate;
 
-  const _FragmentedBackground({super.key, required this.artProvider});
+  const _FragmentedBackground({
+    super.key,
+    required this.artProvider,
+    required this.animate,
+  });
 
   @override
   State<_FragmentedBackground> createState() => _FragmentedBackgroundState();
@@ -143,7 +157,8 @@ class _FragmentedBackgroundState extends State<_FragmentedBackground>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 25),
-    )..repeat();
+    );
+    if (widget.animate) _controller.repeat();
     _fragments = _generateFragments();
     _scheduleBake(widget.artProvider);
   }
@@ -154,6 +169,17 @@ class _FragmentedBackgroundState extends State<_FragmentedBackground>
     if (oldWidget.artProvider != widget.artProvider) {
       _fragments = _generateFragments();
       _scheduleBake(widget.artProvider);
+    }
+    if (oldWidget.animate != widget.animate) {
+      if (widget.animate) {
+        // Resume from the current `_controller.value`, so the fragment
+        // layout picks up exactly where it froze instead of jumping.
+        _controller.repeat();
+      } else {
+        // `stop()` halts the ticker; `_controller.value` is preserved, so
+        // the painter keeps drawing the last computed frame.
+        _controller.stop();
+      }
     }
   }
 
