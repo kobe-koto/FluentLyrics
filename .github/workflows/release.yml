@@ -241,8 +241,8 @@ jobs:
           FDROID_REPO_KEYSTORE_PASSWORD: ${{ secrets.FDROID_REPO_KEYSTORE_PASSWORD }}
           FDROID_REPO_KEY_ALIAS: ${{ secrets.FDROID_REPO_KEY_ALIAS }}
           FDROID_REPO_KEY_PASSWORD: ${{ secrets.FDROID_REPO_KEY_PASSWORD }}
-          FDROID_REPO_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/fdroid/repo
         run: |
+          cp -a fdroid-config fdroid-work
           mkdir -p fdroid-work/repo fdroid-public
 
           find dist -type f -name 'fluent_lyrics-*-android.apk' -exec cp '{}' fdroid-work/repo/ ';'
@@ -254,10 +254,7 @@ jobs:
 
           echo "$FDROID_REPO_KEYSTORE_BASE64" | base64 --decode > fdroid-work/fdroid-repo.jks
 
-          cat > fdroid-work/config.yml <<EOF
-          repo_url: $FDROID_REPO_URL
-          repo_name: FluentLyrics
-          repo_description: Custom F-Droid repository for FluentLyrics Android releases.
+          cat >> fdroid-work/config.yml <<EOF
 
           keystore: fdroid-repo.jks
           repo_keyalias: $FDROID_REPO_KEY_ALIAS
