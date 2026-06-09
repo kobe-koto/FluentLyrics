@@ -77,10 +77,14 @@ Requirements:
 - Linux toolchain (for linux)
 
 Common commands:
-- flutter pub get
-- flutter run -d <device>
-- dart run build_runner build  # after modifing Isar @Collection 
-- please refer to fastforge for packaging
+
+```bash
+flutter pub get # get deps
+flutter run -d <device> --[debug|profile|release] # run the app
+dart run build_runner build --delete-conflicting-outputs  # after modifying Isar @Collection 
+dart run slang # after modifying i18n datasets
+dart pub global activate fastforge # Install Fastforge (refer to fastforge for packaging)
+```
 
 ## Disclaimer
 
