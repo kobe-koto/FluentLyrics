@@ -47,3 +47,4 @@ app.*.map.json
 /dist
 release.md
 /tmp
+/fdroid-work
