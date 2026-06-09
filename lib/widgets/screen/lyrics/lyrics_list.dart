@@ -252,32 +252,24 @@ class _LyricsListState extends State<LyricsList> {
                 final isHighlighted = index == currentIndex;
                 final isNextHighlighted = index == currentIndex + 1;
                 final distance = (index - currentIndex).toDouble();
-
-                if (isHighlighted && isInterlude && lyric.text.trim().isEmpty) {
-                  return ValueListenableBuilder<Duration>(
-                    valueListenable: provider.currentPositionNotifier,
-                    builder: (context, currentPosition, child) {
-                      return GestureDetector(
-                        onDoubleTap: provider.controlAbility.canSeek
-                            ? () => provider.seek(lyric.startTime)
-                            : null,
-                        behavior: HitTestBehavior.translucent,
-                        child: RepaintBoundary(
-                          child: InterludeIndicator(
-                            progress: provider.interludeProgressForPosition(
-                              currentPosition,
-                            ),
-                            duration: provider.interludeDuration,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }
-
                 final hasRichInlineParts =
                     lyric.inlineParts != null && lyric.inlineParts!.isNotEmpty;
+                final showInterludeIndicator =
+                    isHighlighted && isInterlude && lyric.text.trim().isEmpty;
 
+                // Outer shell is always _InViewportBuilder -> GestureDetector
+                // regardless of whether this row is currently rendering an
+                // interlude indicator or a normal LyricLine. Keeping the
+                // outermost runtimeType stable lets Flutter's element
+                // reconciler reuse the same Element when the highlighted row
+                // flips between the two child shapes (e.g. user picks a
+                // different candidate while the current line is an
+                // interlude), so the row's RenderBox + GestureDetector
+                // identity survive across the swap instead of being
+                // unmounted and re-built one frame later. Cosmetic cleanup;
+                // does not by itself fix any user-visible jitter (see the
+                // _jumpToCurrentIndex change in lyrics_screen.dart for the
+                // actual scroll-twitch fix).
                 return _InViewportBuilder(
                   index: index,
                   notifier: _inViewport,
@@ -287,7 +279,22 @@ class _LyricsListState extends State<LyricsList> {
                           ? () => provider.seek(lyric.startTime)
                           : null,
                       behavior: HitTestBehavior.translucent,
-                      child: hasRichInlineParts
+                      child: showInterludeIndicator
+                          ? ValueListenableBuilder<Duration>(
+                              valueListenable: provider.currentPositionNotifier,
+                              builder: (context, currentPosition, _) {
+                                return RepaintBoundary(
+                                  child: InterludeIndicator(
+                                    progress: provider
+                                        .interludeProgressForPosition(
+                                          currentPosition,
+                                        ),
+                                    duration: provider.interludeDuration,
+                                  ),
+                                );
+                              },
+                            )
+                          : hasRichInlineParts
                           ? _RichLineResyncBridge(
                               listenable: provider.positionResyncNotifier,
                               subscribeToResync: isHighlighted,
