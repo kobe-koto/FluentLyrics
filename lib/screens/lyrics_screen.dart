@@ -117,12 +117,26 @@ class _LyricsScreenState extends State<LyricsScreen> {
   /// changes (e.g. translation arrives, new lyrics returned) so the viewport
   /// re-anchors to the current line instead of letting line-height changes
   /// shift everything visually.
+  ///
+  /// Implemented via a 1μs `scrollTo` instead of `ItemScrollController.jumpTo`
+  /// because SPL's `_jumpTo` unconditionally calls
+  /// `primary.scrollController.jumpTo(0)` inside a `setState`, which produces
+  /// a visible single-frame layout twitch (most apparent in landscape, where
+  /// the anchor row IS the highlighted row). The 1μs `scrollTo` takes SPL's
+  /// `_startScroll` fast path when the target is already visible, which just
+  /// animates the existing primary scroll controller without forcing a
+  /// `pixels = 0` round trip.
+  /// 
+  /// * > assert(duration > Duration.zero);
+  ///   SPL requies a non-zero positive duration for `scrollTo` during debug profile,
+  ///   so we use 1μs as effectively zero.
   void _jumpToCurrentIndex(int index, int linesBefore) {
     if (!_itemScrollController.isAttached) return;
     final target = _resolveScrollTarget(index, linesBefore);
-    _itemScrollController.jumpTo(
+    _itemScrollController.scrollTo(
       index: target.targetIndex,
       alignment: target.alignment,
+      duration: const Duration(microseconds: 1),
     );
   }
 
@@ -318,10 +332,12 @@ class _LyricsScreenState extends State<LyricsScreen> {
     final lyricsRef = provider.lyrics;
     if (!identical(lyricsRef, _lastLyricsRef)) {
       _lastLyricsRef = lyricsRef;
-      // Snap to the (possibly new) current index without animation. This also
-      // covers the case where currentIndex changed in the same notification,
-      // because an animated scrollTo would start from a now-misaligned offset
-      // and look worse than a clean jump.
+      // Re-anchor to absorb height differences that the new lyrics /
+      // translation may have introduced in the surrounding lines.
+      // `_jumpToCurrentIndex` uses a 1μs `scrollTo` rather than SPL's raw
+      // `jumpTo` so this no-op-by-target case (currentIndex unchanged) does
+      // not trigger SPL's internal `primary.scrollController.jumpTo(0)` and
+      // the resulting one-frame layout twitch.
       _resnapToCurrentIndex(provider);
       // Keep _previousIndex in sync so the subsequent _syncCurrentIndex call
       // does not also schedule an animated scrollTo for the same index.
