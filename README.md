@@ -30,7 +30,7 @@ The main interface.
 
 ## Cannot support
 - iOS – theoretically impossible to obtain now‑playing metadata without jailbreaking.
-- Linux arm64 – official support for building a Linux arm64 Flutter app requires a native Linux arm64 machine, but GitHub Actions does not provide a Linux arm64 runner.
+- Linux arm64 – official support for building a Linux arm64 Flutter app requires a native Linux arm64 machine, ~~but GitHub Actions does not provide a Linux arm64 runner~~, they do, but that requires additional time and effort for an architecture I cannot test, PR welcome anyways (if that comes with consistent test and feedback).
 - Linux (except x86_64 and arm64) – not natively supported by Flutter.
 - BSD – not natively supported by Flutter.
 
