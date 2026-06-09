@@ -48,6 +48,22 @@ paru -Sy fluent-lyrics-bin
 
 Please use the AppImage or kindly package it yourself :3
 
+### Android
+
+You can download it from the [GitHub Releases](https://github.com/kobe-koto/FluentLyrics/releases) or from Fluent Lyrics custom F-Droid repo as below:
+
+1. [Click to add the Fluent Lyrics custom F-Droid repo](https://fdroid.link/#https://kobe-koto.github.io/FluentLyrics/fdroid/repo?fingerprint=5ACD3280EC11CDD98DB5AC85640664B81DFCBFBFBA2F1074163C7B754F6BE799) or scan this QR Code: 
+
+   <details>
+   <summary>Click to expand the QR code</summary>
+   <img src="https://kobe-koto.github.io/FluentLyrics/fdroid/repo/index.png" alt="QR: Fluent Lyrics custom F-Droid repo">
+   </details>
+
+
+2. Sync the repos
+
+3. Search for "Fluent Lyrics"
+
 ### Others
 
 see Releases
