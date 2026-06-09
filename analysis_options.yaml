@@ -1,9 +1,0 @@
-analyzer:
-  errors:
-    experimental_member_use: ignore # for Isar
-include: package:flutter_lints/flutter.yaml
-
-linter:
-  rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    prefer_single_quotes: true
