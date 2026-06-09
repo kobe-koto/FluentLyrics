@@ -1,0 +1,18 @@
+Categories:
+  - Multimedia
+License: AGPL-3.0-only
+WebSite: https://github.com/kobe-koto/FluentLyrics
+SourceCode: https://github.com/kobe-koto/FluentLyrics
+IssueTracker: https://github.com/kobe-koto/FluentLyrics/issues
+
+Name: Fluent Lyrics
+Summary: Lyrics viewer with synchronized lyrics from multiple providers
+Description: |-
+  Fluent Lyrics displays synchronized lyrics for the music currently playing on your device.
+
+  Features:
+  * Rich synchronized lyrics support
+  * Lyrics provider priority configuration
+  * Local lyrics cache
+  * Per-track and global lyrics offset controls
+  * Lyric translations support
