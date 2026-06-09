@@ -98,7 +98,9 @@ class LyricLine extends StatelessWidget {
       fontFamily: 'Outfit',
       fontSize: fontSize,
       fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w700,
-      color: isRichLine && isHighlighted ? Colors.white.withAlpha(128) : Colors.white,
+      color: isRichLine && isHighlighted
+          ? Colors.white.withAlpha(128)
+          : Colors.white,
       height: 1.2,
     );
 

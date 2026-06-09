@@ -22,10 +22,8 @@ Lyric _line(
   translation: translation,
 );
 
-LyricsResult _result({
-  required List<Lyric> lyrics,
-  String source = 'test',
-}) => LyricsResult(lyrics: lyrics, source: source);
+LyricsResult _result({required List<Lyric> lyrics, String source = 'test'}) =>
+    LyricsResult(lyrics: lyrics, source: source);
 
 void main() {
   group('RichifyHelper.apply — text fidelity', () {
@@ -37,23 +35,19 @@ void main() {
             1000,
             'hello,',
             endMs: 1500,
-            parts: [
-              _part(1000, 1400, 'hello'),
-              _part(1400, 1500, ','),
-            ],
+            parts: [_part(1000, 1400, 'hello'), _part(1400, 1500, ',')],
           ),
         ],
       );
-      final target = _result(
-        lyrics: [_line(1000, 'hello', endMs: 1500)],
-      );
+      final target = _result(lyrics: [_line(1000, 'hello', endMs: 1500)]);
 
       final out = RichifyHelper.apply(syncedTarget: target, richSource: src);
       expect(out.isRichSync, isTrue);
       expect(out.lyrics.single.text, 'hello');
       // Rendered text must come only from target.
-      final partsText =
-          out.lyrics.single.inlineParts!.map((p) => p.text).join();
+      final partsText = out.lyrics.single.inlineParts!
+          .map((p) => p.text)
+          .join();
       expect(partsText, 'hello');
       // The comma part timing got dropped; we should be left with 1 part.
       expect(out.lyrics.single.inlineParts!.length, 1);
@@ -75,14 +69,13 @@ void main() {
           ),
         ],
       );
-      final target = _result(
-        lyrics: [_line(0, 'hello, world', endMs: 1000)],
-      );
+      final target = _result(lyrics: [_line(0, 'hello, world', endMs: 1000)]);
 
       final out = RichifyHelper.apply(syncedTarget: target, richSource: src);
       expect(out.lyrics.single.text, 'hello, world');
-      final partsText =
-          out.lyrics.single.inlineParts!.map((p) => p.text).join();
+      final partsText = out.lyrics.single.inlineParts!
+          .map((p) => p.text)
+          .join();
       // No characters lost — the extra comma rides along.
       expect(partsText, 'hello, world');
     });
@@ -98,13 +91,12 @@ void main() {
           ),
         ],
       );
-      final target = _result(
-        lyrics: [_line(0, 'hello', endMs: 500)],
-      );
+      final target = _result(lyrics: [_line(0, 'hello', endMs: 500)]);
 
       final out = RichifyHelper.apply(syncedTarget: target, richSource: src);
-      final partsText =
-          out.lyrics.single.inlineParts!.map((p) => p.text).join();
+      final partsText = out.lyrics.single.inlineParts!
+          .map((p) => p.text)
+          .join();
       expect(partsText, 'hello'); // target casing preserved
       // Still two parts because the source had two parts.
       expect(out.lyrics.single.inlineParts!.length, 2);
@@ -128,14 +120,13 @@ void main() {
         ],
       );
       // Target uses ASCII comma instead of fullwidth.
-      final target = _result(
-        lyrics: [_line(0, '你好,世界', endMs: 1000)],
-      );
+      final target = _result(lyrics: [_line(0, '你好,世界', endMs: 1000)]);
 
       final out = RichifyHelper.apply(syncedTarget: target, richSource: src);
       expect(out.lyrics.single.text, '你好,世界');
-      final partsText =
-          out.lyrics.single.inlineParts!.map((p) => p.text).join();
+      final partsText = out.lyrics.single.inlineParts!
+          .map((p) => p.text)
+          .join();
       expect(partsText, '你好,世界');
     });
 
@@ -153,9 +144,7 @@ void main() {
           ),
         ],
       );
-      final target = _result(
-        lyrics: [_line(0, 'abc', endMs: 1000)],
-      );
+      final target = _result(lyrics: [_line(0, 'abc', endMs: 1000)]);
 
       final out = RichifyHelper.apply(syncedTarget: target, richSource: src);
       // No good alignment → richCount==0 → result stays plain.
@@ -176,9 +165,7 @@ void main() {
           ),
         ],
       );
-      final target = _result(
-        lyrics: [_line(2000, 'hi', endMs: 3000)],
-      );
+      final target = _result(lyrics: [_line(2000, 'hi', endMs: 3000)]);
 
       final out = RichifyHelper.apply(syncedTarget: target, richSource: src);
       final parts = out.lyrics.single.inlineParts!;
@@ -198,9 +185,7 @@ void main() {
           ),
         ],
       );
-      final target = _result(
-        lyrics: [_line(0, 'hi', endMs: 1000)],
-      );
+      final target = _result(lyrics: [_line(0, 'hi', endMs: 1000)]);
 
       final out = RichifyHelper.apply(syncedTarget: target, richSource: src);
       final parts = out.lyrics.single.inlineParts!;
@@ -225,9 +210,7 @@ void main() {
           ),
         ],
       );
-      final target = _result(
-        lyrics: [_line(0, 'abc', endMs: 900)],
-      );
+      final target = _result(lyrics: [_line(0, 'abc', endMs: 900)]);
 
       final out = RichifyHelper.apply(syncedTarget: target, richSource: src);
       final parts = out.lyrics.single.inlineParts!;
@@ -255,16 +238,11 @@ void main() {
             1000,
             'hello world',
             endMs: 2000,
-            parts: [
-              _part(1000, 1500, 'hello'),
-              _part(1500, 2000, 'world'),
-            ],
+            parts: [_part(1000, 1500, 'hello'), _part(1500, 2000, 'world')],
           ),
         ],
       );
-      final target = _result(
-        lyrics: [_line(1000, 'hello world', endMs: 2000)],
-      );
+      final target = _result(lyrics: [_line(1000, 'hello world', endMs: 2000)]);
 
       final out = RichifyHelper.apply(syncedTarget: target, richSource: src);
       expect(out.lyrics.single.inlineParts!.length, greaterThanOrEqualTo(1));
@@ -277,12 +255,7 @@ void main() {
     test('skips blank lines without richifying them', () {
       final src = _result(
         lyrics: [
-          _line(
-            0,
-            'hello',
-            endMs: 500,
-            parts: [_part(0, 500, 'hello')],
-          ),
+          _line(0, 'hello', endMs: 500, parts: [_part(0, 500, 'hello')]),
         ],
       );
       final target = _result(
@@ -299,12 +272,7 @@ void main() {
     test('target translation survives richify', () {
       final src = _result(
         lyrics: [
-          _line(
-            0,
-            'hello',
-            endMs: 500,
-            parts: [_part(0, 500, 'hello')],
-          ),
+          _line(0, 'hello', endMs: 500, parts: [_part(0, 500, 'hello')]),
         ],
       );
       final target = _result(
@@ -343,12 +311,7 @@ void main() {
     test('returns source unchanged when nothing aligned', () {
       final src = _result(
         lyrics: [
-          _line(
-            0,
-            'aaaaaaaa',
-            endMs: 500,
-            parts: [_part(0, 500, 'aaaaaaaa')],
-          ),
+          _line(0, 'aaaaaaaa', endMs: 500, parts: [_part(0, 500, 'aaaaaaaa')]),
         ],
       );
       final target = _result(
@@ -366,22 +329,15 @@ void main() {
     test('returns 1.0 when every line matches', () {
       final src = _result(
         lyrics: [
-          _line(
-            0,
-            'hello',
-            endMs: 500,
-            parts: [_part(0, 500, 'hello')],
-          ),
-          _line(
-            500,
-            'world',
-            endMs: 1000,
-            parts: [_part(500, 1000, 'world')],
-          ),
+          _line(0, 'hello', endMs: 500, parts: [_part(0, 500, 'hello')]),
+          _line(500, 'world', endMs: 1000, parts: [_part(500, 1000, 'world')]),
         ],
       );
       final target = _result(
-        lyrics: [_line(0, 'hello', endMs: 500), _line(500, 'world', endMs: 1000)],
+        lyrics: [
+          _line(0, 'hello', endMs: 500),
+          _line(500, 'world', endMs: 1000),
+        ],
       );
 
       expect(
@@ -393,22 +349,12 @@ void main() {
     test('returns 0 when target has only blank content', () {
       final src = _result(
         lyrics: [
-          _line(
-            0,
-            'hello',
-            endMs: 500,
-            parts: [_part(0, 500, 'hello')],
-          ),
+          _line(0, 'hello', endMs: 500, parts: [_part(0, 500, 'hello')]),
         ],
       );
-      final target = _result(
-        lyrics: [_line(0, '   ', endMs: 500)],
-      );
+      final target = _result(lyrics: [_line(0, '   ', endMs: 500)]);
 
-      expect(
-        RichifyHelper.coverage(syncedTarget: target, richSource: src),
-        0,
-      );
+      expect(RichifyHelper.coverage(syncedTarget: target, richSource: src), 0);
     });
   });
 }
