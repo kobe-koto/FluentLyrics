@@ -69,13 +69,15 @@ class LyricsControlArea extends StatelessWidget {
                         color: Colors.white.withAlpha(150),
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        offsetText,
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(150),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0,
+                      RepaintBoundary(
+                        child: Text(
+                          offsetText,
+                          style: TextStyle(
+                            color: Colors.white.withAlpha(150),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
+                          ),
                         ),
                       ),
                     ],
@@ -175,34 +177,42 @@ class LyricsControlArea extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                icon: const Icon(Icons.skip_previous),
-                color: Colors.white,
-                iconSize: 32,
-                onPressed: provider.controlAbility.canGoPrevious
-                    ? provider.previousTrack
-                    : null,
-                disabledColor: Colors.white.withValues(alpha: 0.35),
+              RepaintBoundary(
+                child: IconButton(
+                  icon: const Icon(Icons.skip_previous),
+                  color: Colors.white,
+                  iconSize: 32,
+                  onPressed: provider.controlAbility.canGoPrevious
+                      ? provider.previousTrack
+                      : null,
+                  disabledColor: Colors.white.withValues(alpha: 0.35),
+                ),
               ),
               const SizedBox(width: 24),
-              IconButton(
-                icon: Icon(provider.isPlaying ? Icons.pause : Icons.play_arrow),
-                color: Colors.white,
-                iconSize: 48,
-                onPressed: provider.controlAbility.canPlayPause
-                    ? provider.playPause
-                    : null,
-                disabledColor: Colors.white.withValues(alpha: 0.35),
+              RepaintBoundary(
+                child: IconButton(
+                  icon: Icon(
+                    provider.isPlaying ? Icons.pause : Icons.play_arrow,
+                  ),
+                  color: Colors.white,
+                  iconSize: 48,
+                  onPressed: provider.controlAbility.canPlayPause
+                      ? provider.playPause
+                      : null,
+                  disabledColor: Colors.white.withValues(alpha: 0.35),
+                ),
               ),
               const SizedBox(width: 24),
-              IconButton(
-                icon: const Icon(Icons.skip_next),
-                color: Colors.white,
-                iconSize: 32,
-                onPressed: provider.controlAbility.canGoNext
-                    ? provider.nextTrack
-                    : null,
-                disabledColor: Colors.white.withValues(alpha: 0.35),
+              RepaintBoundary(
+                child: IconButton(
+                  icon: const Icon(Icons.skip_next),
+                  color: Colors.white,
+                  iconSize: 32,
+                  onPressed: provider.controlAbility.canGoNext
+                      ? provider.nextTrack
+                      : null,
+                  disabledColor: Colors.white.withValues(alpha: 0.35),
+                ),
               ),
             ],
           ),
@@ -220,12 +230,14 @@ class _OffsetButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(icon, color: Colors.white.withAlpha(100), size: 20),
-      onPressed: onPressed,
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
+    return RepaintBoundary(
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white.withAlpha(100), size: 20),
+        onPressed: onPressed,
+        visualDensity: VisualDensity.compact,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+      ),
     );
   }
 }

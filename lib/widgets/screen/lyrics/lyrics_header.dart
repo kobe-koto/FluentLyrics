@@ -36,47 +36,55 @@ class LyricsHeader extends StatelessWidget {
           _buildArtThumb(artProvider),
           const SizedBox(width: 16),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  metadata?.title ?? t.lyrics.noMedia,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+            child: RepaintBoundary(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    metadata?.title ?? t.lyrics.noMedia,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  metadata?.artist.join(', ') ?? t.lyrics.waitForMusic,
-                  style: TextStyle(
-                    color: Colors.white.withAlpha(136),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                  Text(
+                    metadata?.artist.join(', ') ?? t.lyrics.waitForMusic,
+                    style: TextStyle(
+                      color: Colors.white.withAlpha(136),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
-            onPressed: onRefresh,
-            tooltip: t.lyrics.clearCacheTooltip,
+          RepaintBoundary(
+            child: IconButton(
+              icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
+              onPressed: onRefresh,
+              tooltip: t.lyrics.clearCacheTooltip,
+            ),
           ),
-          _CandidatesButton(provider: provider),
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-            tooltip: t.lyrics.settingsTooltip,
+          RepaintBoundary(child: _CandidatesButton(provider: provider)),
+          RepaintBoundary(
+            child: IconButton(
+              icon: const Icon(Icons.settings, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
+              tooltip: t.lyrics.settingsTooltip,
+            ),
           ),
         ],
       ),
@@ -102,57 +110,65 @@ class LyricsHeader extends StatelessWidget {
             children: [
               // Metadata
               Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      metadata?.title ?? t.lyrics.noMedia,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                child: RepaintBoundary(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        metadata?.title ?? t.lyrics.noMedia,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      metadata?.artist.join(', ') ?? t.lyrics.waitForMusic,
-                      style: TextStyle(
-                        color: Colors.white.withAlpha(150),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 4),
+                      Text(
+                        metadata?.artist.join(', ') ?? t.lyrics.waitForMusic,
+                        style: TextStyle(
+                          color: Colors.white.withAlpha(150),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
               // Refresh lyrics
-              IconButton(
-                icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
-                iconSize: 28,
-                onPressed: onRefresh,
-                tooltip: t.lyrics.clearCacheTooltip,
+              RepaintBoundary(
+                child: IconButton(
+                  icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
+                  iconSize: 28,
+                  onPressed: onRefresh,
+                  tooltip: t.lyrics.clearCacheTooltip,
+                ),
               ),
               // Candidates
-              _CandidatesButton(provider: provider, iconSize: 28),
+              RepaintBoundary(
+                child: _CandidatesButton(provider: provider, iconSize: 28),
+              ),
               // Settings
-              IconButton(
-                icon: const Icon(Icons.settings, color: Colors.white),
-                iconSize: 28,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  );
-                },
-                tooltip: t.lyrics.settingsTooltip,
+              RepaintBoundary(
+                child: IconButton(
+                  icon: const Icon(Icons.settings, color: Colors.white),
+                  iconSize: 28,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  },
+                  tooltip: t.lyrics.settingsTooltip,
+                ),
               ),
             ],
           ),
@@ -162,42 +178,44 @@ class LyricsHeader extends StatelessWidget {
   }
 
   Widget _buildArtThumb(ImageProvider artImage, [bool large = false]) {
-    return Container(
-      width: large ? double.infinity : 64,
-      height: large ? double.infinity : 64,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(large ? 24 : 12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(100),
-            blurRadius: large ? 24 : 12,
-            offset: Offset(0, large ? 8 : 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(large ? 24 : 12),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final double dpr = MediaQuery.of(context).devicePixelRatio;
-            final int? cacheWidth = constraints.maxWidth.isFinite
-                ? (constraints.maxWidth * dpr).round()
-                : null;
-            final int? cacheHeight = constraints.maxHeight.isFinite
-                ? (constraints.maxHeight * dpr).round()
-                : null;
+    return RepaintBoundary(
+      child: Container(
+        width: large ? double.infinity : 64,
+        height: large ? double.infinity : 64,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(large ? 24 : 12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(100),
+              blurRadius: large ? 24 : 12,
+              offset: Offset(0, large ? 8 : 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(large ? 24 : 12),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double dpr = MediaQuery.of(context).devicePixelRatio;
+              final int? cacheWidth = constraints.maxWidth.isFinite
+                  ? (constraints.maxWidth * dpr).round()
+                  : null;
+              final int? cacheHeight = constraints.maxHeight.isFinite
+                  ? (constraints.maxHeight * dpr).round()
+                  : null;
 
-            return DelayedLoadingImage(
-              image: artImage,
-              fit: BoxFit.cover,
-              cacheWidth: cacheWidth,
-              cacheHeight: cacheHeight,
-              errorBuilder: (context, error, stackTrace) {
-                AppLogger.debug('Error loading album art: $error');
-                return Image.asset('assets/album_art.png', fit: BoxFit.cover);
-              },
-            );
-          },
+              return DelayedLoadingImage(
+                image: artImage,
+                fit: BoxFit.cover,
+                cacheWidth: cacheWidth,
+                cacheHeight: cacheHeight,
+                errorBuilder: (context, error, stackTrace) {
+                  AppLogger.debug('Error loading album art: $error');
+                  return Image.asset('assets/album_art.png', fit: BoxFit.cover);
+                },
+              );
+            },
+          ),
         ),
       ),
     );
