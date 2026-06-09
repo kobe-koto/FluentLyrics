@@ -250,6 +250,7 @@ class _LyricsListState extends State<LyricsList> {
 
                 final lyric = lyrics[index];
                 final isHighlighted = index == currentIndex;
+                final isNextHighlighted = index == currentIndex + 1;
                 final distance = (index - currentIndex).toDouble();
 
                 if (isHighlighted && isInterlude && lyric.text.trim().isEmpty) {
@@ -295,6 +296,7 @@ class _LyricsListState extends State<LyricsList> {
                                 return _buildLyricLine(
                                   lyric: lyric,
                                   isHighlighted: isHighlighted,
+                                  isNextHighlighted: isNextHighlighted,
                                   distance: distance,
                                   inViewport: inViewport,
                                   currentPosition: currentPosition,
@@ -304,6 +306,7 @@ class _LyricsListState extends State<LyricsList> {
                           : _buildLyricLine(
                               lyric: lyric,
                               isHighlighted: isHighlighted,
+                              isNextHighlighted: isNextHighlighted,
                               distance: distance,
                               inViewport: inViewport,
                               currentPosition: provider.currentPosition,
@@ -323,6 +326,7 @@ class _LyricsListState extends State<LyricsList> {
   Widget _buildLyricLine({
     required Lyric lyric,
     required bool isHighlighted,
+    required bool isNextHighlighted,
     required double distance,
     required bool inViewport,
     required Duration currentPosition,
@@ -331,6 +335,7 @@ class _LyricsListState extends State<LyricsList> {
     return LyricLine(
       lyric: lyric,
       isHighlighted: isHighlighted,
+      isNextHighlighted: isNextHighlighted,
       distance: distance,
       isManualScrolling: widget.isManualScrolling,
       blurEnabled: provider.blurEnabled.current,
@@ -385,7 +390,7 @@ class _LyricsListState extends State<LyricsList> {
     if (infoParts.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 48, left: 24, right: 24),
+      padding: const EdgeInsets.only(top: 16, bottom: 16, left: 24, right: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: infoParts

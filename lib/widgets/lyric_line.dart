@@ -22,6 +22,7 @@ class LyricLine extends StatelessWidget {
 
   final Lyric lyric;
   final bool isHighlighted;
+  final bool isNextHighlighted;
   final double distance; // 0 is current, 1 is adjacent, etc.
   final bool isManualScrolling;
   final bool blurEnabled;
@@ -37,6 +38,7 @@ class LyricLine extends StatelessWidget {
     super.key,
     required this.lyric,
     required this.isHighlighted,
+    required this.isNextHighlighted,
     required this.fontSize,
     required this.inactiveScale,
     required this.translationHighlightOnly,
@@ -60,12 +62,6 @@ class LyricLine extends StatelessWidget {
     final fontSize = this.fontSize;
     final inactiveScale = this.inactiveScale;
     final translationHighlightOnly = this.translationHighlightOnly;
-
-    final mergedInlineParts = _getMergedInlineParts(lyric.inlineParts ?? []);
-    final isRichLine =
-        mergedInlineParts.isNotEmpty &&
-        lyric.text.trim().isNotEmpty && // empty text check
-        mergedInlineParts.length > 1; // multiple parts check
 
     const double minOpacity = 0.4;
 
@@ -98,9 +94,7 @@ class LyricLine extends StatelessWidget {
       fontFamily: 'Outfit',
       fontSize: fontSize,
       fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w700,
-      color: isRichLine && isHighlighted
-          ? Colors.white.withAlpha(128)
-          : Colors.white,
+      color: Colors.white,
       height: 1.2,
     );
 
@@ -181,9 +175,9 @@ class LyricLine extends StatelessWidget {
 
   Widget _buildText(BuildContext context) {
     final lyric = this.lyric;
-    final isHighlighted = this.isHighlighted;
+    final shouldBeRichLine = isHighlighted || isNextHighlighted;
     final text = lyric.text;
-    if (!isHighlighted ||
+    if (!shouldBeRichLine ||
         lyric.inlineParts == null ||
         lyric.inlineParts!.isEmpty) {
       return Text(
@@ -224,6 +218,7 @@ class LyricLine extends StatelessWidget {
               style: richTextStyle,
               adjustedPosition: adjustedPosition,
               isPlaying: isPlaying,
+              isHighlighted: isHighlighted,
             ),
           );
         }).toList(),
@@ -330,6 +325,7 @@ class _RichPart extends StatefulWidget {
   final TextStyle style;
   final Duration adjustedPosition;
   final bool isPlaying;
+  final bool isHighlighted;
 
   const _RichPart({
     required this.text,
@@ -338,6 +334,7 @@ class _RichPart extends StatefulWidget {
     required this.style,
     required this.adjustedPosition,
     required this.isPlaying,
+    required this.isHighlighted,
   });
 
   @override
@@ -511,8 +508,13 @@ class _RichPartState extends State<_RichPart>
             transform: Matrix4.translationValues(0, isLifting ? -2 : 0, 0),
             child: Stack(
               children: [
-                Opacity(
-                  opacity: (isShort && isLifting) ? 1.0 : 0.4,
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 75),
+                  opacity: widget.isHighlighted
+                      ? (isShort && isLifting)
+                            ? 1.0
+                            : 0.4
+                      : 1.0,
                   child: child!,
                 ),
                 if (isLifting && !isShort)
