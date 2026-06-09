@@ -227,7 +227,12 @@ jobs:
         if: ${{ needs.prepare-version.outputs.prerelease != 'true' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y fdroidserver
+          sudo apt-get install -y python3-venv
+          python3 -m venv "$RUNNER_TEMP/fdroidserver-venv"
+          "$RUNNER_TEMP/fdroidserver-venv/bin/python" -m pip install --upgrade pip
+          "$RUNNER_TEMP/fdroidserver-venv/bin/pip" install --upgrade fdroidserver androguard
+          echo "$RUNNER_TEMP/fdroidserver-venv/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/fdroidserver-venv/bin/fdroid" --version
 
       - name: Generate F-Droid repository
         if: ${{ needs.prepare-version.outputs.prerelease != 'true' }}
