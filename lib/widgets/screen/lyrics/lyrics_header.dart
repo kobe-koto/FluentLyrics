@@ -22,10 +22,9 @@ class LyricsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isLandscape) {
-      return _buildLandscapeHeader(context);
-    }
-    return _buildPortraitHeader(context);
+    return isLandscape
+        ? _buildLandscapeHeader(context)
+        : _buildPortraitHeader(context);
   }
 
   Widget _buildPortraitHeader(BuildContext context) {
@@ -87,7 +86,7 @@ class LyricsHeader extends StatelessWidget {
   Widget _buildLandscapeHeader(BuildContext context) {
     final metadata = provider.currentMetadata;
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Column(
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -101,6 +100,7 @@ class LyricsHeader extends StatelessWidget {
           const SizedBox(height: 24),
           Row(
             children: [
+              // Metadata
               Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -130,13 +130,17 @@ class LyricsHeader extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // Refresh lyrics
               IconButton(
                 icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
                 iconSize: 28,
                 onPressed: onRefresh,
                 tooltip: t.lyrics.clearCacheTooltip,
               ),
+              // Candidates
               _CandidatesButton(provider: provider, iconSize: 28),
+              // Settings
               IconButton(
                 icon: const Icon(Icons.settings, color: Colors.white),
                 iconSize: 28,

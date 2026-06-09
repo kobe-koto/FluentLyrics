@@ -34,9 +34,10 @@ class LyricsControlArea extends StatelessWidget {
         "${offsetSeconds >= 0 ? '+' : ''}${offsetSeconds.toStringAsFixed(2)}s";
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+      padding: const EdgeInsets.fromLTRB(24, 2, 24, 32),
       child: Column(
         children: [
+          // Offset adjustment controls
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -90,7 +91,10 @@ class LyricsControlArea extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+
+          const SizedBox(height: 4),
+
+          // Progress slider and elapsed/total display
           ValueListenableBuilder<Duration>(
             valueListenable: provider.currentPositionNotifier,
             builder: (context, currentPosition, child) {
@@ -113,6 +117,9 @@ class LyricsControlArea extends StatelessWidget {
                           ? const RoundSliderThumbShape(enabledThumbRadius: 6)
                           : SliderComponentShape.noThumb,
                       overlayColor: Colors.white.withValues(alpha: 0.1),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 18,
+                      ),
                       trackShape: _CustomSliderTrackShape(),
                     ),
                     child: RepaintBoundary(
@@ -163,7 +170,8 @@ class LyricsControlArea extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 12),
+
+          // Playback controls
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
