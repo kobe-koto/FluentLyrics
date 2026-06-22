@@ -184,6 +184,15 @@ bool is_digits(const char *text) {
   return true;
 }
 
+bool process_owned_by_uid(pid_t pid, uid_t uid) {
+  struct stat st {};
+  const std::string proc = "/proc/" + std::to_string(pid);
+  if (stat(proc.c_str(), &st) != 0) {
+    return false;
+  }
+  return st.st_uid == uid;
+}
+
 bool is_candidate_process(pid_t pid, const std::string &current_exe_name,
                           const std::string &current_appimage_name) {
   const std::string proc = "/proc/" + std::to_string(pid);
@@ -206,6 +215,7 @@ bool is_candidate_process(pid_t pid, const std::string &current_exe_name,
 
 bool fluent_lyrics_prepare_instance(std::string *error) {
   const pid_t self = getpid();
+  const uid_t current_uid = getuid();
   const std::string current_exe = read_link("/proc/self/exe");
   const std::string current_exe_name = basename_of(current_exe);
   const std::string current_appimage_name =
@@ -230,6 +240,9 @@ bool fluent_lyrics_prepare_instance(std::string *error) {
     const pid_t pid =
         static_cast<pid_t>(std::strtol(entry->d_name, nullptr, 10));
     if (pid <= 0 || pid == self) {
+      continue;
+    }
+    if (!process_owned_by_uid(pid, current_uid)) {
       continue;
     }
     if (!is_candidate_process(pid, current_exe_name, current_appimage_name)) {
