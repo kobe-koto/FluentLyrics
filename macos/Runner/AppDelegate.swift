@@ -45,9 +45,13 @@ class AppDelegate: FlutterAppDelegate {
     }
 
     let currentPID = ProcessInfo.processInfo.processIdentifier
+    let currentUID = getuid()
     let existingApps = NSRunningApplication
       .runningApplications(withBundleIdentifier: bundleIdentifier)
-      .filter { $0.processIdentifier != currentPID }
+      .filter {
+        $0.processIdentifier != currentPID &&
+          processUID(for: $0.processIdentifier) == currentUID
+      }
 
     if let sameExecutable = existingApps.first(where: {
       guard let executableURL = $0.executableURL,
@@ -102,6 +106,16 @@ class AppDelegate: FlutterAppDelegate {
       Thread.sleep(forTimeInterval: 0.1)
     }
     return app.isTerminated
+  }
+
+  private func processUID(for pid: pid_t) -> uid_t? {
+    var info = proc_bsdinfo()
+    let size = Int32(MemoryLayout<proc_bsdinfo>.stride)
+    let result = proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, size)
+    guard result == size else {
+      return nil
+    }
+    return info.pbi_uid
   }
 
   @objc private func showMainWindowFromInstanceRequest(_ notification: Notification) {
