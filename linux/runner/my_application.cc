@@ -6,6 +6,7 @@
 #endif
 
 #include "flutter/generated_plugin_registrant.h"
+#include "instance_guard.h"
 
 struct _MyApplication {
   GtkApplication parent_instance;
@@ -22,6 +23,15 @@ static void first_frame_cb(MyApplication* self, FlView* view) {
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
+
+  GList* windows = gtk_application_get_windows(GTK_APPLICATION(application));
+  if (windows != nullptr) {
+    GtkWindow* existing_window = GTK_WINDOW(windows->data);
+    gtk_widget_show(GTK_WIDGET(existing_window));
+    gtk_window_present(existing_window);
+    return;
+  }
+
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
@@ -86,6 +96,14 @@ static gboolean my_application_local_command_line(GApplication* application,
   // Strip out the first argument as it is the binary name.
   self->dart_entrypoint_arguments = g_strdupv(*arguments + 1);
 
+  std::string instance_error;
+  if (!fluent_lyrics_prepare_instance(&instance_error)) {
+    g_warning("Failed to prepare Fluent Lyrics instance: %s",
+              instance_error.c_str());
+    *exit_status = 1;
+    return TRUE;
+  }
+
   g_autoptr(GError) error = nullptr;
   if (!g_application_register(application, nullptr, &error)) {
     g_warning("Failed to register: %s", error->message);
@@ -143,6 +161,6 @@ MyApplication* my_application_new() {
   g_set_prgname(APPLICATION_ID);
 
   return MY_APPLICATION(g_object_new(my_application_get_type(),
-                                     "application-id", APPLICATION_ID, "flags",
-                                     G_APPLICATION_NON_UNIQUE, nullptr));
+                                     "application-id", APPLICATION_ID,
+                                     nullptr));
 }
