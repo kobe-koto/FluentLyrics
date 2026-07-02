@@ -15,6 +15,7 @@ class LinuxMediaService extends MediaService implements MediaController {
   MediaPlaybackStatus _status = MediaPlaybackStatus.empty();
   MediaControlAbility _controlAbility = MediaControlAbility.none();
   String? _currentTrackId;
+  String? _lastActivePlayerBusName;
   bool _isUpdating = false;
   bool _isPolling = false;
   int _pollSession = 0;
@@ -265,11 +266,17 @@ class LinuxMediaService extends MediaService implements MediaController {
         final status = await _getPlaybackStatus(player);
         if (status == 'Playing') {
           bestFound = player;
+          _lastActivePlayerBusName = player;
           break;
         }
       }
 
-      _cachedPlayerBusName = bestFound ?? validPlayers.first;
+      final lastActivePlayer = _lastActivePlayerBusName;
+      _cachedPlayerBusName =
+          bestFound ??
+          (lastActivePlayer != null && validPlayers.contains(lastActivePlayer)
+              ? lastActivePlayer
+              : validPlayers.first);
       _lastDiscoveryTime = now;
       return _cachedPlayerBusName;
     } catch (e) {
