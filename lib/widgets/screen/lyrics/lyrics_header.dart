@@ -64,13 +64,13 @@ class LyricsHeader extends StatelessWidget {
               ),
             ),
           ),
-          RepaintBoundary(
-            child: IconButton(
-              icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
-              onPressed: onRefresh,
-              tooltip: t.lyrics.clearCacheTooltip,
-            ),
-          ),
+          // RepaintBoundary(
+          //   child: IconButton(
+          //     icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
+          //     onPressed: onRefresh,
+          //     tooltip: t.lyrics.clearCacheTooltip,
+          //   ),
+          // ),
           RepaintBoundary(child: _CandidatesButton(provider: provider)),
           RepaintBoundary(
             child: IconButton(
@@ -142,14 +142,14 @@ class LyricsHeader extends StatelessWidget {
               ),
 
               // Refresh lyrics
-              RepaintBoundary(
-                child: IconButton(
-                  icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
-                  iconSize: 28,
-                  onPressed: onRefresh,
-                  tooltip: t.lyrics.clearCacheTooltip,
-                ),
-              ),
+              // RepaintBoundary(
+              //   child: IconButton(
+              //     icon: Icon(Icons.refresh, color: Colors.white.withAlpha(200)),
+              //     iconSize: 28,
+              //     onPressed: onRefresh,
+              //     tooltip: t.lyrics.clearCacheTooltip,
+              //   ),
+              // ),
               // Candidates
               RepaintBoundary(
                 child: _CandidatesButton(provider: provider, iconSize: 28),
