@@ -250,7 +250,7 @@ class _LyricsListState extends State<LyricsList> {
 
                 final lyric = lyrics[index];
                 final isHighlighted = index == currentIndex;
-                final isNextHighlighted = index == currentIndex + 1;
+                final isPrerendered = (index - currentIndex).abs() == 1;
                 final distance = (index - currentIndex).toDouble();
                 final hasRichInlineParts =
                     lyric.inlineParts != null && lyric.inlineParts!.isNotEmpty;
@@ -303,7 +303,7 @@ class _LyricsListState extends State<LyricsList> {
                                 return _buildLyricLine(
                                   lyric: lyric,
                                   isHighlighted: isHighlighted,
-                                  isNextHighlighted: isNextHighlighted,
+                                  isPrerendered: isPrerendered,
                                   distance: distance,
                                   inViewport: inViewport,
                                   currentPosition: currentPosition,
@@ -313,7 +313,7 @@ class _LyricsListState extends State<LyricsList> {
                           : _buildLyricLine(
                               lyric: lyric,
                               isHighlighted: isHighlighted,
-                              isNextHighlighted: isNextHighlighted,
+                              isPrerendered: isPrerendered,
                               distance: distance,
                               inViewport: inViewport,
                               currentPosition: provider.currentPosition,
@@ -333,7 +333,7 @@ class _LyricsListState extends State<LyricsList> {
   Widget _buildLyricLine({
     required Lyric lyric,
     required bool isHighlighted,
-    required bool isNextHighlighted,
+    required bool isPrerendered,
     required double distance,
     required bool inViewport,
     required Duration currentPosition,
@@ -342,7 +342,7 @@ class _LyricsListState extends State<LyricsList> {
     return LyricLine(
       lyric: lyric,
       isHighlighted: isHighlighted,
-      isNextHighlighted: isNextHighlighted,
+      isPrerendered: isPrerendered,
       distance: distance,
       isManualScrolling: widget.isManualScrolling,
       blurEnabled: provider.blurEnabled.current,

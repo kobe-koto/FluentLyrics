@@ -22,7 +22,7 @@ class LyricLine extends StatelessWidget {
 
   final Lyric lyric;
   final bool isHighlighted;
-  final bool isNextHighlighted;
+  final bool isPrerendered;
   final double distance; // 0 is current, 1 is adjacent, etc.
   final bool isManualScrolling;
   final bool blurEnabled;
@@ -38,7 +38,7 @@ class LyricLine extends StatelessWidget {
     super.key,
     required this.lyric,
     required this.isHighlighted,
-    required this.isNextHighlighted,
+    required this.isPrerendered,
     required this.fontSize,
     required this.inactiveScale,
     required this.translationHighlightOnly,
@@ -175,7 +175,7 @@ class LyricLine extends StatelessWidget {
 
   Widget _buildText(BuildContext context) {
     final lyric = this.lyric;
-    final shouldBeRichLine = isHighlighted || isNextHighlighted;
+    final shouldBeRichLine = isHighlighted || isPrerendered;
     final text = lyric.text;
     if (!shouldBeRichLine ||
         lyric.inlineParts == null ||
