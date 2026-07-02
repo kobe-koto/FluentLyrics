@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.media.MediaMetadata
 import android.media.session.MediaController
+import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.graphics.Bitmap
@@ -17,6 +18,8 @@ import java.io.ByteArrayOutputStream
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "cc.koto.fluent_lyrics/media"
+    private var lastActiveSessionToken: MediaSession.Token? = null
+    private var lastActivePackageName: String? = null
 
     // Cache the most recent artwork data-URL.  Without this, the 250 ms
     // poll re-runs Bitmap.compress(JPEG) on the same album art ~4× per
@@ -185,8 +188,30 @@ class MainActivity : FlutterActivity() {
         val componentName = ComponentName(this, MediaSessionListenerService::class.java)
         return try {
             val sessions = manager.getActiveSessions(componentName)
-            // find the one that is playing
-            sessions.find { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: sessions.firstOrNull()
+            val playingController = sessions.find {
+                it.playbackState?.state == PlaybackState.STATE_PLAYING
+            }
+            if (playingController != null) {
+                lastActiveSessionToken = playingController.sessionToken
+                lastActivePackageName = playingController.packageName
+                return playingController
+            }
+
+            val previousToken = lastActiveSessionToken
+            if (previousToken != null) {
+                sessions.find { it.sessionToken == previousToken }?.let {
+                    return it
+                }
+            }
+
+            val previousPackageName = lastActivePackageName
+            if (previousPackageName != null) {
+                sessions.find { it.packageName == previousPackageName }?.let {
+                    return it
+                }
+            }
+
+            sessions.firstOrNull()
         } catch (e: SecurityException) {
             // This happens if notification access is not granted
             null
