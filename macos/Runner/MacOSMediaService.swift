@@ -642,6 +642,7 @@ final class MacOSMediaService {
   private let mediaRemoteAppleScriptClient = MediaRemoteAppleScriptClient()
   private var hasLoggedAppleScriptStatus = false
   private var lastAppleScriptPlayer: AppleScriptPlayer?
+  private var lastActiveStatusSource: String?
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
@@ -673,8 +674,9 @@ final class MacOSMediaService {
 
   private func getStatus(result: @escaping FlutterResult) {
     ciderAPIClient.fetchStatus { ciderStatus in
-      if let ciderStatus, ciderStatus["isPlaying"] as? Bool == true {
+      if let ciderStatus, self.isPlaying(ciderStatus) {
         DispatchQueue.main.async {
+          self.rememberActiveStatus(ciderStatus)
           result(ciderStatus)
         }
         return
@@ -682,23 +684,56 @@ final class MacOSMediaService {
 
       DispatchQueue.main.async {
         let appleScriptStatus = self.appleScriptStatus()
-        if let appleScriptStatus, appleScriptStatus["isPlaying"] as? Bool == true {
+        if let appleScriptStatus, self.isPlaying(appleScriptStatus) {
+          self.rememberActiveStatus(appleScriptStatus)
           result(appleScriptStatus)
           return
         }
 
         self.mediaRemoteAppleScriptClient.fetchStatus { mediaRemoteStatus in
           DispatchQueue.main.async {
-            if let mediaRemoteStatus, mediaRemoteStatus["isPlaying"] as? Bool == true {
+            if let mediaRemoteStatus, self.isPlaying(mediaRemoteStatus) {
+              self.rememberActiveStatus(mediaRemoteStatus)
               result(mediaRemoteStatus)
               return
             }
 
-            result(ciderStatus ?? appleScriptStatus ?? mediaRemoteStatus)
+            result(
+              self.preferredPausedStatus(from: [
+                ciderStatus,
+                appleScriptStatus,
+                mediaRemoteStatus,
+              ]) ?? ciderStatus ?? appleScriptStatus ?? mediaRemoteStatus
+            )
           }
         }
       }
     }
+  }
+
+  private func isPlaying(_ status: [String: Any?]?) -> Bool {
+    status?["isPlaying"] as? Bool == true
+  }
+
+  private func statusSource(_ status: [String: Any?]?) -> String? {
+    status?["source"] as? String
+  }
+
+  private func rememberActiveStatus(_ status: [String: Any?]?) {
+    guard let source = statusSource(status) else {
+      return
+    }
+    lastActiveStatusSource = source
+  }
+
+  private func preferredPausedStatus(from statuses: [[String: Any?]?]) -> [String: Any?]? {
+    guard let lastActiveStatusSource else {
+      return nil
+    }
+    for status in statuses where statusSource(status) == lastActiveStatusSource {
+      return status
+    }
+    return nil
   }
 
   private func logAppleScriptStatus(_ message: String) {
@@ -748,6 +783,7 @@ final class MacOSMediaService {
   private func appleScriptStatus() -> [String: Any?]? {
     var firstPausedStatus: [String: Any?]?
     var firstPausedPlayer: AppleScriptPlayer?
+    var lastActivePausedStatus: [String: Any?]?
 
     for player in AppleScriptPlayer.allCases {
       guard isRunning(player) else {
@@ -767,6 +803,15 @@ final class MacOSMediaService {
         firstPausedStatus = status
         firstPausedPlayer = player
       }
+
+      if player == lastAppleScriptPlayer {
+        lastActivePausedStatus = status
+      }
+    }
+
+    if let lastActivePausedStatus, let lastAppleScriptPlayer {
+      logAppleScriptStatus("received paused track from \(lastAppleScriptPlayer.rawValue)")
+      return lastActivePausedStatus
     }
 
     if let firstPausedStatus, let firstPausedPlayer {
