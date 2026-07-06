@@ -52,11 +52,6 @@ class _FakeMediaService extends MediaService {
 
   @override
   void stopPolling() {}
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }
 
 class _FakeSettingsService extends SettingsService {
