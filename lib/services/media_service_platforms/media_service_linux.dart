@@ -4,13 +4,21 @@ class LinuxMediaService extends MediaService implements MediaController {
   final DBusClient _client = DBusClient.session();
   String? _cachedPlayerBusName;
   DateTime? _lastDiscoveryTime;
+  static const _mprisBusNamePrefix = 'org.mpris.MediaPlayer2.';
   static const _discoveryInterval = Duration(seconds: 2);
   static const _dbusTimeout = Duration(milliseconds: 500);
-  static const Duration _activePollInterval = Duration(milliseconds: 250);
-  static const Duration _idlePollInterval = Duration(seconds: 1);
+  static const Duration _startupRefreshDelay = Duration(milliseconds: 10);
+  static const Duration _positionTickInterval = Duration(milliseconds: 250);
+  static const Duration _fallbackRefreshInterval = Duration(seconds: 10);
   static const Duration _disconnectedPollInterval = Duration(seconds: 2);
 
-  Timer? _pollTimer;
+  Timer? _fallbackTimer;
+  Timer? _positionTimer;
+  StreamSubscription<DBusNameOwnerChangedEvent>? _nameOwnerSubscription;
+  final Map<String, StreamSubscription<DBusPropertiesChangedSignal>>
+  _playerPropertySubscriptions = {};
+  final Map<String, StreamSubscription<DBusSignal>> _playerSeekedSubscriptions =
+      {};
   MediaMetadata? _metadata;
   MediaPlaybackStatus _status = MediaPlaybackStatus.empty();
   MediaControlAbility _controlAbility = MediaControlAbility.none();
@@ -19,6 +27,8 @@ class LinuxMediaService extends MediaService implements MediaController {
   bool _isUpdating = false;
   bool _isPolling = false;
   int _pollSession = 0;
+  DateTime? _positionAnchorTime;
+  Duration _positionAnchor = Duration.zero;
 
   @override
   MediaMetadata? get metadata => _metadata;
@@ -33,29 +43,45 @@ class LinuxMediaService extends MediaService implements MediaController {
   void startPolling() {
     _pollSession++;
     _isPolling = true;
-    _scheduleNextPoll(Duration.zero, _pollSession);
+    final session = _pollSession;
+    _nameOwnerSubscription?.cancel();
+    _nameOwnerSubscription = _client.nameOwnerChanged.listen((event) {
+      if (!_isPolling ||
+          session != _pollSession ||
+          !event.name.startsWith(_mprisBusNamePrefix)) {
+        return;
+      }
+      _cachedPlayerBusName = null;
+      _lastDiscoveryTime = null;
+      _refreshPlayerSubscriptions(session);
+      _updateState(session);
+    });
+    _scheduleFallbackRefresh(_startupRefreshDelay, session);
   }
 
   @override
   void stopPolling() {
     _pollSession++;
     _isPolling = false;
-    _pollTimer?.cancel();
-    _pollTimer = null;
+    _fallbackTimer?.cancel();
+    _fallbackTimer = null;
+    _nameOwnerSubscription?.cancel();
+    _nameOwnerSubscription = null;
+    _cancelPlayerSubscriptions();
+    _stopPositionTicker();
   }
 
-  void _scheduleNextPoll(Duration delay, int session) {
+  void _scheduleFallbackRefresh(Duration delay, int session) {
     if (!_isPolling || session != _pollSession) return;
-    _pollTimer?.cancel();
-    _pollTimer = Timer(delay, () => _updateState(session));
+    _fallbackTimer?.cancel();
+    _fallbackTimer = Timer(delay, () {
+      _refreshPlayerSubscriptions(session);
+      _updateState(session);
+    });
   }
 
-  Duration _nextPollDelay({
-    required bool hasMetadata,
-    required bool isPlaying,
-  }) {
-    if (!hasMetadata) return _disconnectedPollInterval;
-    return isPlaying ? _activePollInterval : _idlePollInterval;
+  Duration _nextFallbackDelay({required bool hasMetadata}) {
+    return hasMetadata ? _fallbackRefreshInterval : _disconnectedPollInterval;
   }
 
   Future<void> _updateState(int session) async {
@@ -67,19 +93,17 @@ class LinuxMediaService extends MediaService implements MediaController {
     }
 
     _isUpdating = true;
-    var nextPollDelay = _nextPollDelay(
-      hasMetadata: _metadata != null,
-      isPlaying: _status.isPlaying,
-    );
     try {
       final playerBusName = await _getBestPlayer();
       if (playerBusName == null) {
-        nextPollDelay = _disconnectedPollInterval;
+        _stopPositionTicker();
         if (_metadata != null || _status != MediaPlaybackStatus.empty()) {
           _metadata = null;
           _status = MediaPlaybackStatus.empty();
           _controlAbility = MediaControlAbility.none();
           _currentTrackId = null;
+          _positionAnchor = Duration.zero;
+          _positionAnchorTime = null;
           notifyListeners();
         }
         return;
@@ -104,14 +128,9 @@ class LinuxMediaService extends MediaService implements MediaController {
           (key, value) => MapEntry(key.asString(), value),
         );
 
-        DBusValue? unwrap(DBusValue? v) {
-          if (v is DBusVariant) return v.value;
-          return v;
-        }
-
         final title =
-            unwrap(dict['xesam:title'])?.asString() ?? 'Unknown Title';
-        final artistValue = unwrap(dict['xesam:artist']);
+            _unwrapValue(dict['xesam:title'])?.asString() ?? 'Unknown Title';
+        final artistValue = _unwrapValue(dict['xesam:artist']);
         List<String> artist = ['Unknown Artist'];
         if (artistValue is DBusArray) {
           artist = artistValue.children.map((e) => e.asString()).toList();
@@ -120,13 +139,13 @@ class LinuxMediaService extends MediaService implements MediaController {
         }
 
         final album =
-            unwrap(dict['xesam:album'])?.asString() ?? 'Unknown Album';
-        final artUrlValue = unwrap(dict['mpris:artUrl'])?.asString();
+            _unwrapValue(dict['xesam:album'])?.asString() ?? 'Unknown Album';
+        final artUrlValue = _unwrapValue(dict['mpris:artUrl'])?.asString();
         final artUrl = (artUrlValue == null || artUrlValue.isEmpty)
             ? 'fallback'
             : artUrlValue;
 
-        final lengthValue = unwrap(dict['mpris:length']);
+        final lengthValue = _unwrapValue(dict['mpris:length']);
         int length = 0;
         if (lengthValue is DBusUint64) {
           length = lengthValue.value;
@@ -138,7 +157,7 @@ class LinuxMediaService extends MediaService implements MediaController {
           return;
         }
 
-        newTrackId = unwrap(dict['mpris:trackid'])?.asString();
+        newTrackId = _unwrapValue(dict['mpris:trackid'])?.asString();
 
         newMetadata = MediaMetadata(
           title: title,
@@ -173,16 +192,20 @@ class LinuxMediaService extends MediaService implements MediaController {
         isPlaying: isPlaying,
         position: position,
       );
-      nextPollDelay = _nextPollDelay(
-        hasMetadata: newMetadata != null,
-        isPlaying: newStatus.isPlaying,
-      );
       final newAbility = MediaControlAbility(
         canPlayPause: canPlay || canPause,
         canGoNext: canGoNext,
         canGoPrevious: canGoPrevious,
         canSeek: canSeek,
       );
+
+      _positionAnchor = newStatus.position;
+      _positionAnchorTime = DateTime.now();
+      if (newStatus.isPlaying && newMetadata != null) {
+        _startPositionTicker();
+      } else {
+        _stopPositionTicker();
+      }
 
       bool changed = false;
       if (_metadata != newMetadata) {
@@ -209,8 +232,172 @@ class LinuxMediaService extends MediaService implements MediaController {
       _cachedPlayerBusName = null;
     } finally {
       _isUpdating = false;
-      _scheduleNextPoll(nextPollDelay, session);
+      _scheduleFallbackRefresh(
+        _nextFallbackDelay(hasMetadata: _metadata != null),
+        session,
+      );
     }
+  }
+
+  Future<void> _refreshPlayerSubscriptions(int session) async {
+    if (!_isPolling || session != _pollSession) return;
+    try {
+      final names = await _client.listNames().timeout(_dbusTimeout);
+      final players = names
+          .where((name) => name.startsWith(_mprisBusNamePrefix))
+          .toSet();
+
+      final removedPlayers = _playerPropertySubscriptions.keys
+          .where((name) => !players.contains(name))
+          .toList();
+      for (final player in removedPlayers) {
+        await _playerPropertySubscriptions.remove(player)?.cancel();
+        await _playerSeekedSubscriptions.remove(player)?.cancel();
+      }
+
+      for (final player in players) {
+        if (_playerPropertySubscriptions.containsKey(player)) continue;
+        final object = DBusRemoteObject(
+          _client,
+          name: player,
+          path: DBusObjectPath('/org/mpris/MediaPlayer2'),
+        );
+        _playerPropertySubscriptions[player] = object.propertiesChanged.listen(
+          (signal) => _handlePlayerPropertiesChanged(session, player, signal),
+          onError: (_) {
+            _playerPropertySubscriptions.remove(player)?.cancel();
+            _playerSeekedSubscriptions.remove(player)?.cancel();
+            if (_isPolling && session == _pollSession) {
+              _cachedPlayerBusName = null;
+              _lastDiscoveryTime = null;
+              _updateState(session);
+            }
+          },
+        );
+        _playerSeekedSubscriptions[player] =
+            DBusRemoteObjectSignalStream(
+              object: object,
+              interface: 'org.mpris.MediaPlayer2.Player',
+              name: 'Seeked',
+              signature: DBusSignature('x'),
+            ).listen(
+              (signal) => _handlePlayerSeeked(session, player, signal),
+              onError: (_) {
+                _playerSeekedSubscriptions.remove(player)?.cancel();
+              },
+            );
+      }
+    } catch (_) {
+      // Keep the existing fallback refresh alive if the bus is temporarily busy.
+    }
+  }
+
+  void _handlePlayerPropertiesChanged(
+    int session,
+    String player,
+    DBusPropertiesChangedSignal signal,
+  ) {
+    if (!_isPolling ||
+        session != _pollSession ||
+        signal.propertiesInterface != 'org.mpris.MediaPlayer2.Player') {
+      return;
+    }
+
+    final changed = signal.changedProperties;
+    final invalidated = signal.invalidatedProperties;
+    const relevantProperties = {
+      'Metadata',
+      'PlaybackStatus',
+      'Position',
+      'CanPlay',
+      'CanPause',
+      'CanGoNext',
+      'CanGoPrevious',
+      'CanSeek',
+    };
+    final isRelevant =
+        changed.keys.any(relevantProperties.contains) ||
+        invalidated.any(relevantProperties.contains);
+    if (!isRelevant) return;
+
+    final playbackValue = _unwrapValue(changed['PlaybackStatus']);
+    if (playbackValue is DBusString && playbackValue.value == 'Playing') {
+      _cachedPlayerBusName = player;
+      _lastActivePlayerBusName = player;
+      _lastDiscoveryTime = DateTime.now();
+    } else if (changed.containsKey('PlaybackStatus') &&
+        _cachedPlayerBusName == player) {
+      _lastDiscoveryTime = null;
+    }
+
+    _updateState(session);
+  }
+
+  void _handlePlayerSeeked(int session, String player, DBusSignal signal) {
+    if (!_isPolling || session != _pollSession) return;
+
+    if (signal.values.isNotEmpty) {
+      final positionValue = _unwrapValue(signal.values.first);
+      Duration? position;
+      if (positionValue is DBusInt64) {
+        position = Duration(microseconds: positionValue.value);
+      } else if (positionValue is DBusUint64) {
+        position = Duration(microseconds: positionValue.value);
+      }
+
+      if (position != null && _cachedPlayerBusName == player) {
+        _positionAnchor = position;
+        _positionAnchorTime = DateTime.now();
+        _status = MediaPlaybackStatus(
+          isPlaying: _status.isPlaying,
+          position: position,
+        );
+        notifyListeners();
+      }
+    }
+
+    _updateState(session);
+  }
+
+  void _cancelPlayerSubscriptions() {
+    for (final subscription in _playerPropertySubscriptions.values) {
+      subscription.cancel();
+    }
+    _playerPropertySubscriptions.clear();
+    for (final subscription in _playerSeekedSubscriptions.values) {
+      subscription.cancel();
+    }
+    _playerSeekedSubscriptions.clear();
+  }
+
+  DBusValue? _unwrapValue(DBusValue? value) {
+    if (value is DBusVariant) return value.value;
+    return value;
+  }
+
+  void _startPositionTicker() {
+    _positionTimer ??= Timer.periodic(_positionTickInterval, (_) {
+      final anchorTime = _positionAnchorTime;
+      final metadata = _metadata;
+      if (!_status.isPlaying || anchorTime == null || metadata == null) {
+        _stopPositionTicker();
+        return;
+      }
+
+      var position = _positionAnchor + DateTime.now().difference(anchorTime);
+      if (metadata.duration > Duration.zero && position > metadata.duration) {
+        position = metadata.duration;
+      }
+      if (position == _status.position) return;
+
+      _status = MediaPlaybackStatus(isPlaying: true, position: position);
+      notifyListeners();
+    });
+  }
+
+  void _stopPositionTicker() {
+    _positionTimer?.cancel();
+    _positionTimer = null;
   }
 
   Future<String?> _getBestPlayer() async {
@@ -409,7 +596,10 @@ class LinuxMediaService extends MediaService implements MediaController {
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
+    _fallbackTimer?.cancel();
+    _nameOwnerSubscription?.cancel();
+    _cancelPlayerSubscriptions();
+    _stopPositionTicker();
     _client.close();
     super.dispose();
   }
