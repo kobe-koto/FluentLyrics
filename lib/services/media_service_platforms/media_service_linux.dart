@@ -11,9 +11,11 @@ class LinuxMediaService extends MediaService implements MediaController {
   static const Duration _positionTickInterval = Duration(milliseconds: 250);
   static const Duration _fallbackRefreshInterval = Duration(seconds: 10);
   static const Duration _disconnectedPollInterval = Duration(seconds: 2);
+  static const Duration _seekConfirmationTimeout = Duration(seconds: 2);
 
   Timer? _fallbackTimer;
   Timer? _positionTimer;
+  Timer? _seekConfirmationTimer;
   StreamSubscription<DBusNameOwnerChangedEvent>? _nameOwnerSubscription;
   final Map<String, StreamSubscription<DBusPropertiesChangedSignal>>
   _playerPropertySubscriptions = {};
@@ -29,6 +31,8 @@ class LinuxMediaService extends MediaService implements MediaController {
   int _pollSession = 0;
   DateTime? _positionAnchorTime;
   Duration _positionAnchor = Duration.zero;
+  String? _pendingSeekPlayerBusName;
+  Duration? _pendingSeekTarget;
 
   @override
   MediaMetadata? get metadata => _metadata;
@@ -68,6 +72,7 @@ class LinuxMediaService extends MediaService implements MediaController {
     _nameOwnerSubscription?.cancel();
     _nameOwnerSubscription = null;
     _cancelPlayerSubscriptions();
+    _clearPendingSeek();
     _stopPositionTicker();
   }
 
@@ -96,6 +101,7 @@ class LinuxMediaService extends MediaService implements MediaController {
     try {
       final playerBusName = await _getBestPlayer();
       if (playerBusName == null) {
+        _clearPendingSeek();
         _stopPositionTicker();
         if (_metadata != null || _status != MediaPlaybackStatus.empty()) {
           _metadata = null;
@@ -199,12 +205,36 @@ class LinuxMediaService extends MediaService implements MediaController {
         canSeek: canSeek,
       );
 
-      _positionAnchor = newStatus.position;
-      _positionAnchorTime = DateTime.now();
-      if (newStatus.isPlaying && newMetadata != null) {
-        _startPositionTicker();
-      } else {
+      var appliedStatus = newStatus;
+      final pendingSeekTarget = _pendingSeekTarget;
+      final pendingSeekPlayerBusName = _pendingSeekPlayerBusName;
+      final trackChanged =
+          _metadata != null &&
+          newMetadata != null &&
+          !newMetadata.isSameTrack(_metadata);
+      if (trackChanged ||
+          (pendingSeekTarget != null &&
+              pendingSeekPlayerBusName != playerBusName)) {
+        _clearPendingSeek();
+      } else if (pendingSeekTarget != null) {
+        appliedStatus = MediaPlaybackStatus(
+          isPlaying: newStatus.isPlaying,
+          position: pendingSeekTarget,
+        );
+      }
+
+      if (_pendingSeekTarget != null) {
+        _positionAnchor = appliedStatus.position;
+        _positionAnchorTime = null;
         _stopPositionTicker();
+      } else {
+        _positionAnchor = appliedStatus.position;
+        _positionAnchorTime = DateTime.now();
+        if (appliedStatus.isPlaying && newMetadata != null) {
+          _startPositionTicker();
+        } else {
+          _stopPositionTicker();
+        }
       }
 
       bool changed = false;
@@ -212,8 +242,8 @@ class LinuxMediaService extends MediaService implements MediaController {
         _metadata = newMetadata;
         changed = true;
       }
-      if (_status != newStatus) {
-        _status = newStatus;
+      if (_status != appliedStatus) {
+        _status = appliedStatus;
         changed = true;
       }
       if (_controlAbility != newAbility) {
@@ -346,6 +376,7 @@ class LinuxMediaService extends MediaService implements MediaController {
       }
 
       if (position != null && _cachedPlayerBusName == player) {
+        _clearPendingSeek();
         _positionAnchor = position;
         _positionAnchorTime = DateTime.now();
         _status = MediaPlaybackStatus(
@@ -377,6 +408,7 @@ class LinuxMediaService extends MediaService implements MediaController {
 
   void _startPositionTicker() {
     _positionTimer ??= Timer.periodic(_positionTickInterval, (_) {
+      if (_pendingSeekTarget != null) return;
       final anchorTime = _positionAnchorTime;
       final metadata = _metadata;
       if (!_status.isPlaying || anchorTime == null || metadata == null) {
@@ -398,6 +430,40 @@ class LinuxMediaService extends MediaService implements MediaController {
   void _stopPositionTicker() {
     _positionTimer?.cancel();
     _positionTimer = null;
+  }
+
+  void _holdSeekPosition(String playerBusName, Duration position) {
+    final metadata = _metadata;
+    final clampedPosition =
+        metadata != null &&
+            metadata.duration > Duration.zero &&
+            position > metadata.duration
+        ? metadata.duration
+        : position;
+    _pendingSeekPlayerBusName = playerBusName;
+    _pendingSeekTarget = clampedPosition;
+    _positionAnchor = clampedPosition;
+    _positionAnchorTime = null;
+    _status = MediaPlaybackStatus(
+      isPlaying: _status.isPlaying,
+      position: clampedPosition,
+    );
+    _stopPositionTicker();
+    _seekConfirmationTimer?.cancel();
+    _seekConfirmationTimer = Timer(_seekConfirmationTimeout, () {
+      _clearPendingSeek();
+      if (_isPolling) {
+        _updateState(_pollSession);
+      }
+    });
+    notifyListeners();
+  }
+
+  void _clearPendingSeek() {
+    _pendingSeekPlayerBusName = null;
+    _pendingSeekTarget = null;
+    _seekConfirmationTimer?.cancel();
+    _seekConfirmationTimer = null;
   }
 
   Future<String?> _getBestPlayer() async {
@@ -586,12 +652,21 @@ class LinuxMediaService extends MediaService implements MediaController {
       name: playerBusName,
       path: DBusObjectPath('/org/mpris/MediaPlayer2'),
     );
-    await object.callMethod(
-      'org.mpris.MediaPlayer2.Player',
-      'SetPosition',
-      [DBusObjectPath(_currentTrackId!), DBusInt64(position.inMicroseconds)],
-      replySignature: DBusSignature(''),
-    );
+    _holdSeekPosition(playerBusName, position);
+    try {
+      await object.callMethod(
+        'org.mpris.MediaPlayer2.Player',
+        'SetPosition',
+        [DBusObjectPath(_currentTrackId!), DBusInt64(position.inMicroseconds)],
+        replySignature: DBusSignature(''),
+      );
+    } catch (_) {
+      _clearPendingSeek();
+      if (_isPolling) {
+        await _updateState(_pollSession);
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -599,6 +674,7 @@ class LinuxMediaService extends MediaService implements MediaController {
     _fallbackTimer?.cancel();
     _nameOwnerSubscription?.cancel();
     _cancelPlayerSubscriptions();
+    _clearPendingSeek();
     _stopPositionTicker();
     _client.close();
     super.dispose();
