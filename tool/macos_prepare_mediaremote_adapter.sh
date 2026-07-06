@@ -14,6 +14,7 @@ WORK_DIR="${TMPDIR:-/tmp}/fluent_lyrics_mediaremote_adapter_${VERSION}"
 ARCHIVE="$WORK_DIR/source.tar.gz"
 SOURCE_DIR="$WORK_DIR/source"
 BUILD_DIR="$WORK_DIR/build"
+ARCHIVE_URL="https://github.com/ungive/mediaremote-adapter/archive/refs/tags/$VERSION.tar.gz"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -29,9 +30,7 @@ require_command tar
 rm -rf "$WORK_DIR"
 mkdir -p "$SOURCE_DIR" "$BUILD_DIR" "$VENDOR_DIR/bin"
 
-curl -L \
-  "https://api.github.com/repos/ungive/mediaremote-adapter/tarball/$VERSION" \
-  -o "$ARCHIVE"
+curl -fL "$ARCHIVE_URL" -o "$ARCHIVE"
 tar -xzf "$ARCHIVE" -C "$SOURCE_DIR" --strip-components=1
 
 cmake -S "$SOURCE_DIR" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release

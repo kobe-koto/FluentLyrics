@@ -196,6 +196,9 @@ jobs:
           version="${VERSION#v}"
           VERSION="$version" perl -0pi -e 's/^version: .*/version: $ENV{VERSION}/m' pubspec.yaml
 
+      - name: Prepare MediaRemote adapter
+        run: ./tool/macos_prepare_mediaremote_adapter.sh
+
       - name: Build macOS
         env:
           RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
