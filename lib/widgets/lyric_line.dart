@@ -5,6 +5,13 @@ import 'package:flutter/material.dart';
 import '../models/lyric_model.dart';
 
 class LyricLine extends StatelessWidget {
+  static const Duration _translationAnimationDuration = Duration(
+    milliseconds: 260,
+  );
+  static const Duration _translationReverseAnimationDuration = Duration(
+    milliseconds: 200,
+  );
+
   static final Expando<List<LyricInlinePart>> _mergedInlinePartsCache = Expando(
     'mergedInlineParts',
   );
@@ -110,40 +117,12 @@ class LyricLine extends StatelessWidget {
         child: Builder(
           builder: (context) {
             final mainText = _buildText(context);
-            if (!shouldDisplayTranslation) {
-              return mainText;
-            }
-
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 mainText,
-                shouldDisplayTranslation
-                    ? const SizedBox(width: double.infinity, height: 8)
-                    : const SizedBox(width: double.infinity, height: 0),
-                shouldDisplayTranslation
-                    ? AnimatedOpacity(
-                        duration: const Duration(milliseconds: 500),
-                        curve: Curves.easeOutQuart,
-                        opacity: 1.0,
-                        child: Builder(
-                          builder: (context) {
-                            final style = DefaultTextStyle.of(context).style;
-                            return Text(
-                              lyric.translation!,
-                              style: style.copyWith(
-                                fontSize: (style.fontSize! * 0.65)
-                                    .roundToDouble(),
-                                height: 1.2,
-                                color: Colors.white.withValues(alpha: 0.65),
-                              ),
-                              textAlign: TextAlign.left,
-                            );
-                          },
-                        ),
-                      )
-                    : const SizedBox(width: double.infinity, height: 0),
+                _buildTranslationSwitcher(shouldDisplayTranslation),
               ],
             );
           },
@@ -170,6 +149,59 @@ class LyricLine extends StatelessWidget {
         opacity: opacity,
         child: filteredText,
       ),
+    );
+  }
+
+  Widget _buildTranslationSwitcher(bool shouldDisplayTranslation) {
+    final translation = lyric.translation;
+    return AnimatedSwitcher(
+      duration: _translationAnimationDuration,
+      reverseDuration: _translationReverseAnimationDuration,
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (currentChild, previousChildren) {
+        final children = <Widget>[...previousChildren, ?currentChild];
+        if (children.isEmpty) return const SizedBox.shrink();
+        return Stack(
+          alignment: AlignmentDirectional.topStart,
+          children: children,
+        );
+      },
+      transitionBuilder: (child, animation) {
+        final offset = Tween<Offset>(
+          begin: const Offset(0, -0.12),
+          end: Offset.zero,
+        ).animate(animation);
+
+        return FadeTransition(
+          opacity: animation,
+          child: SizeTransition(
+            sizeFactor: animation,
+            alignment: AlignmentDirectional.topStart,
+            child: SlideTransition(position: offset, child: child),
+          ),
+        );
+      },
+      child: shouldDisplayTranslation
+          ? Builder(
+              key: ValueKey<String>('translation:$translation'),
+              builder: (context) {
+                final style = DefaultTextStyle.of(context).style;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    translation!,
+                    style: style.copyWith(
+                      fontSize: (style.fontSize! * 0.65).roundToDouble(),
+                      height: 1.2,
+                      color: Colors.white.withValues(alpha: 0.65),
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                );
+              },
+            )
+          : const SizedBox.shrink(key: ValueKey<String>('translation:none')),
     );
   }
 
