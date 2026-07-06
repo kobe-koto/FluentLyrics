@@ -29,16 +29,16 @@ class MainActivity : FlutterActivity() {
     private val observedControllers = mutableMapOf<MediaSession.Token, MediaController>()
     private val controllerCallback = object : MediaController.Callback() {
         override fun onMetadataChanged(metadata: MediaMetadata?) {
-            emitCurrentStatus()
+            emitCurrentStatus("metadata")
         }
 
         override fun onPlaybackStateChanged(state: PlaybackState?) {
-            emitCurrentStatus()
+            emitCurrentStatus("playbackState")
         }
 
         override fun onSessionDestroyed() {
             updateObservedControllers()
-            emitCurrentStatus()
+            emitCurrentStatus("sessionDestroyed")
         }
     }
 
@@ -174,7 +174,7 @@ class MainActivity : FlutterActivity() {
         if (activeSessionsListener == null) {
             val listener = MediaSessionManager.OnActiveSessionsChangedListener {
                 updateObservedControllers()
-                emitCurrentStatus()
+                emitCurrentStatus("activeSessions")
             }
             activeSessionsListener = listener
             try {
@@ -235,26 +235,29 @@ class MainActivity : FlutterActivity() {
         observedControllers.clear()
     }
 
-    private fun emitCurrentStatus() {
+    private fun emitCurrentStatus(event: String? = null) {
         mainHandler.post {
             ensureEventSubscriptions()
-            eventSink?.success(buildCurrentStatusMap())
+            eventSink?.success(buildCurrentStatusMap(event))
         }
     }
 
-    private fun buildCurrentStatusMap(): Map<String, Any?>? {
+    private fun buildCurrentStatusMap(event: String? = null): Map<String, Any?>? {
         if (!isNotificationPermissionGranted()) {
             return null
         }
         val controller = getActiveController() ?: return null
-        return buildStatusMap(controller)
+        return buildStatusMap(controller, event)
     }
 
-    private fun buildStatusMap(controller: MediaController): Map<String, Any?> {
+    private fun buildStatusMap(controller: MediaController, event: String? = null): Map<String, Any?> {
         val metadata = controller.metadata
         val playbackState = controller.playbackState
 
         val statusMap = mutableMapOf<String, Any?>()
+        if (event != null) {
+            statusMap["event"] = event
+        }
 
         if (metadata != null) {
             val metaMap = mutableMapOf<String, Any?>()

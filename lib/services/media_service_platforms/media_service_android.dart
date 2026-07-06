@@ -10,10 +10,13 @@ class AndroidMediaService extends MediaService implements MediaController {
   static const Duration _positionTickInterval = Duration(milliseconds: 250);
   static const Duration _fallbackRefreshInterval = Duration(seconds: 5);
   static const Duration _disconnectedPollInterval = Duration(seconds: 2);
+  static const Duration _seekConfirmationTimeout = Duration(seconds: 2);
+  static const Duration _seekConfirmationTolerance = Duration(seconds: 2);
 
   StreamSubscription<dynamic>? _eventSubscription;
   Timer? _fallbackTimer;
   Timer? _positionTimer;
+  Timer? _seekConfirmationTimer;
   MediaMetadata? _metadata;
   MediaPlaybackStatus _status = MediaPlaybackStatus.empty();
   MediaControlAbility _controlAbility = MediaControlAbility.none();
@@ -22,6 +25,7 @@ class AndroidMediaService extends MediaService implements MediaController {
   int _pollSession = 0;
   DateTime? _positionAnchorTime;
   Duration _positionAnchor = Duration.zero;
+  Duration? _pendingSeekTarget;
 
   @override
   MediaMetadata? get metadata => _metadata;
@@ -41,7 +45,10 @@ class AndroidMediaService extends MediaService implements MediaController {
     _eventSubscription = _eventsChannel.receiveBroadcastStream().listen(
       (event) {
         if (!_isPolling || session != _pollSession) return;
-        _applyStatusResult(event);
+        _applyStatusResult(
+          event,
+          isSeekConfirmationEvent: _isSeekConfirmationEvent(event),
+        );
       },
       onError: (Object error) {
         AppLogger.debug('Android media event stream failed: $error');
@@ -58,6 +65,7 @@ class AndroidMediaService extends MediaService implements MediaController {
     _eventSubscription = null;
     _fallbackTimer?.cancel();
     _fallbackTimer = null;
+    _clearPendingSeek();
     _stopPositionTicker();
   }
 
@@ -94,8 +102,12 @@ class AndroidMediaService extends MediaService implements MediaController {
     }
   }
 
-  void _applyStatusResult(dynamic result) {
+  void _applyStatusResult(
+    dynamic result, {
+    bool isSeekConfirmationEvent = false,
+  }) {
     if (result == null) {
+      _clearPendingSeek();
       _stopPositionTicker();
       if (_metadata != null || _status != MediaPlaybackStatus.empty()) {
         _metadata = null;
@@ -139,7 +151,7 @@ class AndroidMediaService extends MediaService implements MediaController {
     final abilityMap = resultMap['controlAbility'] as Map?;
     final rawPosition = resultMap['position'];
     final positionMs = rawPosition is num ? rawPosition.toInt() : 0;
-    final newStatus = MediaPlaybackStatus(
+    var newStatus = MediaPlaybackStatus(
       isPlaying: resultMap['isPlaying'] ?? false,
       position: Duration(milliseconds: positionMs),
     );
@@ -152,12 +164,37 @@ class AndroidMediaService extends MediaService implements MediaController {
           )
         : MediaControlAbility.none();
 
-    _positionAnchor = newStatus.position;
-    _positionAnchorTime = DateTime.now();
-    if (newStatus.isPlaying && newMetadata != null) {
-      _startPositionTicker();
-    } else {
+    final pendingSeekTarget = _pendingSeekTarget;
+    final trackChanged =
+        _metadata != null &&
+        newMetadata != null &&
+        !newMetadata.isSameTrack(_metadata);
+    if (trackChanged) {
+      _clearPendingSeek();
+    } else if (pendingSeekTarget != null) {
+      if (isSeekConfirmationEvent &&
+          _isPositionNear(newStatus.position, pendingSeekTarget)) {
+        _clearPendingSeek();
+      } else {
+        newStatus = MediaPlaybackStatus(
+          isPlaying: newStatus.isPlaying,
+          position: pendingSeekTarget,
+        );
+      }
+    }
+
+    if (_pendingSeekTarget != null) {
+      _positionAnchor = newStatus.position;
+      _positionAnchorTime = null;
       _stopPositionTicker();
+    } else {
+      _positionAnchor = newStatus.position;
+      _positionAnchorTime = DateTime.now();
+      if (newStatus.isPlaying && newMetadata != null) {
+        _startPositionTicker();
+      } else {
+        _stopPositionTicker();
+      }
     }
 
     if (_metadata != newMetadata ||
@@ -172,6 +209,7 @@ class AndroidMediaService extends MediaService implements MediaController {
 
   void _startPositionTicker() {
     _positionTimer ??= Timer.periodic(_positionTickInterval, (_) {
+      if (_pendingSeekTarget != null) return;
       final anchorTime = _positionAnchorTime;
       final metadata = _metadata;
       if (!_status.isPlaying || anchorTime == null || metadata == null) {
@@ -193,6 +231,47 @@ class AndroidMediaService extends MediaService implements MediaController {
   void _stopPositionTicker() {
     _positionTimer?.cancel();
     _positionTimer = null;
+  }
+
+  bool _isSeekConfirmationEvent(dynamic event) {
+    return event is Map && event['event'] == 'playbackState';
+  }
+
+  bool _isPositionNear(Duration position, Duration target) {
+    final delta = position - target;
+    return delta.abs() <= _seekConfirmationTolerance;
+  }
+
+  void _holdSeekPosition(Duration position) {
+    final metadata = _metadata;
+    final clampedPosition =
+        metadata != null &&
+            metadata.duration > Duration.zero &&
+            position > metadata.duration
+        ? metadata.duration
+        : position;
+    _pendingSeekTarget = clampedPosition;
+    _positionAnchor = clampedPosition;
+    _positionAnchorTime = null;
+    _status = MediaPlaybackStatus(
+      isPlaying: _status.isPlaying,
+      position: clampedPosition,
+    );
+    _stopPositionTicker();
+    _seekConfirmationTimer?.cancel();
+    _seekConfirmationTimer = Timer(_seekConfirmationTimeout, () {
+      _clearPendingSeek();
+      if (_isPolling) {
+        _refreshState(_pollSession);
+      }
+    });
+    notifyListeners();
+  }
+
+  void _clearPendingSeek() {
+    _pendingSeekTarget = null;
+    _seekConfirmationTimer?.cancel();
+    _seekConfirmationTimer = null;
   }
 
   @override
@@ -222,13 +301,31 @@ class AndroidMediaService extends MediaService implements MediaController {
 
   @override
   Future<void> seek(Duration position) async {
-    await _channel.invokeMethod('seek', {'position': position.inMilliseconds});
+    _holdSeekPosition(position);
+    try {
+      final didSeek = await _channel.invokeMethod<bool>('seek', {
+        'position': position.inMilliseconds,
+      });
+      if (didSeek == true) return;
+
+      _clearPendingSeek();
+      if (_isPolling) {
+        await _refreshState(_pollSession);
+      }
+    } catch (_) {
+      _clearPendingSeek();
+      if (_isPolling) {
+        await _refreshState(_pollSession);
+      }
+      rethrow;
+    }
   }
 
   @override
   void dispose() {
     _eventSubscription?.cancel();
     _fallbackTimer?.cancel();
+    _clearPendingSeek();
     _stopPositionTicker();
     super.dispose();
   }
