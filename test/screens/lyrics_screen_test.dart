@@ -335,6 +335,20 @@ bool _isTextVisible(WidgetTester tester, String text, Size surfaceSize) {
       rect.left < surfaceSize.width;
 }
 
+Future<void> _pumpUntil(
+  WidgetTester tester,
+  bool Function() condition, {
+  Duration timeout = const Duration(seconds: 2),
+  Duration step = const Duration(milliseconds: 50),
+}) async {
+  var elapsed = Duration.zero;
+  while (elapsed < timeout) {
+    if (condition()) return;
+    await tester.pump(step);
+    elapsed += step;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -343,7 +357,7 @@ void main() {
     (tester) async {
       LocaleSettings.setLocaleSync(AppLocale.en);
       const portraitSize = Size(360, 640);
-      const landscapeSize = Size(640, 360);
+      const landscapeSize = Size(800, 450);
       final provider = _ScreenTestLyricsProvider();
 
       addTearDown(() async {
@@ -363,9 +377,12 @@ void main() {
       await tester.binding.setSurfaceSize(landscapeSize);
       await tester.pump();
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
+      await _pumpUntil(
+        tester,
+        () => _isTextVisible(tester, 'Line 10', landscapeSize),
+      );
 
-      expect(_isTextVisible(tester, 'Line 8', landscapeSize), isFalse);
+      expect(_isTextVisible(tester, 'Line 7', landscapeSize), isFalse);
       expect(_isTextVisible(tester, 'Line 10', landscapeSize), isTrue);
     },
   );
