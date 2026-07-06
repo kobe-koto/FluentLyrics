@@ -64,6 +64,15 @@ class AppDelegate: FlutterAppDelegate {
       exit(0)
     }
 
+    // If a newer version is already running, defer to it: focus the running
+    // instance and exit without terminating it. This prevents an older build
+    // from replacing a newer one that a user already launched.
+    if let currentVersion = currentVersion,
+       let newerApp = newestApp(among: existingApps, newerThan: currentVersion) {
+      requestMainWindowFocus(for: newerApp)
+      exit(0)
+    }
+
     for app in existingApps {
       guard terminate(app: app) else {
         failStartup(
@@ -84,7 +93,7 @@ class AppDelegate: FlutterAppDelegate {
   }
 
   private func terminate(app: NSRunningApplication) -> Bool {
-    if app.isTerminated {
+    if isProcessGone(app) {
       return true
     }
 
@@ -100,12 +109,29 @@ class AppDelegate: FlutterAppDelegate {
   private func waitForTermination(app: NSRunningApplication, timeout: TimeInterval) -> Bool {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
-      if app.isTerminated {
+      if isProcessGone(app) {
         return true
       }
       Thread.sleep(forTimeInterval: 0.1)
     }
-    return app.isTerminated
+    return isProcessGone(app)
+  }
+
+  /// Reports whether the target process has exited.
+  ///
+  /// `NSRunningApplication.isTerminated` is a cached, KVO-backed property that
+  /// AppKit only refreshes when the main run loop processes the workspace's
+  /// termination notification. Since this runs synchronously on the main thread
+  /// during `applicationWillFinishLaunching` (blocking the run loop), that
+  /// property never updates here. We instead query the kernel directly with
+  /// `kill(pid, 0)`, mirroring the Linux instance guard. The same-UID filtering
+  /// in `prepareSingleInstanceStartup` means `EPERM` cannot occur for our own
+  /// processes, so an `ESRCH` result reliably means the process is gone.
+  private func isProcessGone(_ app: NSRunningApplication) -> Bool {
+    if app.isTerminated {
+      return true
+    }
+    return kill(app.processIdentifier, 0) != 0 && errno == ESRCH
   }
 
   private func processUID(for pid: pid_t) -> uid_t? {
@@ -116,6 +142,37 @@ class AppDelegate: FlutterAppDelegate {
       return nil
     }
     return info.pbi_uid
+  }
+
+  /// The version of the currently launching build.
+  private var currentVersion: AppVersion? {
+    AppVersion(info: Bundle.main.infoDictionary)
+  }
+
+  /// Resolves the bundle version of an already-running instance.
+  private func appVersion(for app: NSRunningApplication) -> AppVersion? {
+    guard let bundleURL = app.bundleURL,
+          let bundle = Bundle(url: bundleURL) else {
+      return nil
+    }
+    return AppVersion(info: bundle.infoDictionary)
+  }
+
+  /// Returns the running instance with the highest version that is strictly
+  /// newer than `version`, or nil if none of them is newer. Instances whose
+  /// version cannot be read are treated as not-newer (they'll be terminated).
+  private func newestApp(
+    among apps: [NSRunningApplication],
+    newerThan version: AppVersion
+  ) -> NSRunningApplication? {
+    apps
+      .compactMap { app -> (app: NSRunningApplication, version: AppVersion)? in
+        guard let appVersion = appVersion(for: app) else { return nil }
+        return (app, appVersion)
+      }
+      .filter { $0.version > version }
+      .max { $0.version < $1.version }?
+      .app
   }
 
   @objc private func showMainWindowFromInstanceRequest(_ notification: Notification) {
@@ -142,6 +199,41 @@ class AppDelegate: FlutterAppDelegate {
     alert.alertStyle = .critical
     alert.runModal()
     exit(1)
+  }
+}
+
+/// A comparable representation of a bundle's version, derived from its
+/// Info.plist. Ordering is by `CFBundleShortVersionString` first and
+/// `CFBundleVersion` (build number) as a tie-breaker, both compared with
+/// numeric-aware semantics so "0.0.9" < "0.0.10".
+private struct AppVersion: Comparable {
+  let shortVersion: String
+  let buildVersion: String
+
+  init?(info: [String: Any]?) {
+    guard let info = info else {
+      return nil
+    }
+    let short = info["CFBundleShortVersionString"] as? String ?? ""
+    let build = info["CFBundleVersion"] as? String ?? ""
+    guard !short.isEmpty || !build.isEmpty else {
+      return nil
+    }
+    self.shortVersion = short
+    self.buildVersion = build
+  }
+
+  static func < (lhs: AppVersion, rhs: AppVersion) -> Bool {
+    let shortOrder = lhs.shortVersion.compare(rhs.shortVersion, options: .numeric)
+    if shortOrder != .orderedSame {
+      return shortOrder == .orderedAscending
+    }
+    return lhs.buildVersion.compare(rhs.buildVersion, options: .numeric) == .orderedAscending
+  }
+
+  static func == (lhs: AppVersion, rhs: AppVersion) -> Bool {
+    lhs.shortVersion.compare(rhs.shortVersion, options: .numeric) == .orderedSame &&
+      lhs.buildVersion.compare(rhs.buildVersion, options: .numeric) == .orderedSame
   }
 }
 
