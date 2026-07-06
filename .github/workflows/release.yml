@@ -78,7 +78,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: ${{ needs.prepare-version.outputs.prerelease }}
+          cache: false
 
       - name: Install Fastforge
         run: dart pub global activate fastforge
@@ -135,7 +135,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: ${{ needs.prepare-version.outputs.prerelease }}
+          cache: false
 
       - name: Install Fastforge
         run: dart pub global activate fastforge
