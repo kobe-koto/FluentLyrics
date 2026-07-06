@@ -244,6 +244,7 @@
 				33CC110E2044A8840003C045 /* Bundle Framework */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
 				C635DEB7967A2DF9E1D94F4A /* [CP] Embed Pods Frameworks */,
+				7B8D9D4A0D6F4F5BA0D7A101 /* Bundle MediaRemote Adapter */,
 				7B3F2E10A6D1431A9C0B4D12 /* Strip Extended Attributes */,
 			);
 			buildRules = (
@@ -403,6 +404,25 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		7B8D9D4A0D6F4F5BA0D7A101 /* Bundle MediaRemote Adapter */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Bundle MediaRemote Adapter";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$PROJECT_DIR/scripts/bundle_mediaremote_adapter.sh\"\n";
 		};
 		7B3F2E10A6D1431A9C0B4D12 /* Strip Extended Attributes */ = {
 			isa = PBXShellScriptBuildPhase;

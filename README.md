@@ -75,11 +75,13 @@ Requirements:
 - Dart
 - Android toolchain (for android)
 - Linux toolchain (for linux)
+- CMake + Xcode command line tools (for preparing the bundled macOS MediaRemote adapter)
 
 Common commands:
 
 ```bash
 flutter pub get # get deps
+./tool/macos_prepare_mediaremote_adapter.sh # macOS only, required before building the macOS app
 flutter run -d <device> --[debug|profile|release] # run the app
 dart run build_runner build --delete-conflicting-outputs  # after modifying Isar @Collection 
 dart run slang # after modifying i18n datasets
