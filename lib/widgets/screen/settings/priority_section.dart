@@ -50,7 +50,7 @@ class PrioritySection extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           buildDefaultDragHandles: false,
-          onReorder: (oldIndex, newIndex) {
+          onReorderItem: (oldIndex, newIndex) {
             // ReorderableListView indices correspond to the children list
             // Get current visual list to map indices correctly
             final visualList = [];
@@ -63,7 +63,6 @@ class PrioritySection extends StatelessWidget {
             }
 
             final item = visualList.removeAt(oldIndex);
-            if (newIndex > oldIndex) newIndex--;
             visualList.insert(newIndex, item);
 
             // Now reconstruct allProviders and enabledCount from visualList
