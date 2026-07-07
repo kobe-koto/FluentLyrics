@@ -102,7 +102,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
         run: |
-          fastforge release --name production --jobs=release-linux-appimage,release-linux-zip
+          fastforge release --name production --jobs=release-linux-zip,release-linux-appimage
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
