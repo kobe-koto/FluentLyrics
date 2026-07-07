@@ -24,7 +24,7 @@ The main interface.
 ## Supported platforms
 - Linux x86_64 (retrieve now-playing metadata via the MPRIS D‑Bus interface)
 - Android
-- macOS (see https://gist.github.com/SKaplanOfficial/f9f5bdd6455436203d0d318c078358de, HUGE thanks to [@watchdogexd](https://github.com/watchdogexd).)
+- macOS (HUGE thanks to [@watchdogexd](https://github.com/watchdogexd) and [MediaRemote adapter](https://github.com/ungive/mediaremote-adapter).)
 - No other platform support is planned
 - Pull requests are welcome
 
@@ -75,17 +75,17 @@ Requirements:
 - Dart
 - Android toolchain (for android)
 - Linux toolchain (for linux)
-- CMake + Xcode command line tools (for preparing the bundled macOS MediaRemote adapter)
+- Xcode tools (for macOS)
 
 Common commands:
 
 ```bash
 flutter pub get # get deps
-./tool/macos_prepare_mediaremote_adapter.sh # macOS only, required before building the macOS app
 flutter run -d <device> --[debug|profile|release] # run the app
 dart run build_runner build --delete-conflicting-outputs  # after modifying Isar @Collection 
 dart run slang # after modifying i18n datasets
 dart pub global activate fastforge # Install Fastforge (refer to fastforge for packaging)
+./tool/macos_prepare_mediaremote_adapter.sh [version] # macOS only, prepared media remote adapter is required before building, defaults to v0.7.6
 ```
 
 ## Disclaimer
