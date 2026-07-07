@@ -27,5 +27,5 @@ CHANGELOG_START="$(echo "$CHANGELOG_START_TAG" || git rev-list --max-parents=0 H
     echo ""
     echo ""
     # Use envsubst to replace variables in the template
-    VERSION_NAME=$VERSION_NAME envsubst < .github/release-template.md
+    VERSION_NAME=$VERSION_NAME envsubst < tool/downloads-template.md
 } > release.md

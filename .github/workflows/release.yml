@@ -257,7 +257,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PRERELEASE: ${{ needs.prepare-version.outputs.prerelease }}
         run: |
-          bash ./.github/generate-release-notes.sh
+          bash ./tool/generate-release-notes.sh
 
       - name: Upload Release Artifacts
         uses: softprops/action-gh-release@v2
