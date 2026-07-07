@@ -159,7 +159,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
         run: |
-          bash ./.github/normalize-artifacts-android.sh
+          bash ./tool/normalize-artifacts/android.sh
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
