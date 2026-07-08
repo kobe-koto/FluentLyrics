@@ -100,7 +100,7 @@ class LyricLine extends StatelessWidget {
     final lineStyle = TextStyle(
       fontFamily: 'Outfit',
       fontSize: fontSize,
-      fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w700,
+      fontWeight: FontWeight.w800,
       color: Colors.white,
       height: 1.2,
     );
