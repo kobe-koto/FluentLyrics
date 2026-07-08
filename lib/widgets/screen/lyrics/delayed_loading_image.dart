@@ -79,6 +79,7 @@ class _DelayedLoadingImageState extends State<DelayedLoadingImage> {
     return Image(
       image: _resolvedImage,
       fit: widget.fit,
+      gaplessPlayback: true,
       errorBuilder: widget.errorBuilder,
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded || frame != null) {

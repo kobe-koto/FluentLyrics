@@ -11,6 +11,7 @@ import '../services/media_service.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../widgets/screen/lyrics/lyrics_background.dart';
+import '../widgets/screen/lyrics/artwork_image_sizing.dart';
 import '../widgets/screen/lyrics/lyrics_header.dart';
 import '../widgets/screen/lyrics/lyrics_list.dart';
 import '../widgets/screen/lyrics/lyrics_control_area.dart';
@@ -126,7 +127,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
   /// `_startScroll` fast path when the target is already visible, which just
   /// animates the existing primary scroll controller without forcing a
   /// `pixels = 0` round trip.
-  /// 
+  ///
   /// * > assert(duration > Duration.zero);
   ///   SPL requies a non-zero positive duration for `scrollTo` during debug profile,
   ///   so we use 1μs as effectively zero.
@@ -433,6 +434,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
     precacheImage(provider, context)
         .then((_) {
           if (mounted && _lastArtUrl == url) {
+            unawaited(_precacheForegroundArtSizes(provider, url));
             setState(() {
               _backgroundArtProvider = provider;
             });
@@ -445,6 +447,49 @@ class _LyricsScreenState extends State<LyricsScreen> {
             });
           }
         });
+  }
+
+  Future<void> _precacheForegroundArtSizes(
+    ImageProvider provider,
+    String url,
+  ) async {
+    final intrinsicSize = await _resolveImageSize(
+      provider,
+    ).catchError((_) => Size.zero);
+    if (!mounted || _lastArtUrl != url || intrinsicSize == Size.zero) return;
+
+    for (final resizedProvider
+        in ArtworkImageSizing.foregroundPrecacheProviders(
+          provider,
+          intrinsicWidth: intrinsicSize.width.round(),
+          intrinsicHeight: intrinsicSize.height.round(),
+        )) {
+      unawaited(precacheImage(resizedProvider, context).catchError((_) {}));
+    }
+  }
+
+  Future<Size> _resolveImageSize(ImageProvider provider) {
+    final stream = provider.resolve(createLocalImageConfiguration(context));
+    final completer = Completer<Size>();
+    late final ImageStreamListener listener;
+
+    listener = ImageStreamListener(
+      (ImageInfo info, bool _) {
+        if (!completer.isCompleted) {
+          completer.complete(
+            Size(info.image.width.toDouble(), info.image.height.toDouble()),
+          );
+        }
+        stream.removeListener(listener);
+      },
+      onError: (Object error, StackTrace? stack) {
+        if (!completer.isCompleted) completer.completeError(error, stack);
+        stream.removeListener(listener);
+      },
+    );
+
+    stream.addListener(listener);
+    return completer.future;
   }
 
   ImageProvider _getArtProvider(String? artUrl, MediaService mediaService) {

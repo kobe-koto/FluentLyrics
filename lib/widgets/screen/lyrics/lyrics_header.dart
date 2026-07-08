@@ -3,6 +3,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../utils/app_logger.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../../screens/settings_screen.dart';
+import 'artwork_image_sizing.dart';
 import 'delayed_loading_image.dart';
 import 'lyrics_candidate_sheet.dart';
 
@@ -197,18 +198,18 @@ class LyricsHeader extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final double dpr = MediaQuery.of(context).devicePixelRatio;
-              final int? cacheWidth = constraints.maxWidth.isFinite
-                  ? (constraints.maxWidth * dpr).round()
-                  : null;
-              final int? cacheHeight = constraints.maxHeight.isFinite
-                  ? (constraints.maxHeight * dpr).round()
-                  : null;
+              final cacheSize =
+                  ArtworkImageSizing.foregroundCacheSizeForConstraints(
+                    constraints,
+                    devicePixelRatio: dpr,
+                    large: large,
+                  );
 
               return DelayedLoadingImage(
                 image: artImage,
                 fit: BoxFit.cover,
-                cacheWidth: cacheWidth,
-                cacheHeight: cacheHeight,
+                cacheWidth: cacheSize,
+                cacheHeight: cacheSize,
                 errorBuilder: (context, error, stackTrace) {
                   AppLogger.debug('Error loading album art: $error');
                   return Image.asset('assets/album_art.png', fit: BoxFit.cover);
