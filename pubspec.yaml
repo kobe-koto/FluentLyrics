@@ -35,6 +35,7 @@ dependencies:
   window_manager: ^0.5.1
   slang: ^4.15.0
   slang_flutter: ^4.15.0
+  palette_generator_plus: ^1.0.0
 
 dev_dependencies:
   flutter_test:

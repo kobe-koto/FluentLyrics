@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 class LyricsBackground extends StatelessWidget {
   final ImageProvider artProvider;
   final bool motionEnabled;
+  final Color placeholderColor;
 
   /// Whether the fragmented motion is currently advancing. When false the
   /// fragment layout freezes at its current position instead of falling back
@@ -20,6 +21,7 @@ class LyricsBackground extends StatelessWidget {
     required this.artProvider,
     this.motionEnabled = true,
     this.animate = true,
+    this.placeholderColor = Colors.black,
   });
 
   @override
@@ -34,10 +36,12 @@ class LyricsBackground extends StatelessWidget {
               key: ValueKey(('fragmented', artProvider)),
               artProvider: artProvider,
               animate: animate,
+              placeholderColor: placeholderColor,
             )
           : _StaticBackground(
               key: ValueKey(('static', artProvider)),
               artProvider: artProvider,
+              placeholderColor: placeholderColor,
             ),
     );
   }
@@ -48,8 +52,13 @@ class LyricsBackground extends StatelessWidget {
 /// path.
 class _StaticBackground extends StatefulWidget {
   final ImageProvider artProvider;
+  final Color placeholderColor;
 
-  const _StaticBackground({super.key, required this.artProvider});
+  const _StaticBackground({
+    super.key,
+    required this.artProvider,
+    required this.placeholderColor,
+  });
 
   @override
   State<_StaticBackground> createState() => _StaticBackgroundState();
@@ -80,6 +89,7 @@ class _StaticBackgroundState extends State<_StaticBackground> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
+        color: widget.placeholderColor,
         image: DecorationImage(image: _resizedArtProvider, fit: BoxFit.cover),
       ),
       child: BackdropFilter(
@@ -103,11 +113,13 @@ class _StaticBackgroundState extends State<_StaticBackground> {
 class _FragmentedBackground extends StatefulWidget {
   final ImageProvider artProvider;
   final bool animate;
+  final Color placeholderColor;
 
   const _FragmentedBackground({
     super.key,
     required this.artProvider,
     required this.animate,
+    required this.placeholderColor,
   });
 
   @override
@@ -328,9 +340,9 @@ class _FragmentedBackgroundState extends State<_FragmentedBackground>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Base dark layer – also acts as the visible canvas while the
+            // Base reserve layer – also acts as the visible canvas while the
             // first bake is in flight.
-            Container(color: Colors.black),
+            Container(color: widget.placeholderColor),
 
             // Animated fragments. Painted by a single CustomPainter so
             // there are no per-fragment widgets / saveLayers in the tree.

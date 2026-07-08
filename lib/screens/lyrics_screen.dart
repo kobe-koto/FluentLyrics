@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:palette_generator_plus/palette_generator_plus.dart';
 import '../models/lyric_model.dart';
 import '../providers/lyrics_provider.dart';
 import '../services/media_service.dart';
@@ -40,13 +42,18 @@ class _LyricsScreenState extends State<LyricsScreen> {
     ],
     stops: [0.0, 0.05, 0.95, 1.0],
   );
+  static const Color _defaultBackgroundPlaceholderColor = Colors.black;
+  static const Size _paletteSampleSize = Size.square(96);
 
   final Set<String> _failedArtUrls = {};
+  final Map<String, Color> _backgroundPlaceholderColorCache = {};
   int _previousIndex = 0;
   int? _scheduledScrollIndex;
+  int _artLoadGeneration = 0;
   String? _lastArtUrl;
   ImageProvider? _foregroundArtProvider;
   ImageProvider? _backgroundArtProvider;
+  Color _backgroundPlaceholderColor = _defaultBackgroundPlaceholderColor;
   bool _isManualScrolling = false;
   Timer? _autoResumeTimer;
   String? _lastTitle;
@@ -176,6 +183,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             provider: provider,
             getBackgroundArt: () => _backgroundArtProvider,
             getForegroundArt: () => _foregroundArtProvider,
+            placeholderColor: _backgroundPlaceholderColor,
           ),
 
           // Content Layer
@@ -410,12 +418,19 @@ class _LyricsScreenState extends State<LyricsScreen> {
           _foregroundArtProvider!.evict();
         }
         _foregroundArtProvider = _getArtProvider(artUrl, mediaService);
-        _precacheAndSwap(_foregroundArtProvider!, artUrl);
+        _precacheAndSwap(
+          _foregroundArtProvider!,
+          artUrl,
+          _artColorCacheKey(artUrl),
+          ++_artLoadGeneration,
+        );
       }
     } else {
       if (!forceReload && title == _lastTitle && artist == _lastArtist) {
         // Keep current
       } else {
+        _artLoadGeneration++;
+        _backgroundPlaceholderColor = _defaultBackgroundPlaceholderColor;
         if (metadata == null) {
           _lastArtUrl = null;
           _foregroundArtProvider = const AssetImage('assets/album_art.png');
@@ -430,23 +445,114 @@ class _LyricsScreenState extends State<LyricsScreen> {
     _lastArtist = artist;
   }
 
-  void _precacheAndSwap(ImageProvider provider, String url) {
+  void _precacheAndSwap(
+    ImageProvider provider,
+    String url,
+    String colorCacheKey,
+    int generation,
+  ) {
+    final placeholderFuture = _resolveBackgroundPlaceholderColor(
+      provider,
+      colorCacheKey,
+    ).catchError((_) => _defaultBackgroundPlaceholderColor);
+
     precacheImage(provider, context)
-        .then((_) {
-          if (mounted && _lastArtUrl == url) {
+        .then((_) async {
+          final placeholderColor = await placeholderFuture;
+          if (mounted &&
+              generation == _artLoadGeneration &&
+              _lastArtUrl == url) {
             unawaited(_precacheForegroundArtSizes(provider, url));
             setState(() {
+              _backgroundPlaceholderColor = placeholderColor;
               _backgroundArtProvider = provider;
             });
           }
         })
         .catchError((e) {
-          if (mounted && _lastArtUrl == url) {
+          if (mounted &&
+              generation == _artLoadGeneration &&
+              _lastArtUrl == url) {
             setState(() {
               _failedArtUrls.add(url);
             });
           }
         });
+  }
+
+  String _artColorCacheKey(String artUrl) {
+    if (artUrl.startsWith('data:')) {
+      return 'data:${artUrl.hashCode}';
+    }
+    return artUrl;
+  }
+
+  Future<Color> _resolveBackgroundPlaceholderColor(
+    ImageProvider provider,
+    String cacheKey,
+  ) async {
+    final cached = _backgroundPlaceholderColorCache[cacheKey];
+    if (cached != null) return cached;
+
+    final paletteImage = await _resolvePaletteImage(provider);
+    final PaletteGenerator palette;
+    try {
+      palette = await PaletteGenerator.fromImage(
+        paletteImage,
+        maximumColorCount: 12,
+      );
+    } finally {
+      paletteImage.dispose();
+    }
+
+    final sourceColor =
+        palette.dominantColor?.color ??
+        palette.darkMutedColor?.color ??
+        palette.darkVibrantColor?.color ??
+        palette.mutedColor?.color ??
+        palette.vibrantColor?.color;
+    final placeholderColor = sourceColor == null
+        ? _defaultBackgroundPlaceholderColor
+        : _reserveColorForBackground(sourceColor);
+    _backgroundPlaceholderColorCache[cacheKey] = placeholderColor;
+    return placeholderColor;
+  }
+
+  Future<ui.Image> _resolvePaletteImage(ImageProvider provider) {
+    final resized = ResizeImage(
+      provider,
+      width: _paletteSampleSize.width.round(),
+      height: _paletteSampleSize.height.round(),
+    );
+    final stream = resized.resolve(
+      const ImageConfiguration(size: _paletteSampleSize, devicePixelRatio: 1.0),
+    );
+    final completer = Completer<ui.Image>();
+    late final ImageStreamListener listener;
+
+    listener = ImageStreamListener(
+      (ImageInfo info, bool _) {
+        if (!completer.isCompleted) {
+          completer.complete(info.image.clone());
+        }
+        stream.removeListener(listener);
+      },
+      onError: (Object error, StackTrace? stack) {
+        if (!completer.isCompleted) completer.completeError(error, stack);
+        stream.removeListener(listener);
+      },
+    );
+
+    stream.addListener(listener);
+    return completer.future;
+  }
+
+  Color _reserveColorForBackground(Color color) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl
+        .withSaturation((hsl.saturation * 0.72).clamp(0.0, 0.58).toDouble())
+        .withLightness(hsl.lightness.clamp(0.24, 0.54).toDouble())
+        .toColor();
   }
 
   Future<void> _precacheForegroundArtSizes(
@@ -595,11 +701,13 @@ class _BackgroundSection extends StatelessWidget {
   final LyricsProvider provider;
   final ImageProvider? Function() getBackgroundArt;
   final ImageProvider? Function() getForegroundArt;
+  final Color placeholderColor;
 
   const _BackgroundSection({
     required this.provider,
     required this.getBackgroundArt,
     required this.getForegroundArt,
+    required this.placeholderColor,
   });
 
   @override
@@ -616,6 +724,7 @@ class _BackgroundSection extends StatelessWidget {
           artProvider: bgArt,
           motionEnabled: s.motion,
           animate: s.isPlaying,
+          placeholderColor: placeholderColor,
         );
       },
     );
