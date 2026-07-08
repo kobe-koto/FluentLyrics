@@ -4,6 +4,30 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'What should this manual run do?'
+        required: true
+        type: choice
+        default: 'Build Only'
+        options:
+          - 'Release Unstable'
+          - 'Build Only'
+      build_linux:
+        description: 'Build Linux artifacts in Build Only mode'
+        required: false
+        type: boolean
+        default: true
+      build_android:
+        description: 'Build Android artifacts in Build Only mode'
+        required: false
+        type: boolean
+        default: true
+      build_macos:
+        description: 'Build macOS artifacts in Build Only mode'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   prepare-version:
@@ -22,6 +46,13 @@ jobs:
       - name: Prepare version
         id: version
         run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.mode }}" = "Build Only" ]; then
+            if [ "${{ inputs.build_linux }}" != "true" ] && [ "${{ inputs.build_android }}" != "true" ] && [ "${{ inputs.build_macos }}" != "true" ]; then
+              echo "Build Only requires at least one selected platform." >&2
+              exit 1
+            fi
+          fi
+
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             latest_tag="$(git describe --tags --abbrev=0 --match 'v*' --exclude 'v*-r*')"
             latest_version="${latest_tag#v}"
@@ -60,6 +91,7 @@ jobs:
 
   build-linux:
     needs: prepare-version
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' || inputs.build_linux }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -112,6 +144,7 @@ jobs:
 
   build-android:
     needs: prepare-version
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' || inputs.build_android }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -169,6 +202,7 @@ jobs:
 
   build-macos:
     needs: prepare-version
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' || inputs.build_macos }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -232,6 +266,7 @@ jobs:
           path: dist/**/*
 
   release:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' }}
     needs:
       - prepare-version
       - build-linux
@@ -250,6 +285,27 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+
+      - name: Create unstable tag
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'Release Unstable' }}
+        env:
+          RELEASE_VERSION: ${{ needs.prepare-version.outputs.release_version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git rev-parse "$RELEASE_VERSION" >/dev/null 2>&1; then
+            existing_commit="$(git rev-list -n 1 "$RELEASE_VERSION")"
+            current_commit="$(git rev-parse HEAD)"
+            if [ "$existing_commit" != "$current_commit" ]; then
+              echo "Tag $RELEASE_VERSION already exists at $existing_commit, expected $current_commit." >&2
+              exit 1
+            fi
+            echo "Tag $RELEASE_VERSION already exists at current commit."
+          else
+            git tag "$RELEASE_VERSION"
+            git push origin "refs/tags/$RELEASE_VERSION"
+          fi
 
       - name: Generate Release Notes
         env:
