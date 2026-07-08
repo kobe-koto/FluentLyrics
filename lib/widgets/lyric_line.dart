@@ -379,7 +379,7 @@ class _RichPartState extends State<_RichPart>
   Timer? _startTimer;
   bool _hasReachedStartTime = false;
   static const Duration _defaultProgressAnimationDuration = Duration(
-    milliseconds: 350,
+    milliseconds: 500,
   );
   static const Duration _progressAnimationThreshold = Duration(
     milliseconds: 800,
