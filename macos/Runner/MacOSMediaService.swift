@@ -157,15 +157,10 @@ private final class MediaRemoteAdapterClient {
   }
 
   func fetchStatus(completion: @escaping ([String: Any]?) -> Void) {
-    if let latestStatus = latestStatusSnapshot() {
-      completion(latestStatus)
-      return
-    }
-
     commandQueue.async {
       guard
         let output = self.runAdapterCommand(
-          ["get", "--now", "--micros", "--no-artwork"],
+          ["get", "--micros", "--no-artwork"],
           timeout: 3.0
         )
       else {
@@ -173,13 +168,7 @@ private final class MediaRemoteAdapterClient {
         return
       }
 
-      let status = self.parseGetOutput(output)
-      if let status {
-        self.streamQueue.async {
-          self.latestStatus = status
-        }
-      }
-      completion(status)
+      completion(self.parseGetOutput(output))
     }
   }
 
