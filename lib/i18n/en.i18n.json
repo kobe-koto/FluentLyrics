@@ -68,7 +68,10 @@
       "autoResumeDelaySubtitle": "Time to wait before auto-scrolling resumes after you manual scroll.",
       "autoResumeDelayReset": "Reset to 5s",
       "keepScreenOn": "Keep Screen On",
-      "keepScreenOnSubtitle": "Prevent device from sleeping while lyrics screen is active."
+      "keepScreenOnSubtitle": "Prevent device from sleeping while lyrics screen is active.",
+      "artworkMinSize": "Artwork Minimum Size",
+      "artworkMinSizeSubtitle": "Reject artwork from media sources whose shorter side is below this threshold, then try alternate sources. Set to 0 to accept any size.",
+      "artworkMinSizeReset": "Reset to 300px"
     },
     "translation": {
       "sectionTitle": "Translation Configuration",

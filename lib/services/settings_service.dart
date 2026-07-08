@@ -34,6 +34,7 @@ class SettingsService {
   static const String _hideToTrayOnCloseKey = 'hide_to_tray_on_close';
   static const String _lyricsStreamPathKey = 'lyrics_stream_path';
   static const String _translationStreamPathKey = 'translation_stream_path';
+  static const String _artworkMinSizeKey = 'artwork_min_size';
   static const String _localeKey = 'app_locale';
 
   Future<Setting<List<LyricProviderType>>> getAllProvidersOrdered() async {
@@ -608,6 +609,22 @@ class SettingsService {
   Future<void> setTranslationStreamPath(String path) async {
     final prefs = await _prefs;
     await prefs.setString(_translationStreamPathKey, path);
+  }
+
+  Future<Setting<int>> getArtworkMinSize() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getInt(_artworkMinSizeKey) ?? AppDefaults.artworkMinSize;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.artworkMinSize,
+      changed: current != AppDefaults.artworkMinSize,
+    );
+  }
+
+  Future<void> setArtworkMinSize(int size) async {
+    final prefs = await _prefs;
+    await prefs.setInt(_artworkMinSizeKey, size);
   }
 
   /// Returns the saved locale tag (e.g. 'en', 'zh_CN'), or null for system default.

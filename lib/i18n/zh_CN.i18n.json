@@ -68,7 +68,10 @@
       "autoResumeDelaySubtitle": "手动滚动后,等待多少时间再恢复自动滚动。",
       "autoResumeDelayReset": "重置为 5 秒",
       "keepScreenOn": "屏幕常亮",
-      "keepScreenOnSubtitle": "歌词页面活跃时阻止设备休眠。"
+      "keepScreenOnSubtitle": "歌词页面活跃时阻止设备休眠。",
+      "artworkMinSize": "封面最小尺寸",
+      "artworkMinSizeSubtitle": "拒绝媒体源提供的较短边低于此阈值的封面，然后尝试备选源。设为 0 则接受任意尺寸。",
+      "artworkMinSizeReset": "重置为 300px"
     },
     "translation": {
       "sectionTitle": "翻译配置",

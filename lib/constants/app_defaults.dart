@@ -40,4 +40,5 @@ class AppDefaults {
   static const bool hideToTrayOnClose = false;
   static const String lyricsStreamPath = '';
   static const String translationStreamPath = '';
+  static const int artworkMinSize = 300;
 }

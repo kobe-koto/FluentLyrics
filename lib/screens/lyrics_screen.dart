@@ -458,6 +458,26 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
     precacheImage(provider, context)
         .then((_) async {
+          if (!mounted || generation != _artLoadGeneration ||
+              _lastArtUrl != url) {
+            return;
+          }
+
+          final minSize = context.read<LyricsProvider>().artworkMinSize.current;
+          if (minSize > 0 && url.startsWith('data:')) {
+            final size = await _resolveImageSize(provider)
+                .catchError((_) => Size.zero);
+            if (!mounted || generation != _artLoadGeneration ||
+                _lastArtUrl != url) {
+              return;
+            }
+            final shorter = size.shortestSide.round();
+            if (shorter > 0 && shorter < minSize) {
+              _rejectArtwork(url);
+              return;
+            }
+          }
+
           final placeholderColor = await placeholderFuture;
           if (mounted &&
               generation == _artLoadGeneration &&
@@ -473,11 +493,19 @@ class _LyricsScreenState extends State<LyricsScreen> {
           if (mounted &&
               generation == _artLoadGeneration &&
               _lastArtUrl == url) {
-            setState(() {
-              _failedArtUrls.add(url);
-            });
+            _rejectArtwork(url);
           }
         });
+  }
+
+  void _rejectArtwork(String url) {
+    _failedArtUrls.add(url);
+    final provider = context.read<LyricsProvider>();
+    _updateArtProviders(
+      provider.currentMetadata,
+      provider.mediaService,
+      provider.artworkUrlsNotifier.value,
+    );
   }
 
   String _artColorCacheKey(String artUrl) {

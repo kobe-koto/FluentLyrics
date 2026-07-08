@@ -68,7 +68,10 @@
       "autoResumeDelaySubtitle": "手動捲動後,等待多少時間再恢復自動捲動。",
       "autoResumeDelayReset": "重設為 5 秒",
       "keepScreenOn": "螢幕常亮",
-      "keepScreenOnSubtitle": "歌詞畫面活躍時阻止裝置睡眠。"
+      "keepScreenOnSubtitle": "歌詞畫面活躍時阻止裝置睡眠。",
+      "artworkMinSize": "封面最小尺寸",
+      "artworkMinSizeSubtitle": "拒絕媒體源提供的較短邊低於此閾值的封面，然後嘗試備選源。設為 0 則接受任意尺寸。",
+      "artworkMinSizeReset": "重置為 300px"
     },
     "translation": {
       "sectionTitle": "翻譯設定",

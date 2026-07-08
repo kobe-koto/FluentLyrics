@@ -32,6 +32,7 @@ class LyricsProviderSettings {
     required this.hideToTrayOnClose,
     required this.lyricsStreamPath,
     required this.translationStreamPath,
+    required this.artworkMinSize,
   });
 
   factory LyricsProviderSettings.defaults() {
@@ -171,6 +172,11 @@ class LyricsProviderSettings {
         defaultValue: AppDefaults.translationStreamPath,
         changed: false,
       ),
+      artworkMinSize: const Setting(
+        current: AppDefaults.artworkMinSize,
+        defaultValue: AppDefaults.artworkMinSize,
+        changed: false,
+      ),
     );
   }
 
@@ -212,6 +218,7 @@ class LyricsProviderSettings {
       hideToTrayOnClose: await settingsService.getHideToTrayOnClose(),
       lyricsStreamPath: await settingsService.getLyricsStreamPath(),
       translationStreamPath: await settingsService.getTranslationStreamPath(),
+      artworkMinSize: await settingsService.getArtworkMinSize(),
     );
   }
 
@@ -242,4 +249,5 @@ class LyricsProviderSettings {
   Setting<bool> hideToTrayOnClose;
   Setting<String> lyricsStreamPath;
   Setting<String> translationStreamPath;
+  Setting<int> artworkMinSize;
 }

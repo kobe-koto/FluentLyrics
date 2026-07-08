@@ -141,6 +141,9 @@ class LyricsProvider with ChangeNotifier {
   set _translationStreamPath(Setting<String> value) =>
       _settings.translationStreamPath = value;
 
+  Setting<int> get _artworkMinSize => _settings.artworkMinSize;
+  set _artworkMinSize(Setting<int> value) => _settings.artworkMinSize = value;
+
   Duration _trackOffset = Duration.zero;
   int _currentIndex = -1;
   bool _isPlaying = false;
@@ -307,6 +310,7 @@ class LyricsProvider with ChangeNotifier {
   Setting<bool> get hideToTrayOnClose => _hideToTrayOnClose;
   Setting<String> get lyricsStreamPath => _lyricsStreamPath;
   Setting<String> get translationStreamPath => _translationStreamPath;
+  Setting<int> get artworkMinSize => _artworkMinSize;
 
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
@@ -879,6 +883,15 @@ class LyricsProvider with ChangeNotifier {
       value: value,
       assign: (v) => _translationStreamPath = v,
       persist: _settingsService.setTranslationStreamPath,
+    );
+  }
+
+  void setArtworkMinSize(int size) {
+    _setSettingValue(
+      currentSetting: _artworkMinSize,
+      value: size,
+      assign: (v) => _artworkMinSize = v,
+      persist: _settingsService.setArtworkMinSize,
     );
   }
 

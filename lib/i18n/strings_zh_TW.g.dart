@@ -206,6 +206,9 @@ class Translations$settings$display$zh_TW extends Translations$settings$display$
 	@override String get autoResumeDelayReset => '重設為 5 秒';
 	@override String get keepScreenOn => '螢幕常亮';
 	@override String get keepScreenOnSubtitle => '歌詞畫面活躍時阻止裝置睡眠。';
+	@override String get artworkMinSize => '封面最小尺寸';
+	@override String get artworkMinSizeSubtitle => '拒絕媒體源提供的較短邊低於此閾值的封面，然後嘗試備選源。設為 0 則接受任意尺寸。';
+	@override String get artworkMinSizeReset => '重置為 300px';
 }
 
 // Path: settings.translation

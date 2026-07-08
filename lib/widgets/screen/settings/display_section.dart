@@ -103,6 +103,29 @@ class DisplaySection extends StatelessWidget {
                   : null,
               resetTooltip: i18n.autoResumeDelayReset,
             ),
+            const SizedBox(height: 24),
+            SettingsSliderCard(
+              title: i18n.artworkMinSize,
+              subtitle: i18n.artworkMinSizeSubtitle,
+              value: provider.artworkMinSize.current.toDouble(),
+              min: 0,
+              max: 1024,
+              divisions: 64,
+              label: provider.artworkMinSize.current == 0
+                  ? 'Off'
+                  : '${provider.artworkMinSize.current}px',
+              valueText: provider.artworkMinSize.current == 0
+                  ? 'Off'
+                  : '${provider.artworkMinSize.current}px',
+              onChanged: (value) =>
+                  provider.setArtworkMinSize(value.toInt()),
+              onReset: provider.artworkMinSize.changed
+                  ? () => provider.setArtworkMinSize(
+                      provider.artworkMinSize.defaultValue,
+                    )
+                  : null,
+              resetTooltip: i18n.artworkMinSizeReset,
+            ),
             if (Platform.isAndroid) ...[
               const SizedBox(height: 24),
               SettingsToggleCard(

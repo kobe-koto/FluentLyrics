@@ -344,6 +344,15 @@ class Translations$settings$display$en {
 
 	/// en: 'Prevent device from sleeping while lyrics screen is active.'
 	String get keepScreenOnSubtitle => 'Prevent device from sleeping while lyrics screen is active.';
+
+	/// en: 'Artwork Minimum Size'
+	String get artworkMinSize => 'Artwork Minimum Size';
+
+	/// en: 'Reject artwork from media sources whose shorter side is below this threshold, then try alternate sources. Set to 0 to accept any size.'
+	String get artworkMinSizeSubtitle => 'Reject artwork from media sources whose shorter side is below this threshold, then try alternate sources. Set to 0 to accept any size.';
+
+	/// en: 'Reset to 300px'
+	String get artworkMinSizeReset => 'Reset to 300px';
 }
 
 // Path: settings.translation
