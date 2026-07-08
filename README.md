@@ -22,17 +22,38 @@ A desktop lyrics viewer built with Flutter, displays and syncs song lyrics from 
 The main interface.
 
 ## Supported platforms
-- Linux x86_64 (retrieve now-playing metadata via the MPRIS D‑Bus interface)
+- Linux x86_64
+   - retrieve now-playing metadata via the MPRIS D‑Bus interface.
 - Android
-- macOS (HUGE thanks to [@watchdogexd](https://github.com/watchdogexd) and [MediaRemote adapter](https://github.com/ungive/mediaremote-adapter).)
+
+## Limited support
+- macOS
+   - obtain now-playing metadata via the [MediaRemote adapter](https://github.com/ungive/mediaremote-adapter)
+   - HUGE thanks to [@watchdogexd](https://github.com/watchdogexd) for testing and contributing.
+   - I don't have a macOS device, so I can't test it, expect limited support.
 - No other platform support is planned
-- Pull requests are welcome
+- PR welcome
 
 ## Cannot support
-- iOS – theoretically impossible to obtain now‑playing metadata without jailbreaking.
-- Linux arm64 – official support for building a Linux arm64 Flutter app requires a native Linux arm64 machine, ~~but GitHub Actions does not provide a Linux arm64 runner~~, they do, but that requires additional time and effort for an architecture I cannot test, PR welcome anyways (if that comes with consistent test and feedback).
-- Linux (except x86_64 and arm64) – not natively supported by Flutter.
-- BSD – not natively supported by Flutter.
+- Windows
+
+   we dun want to :3
+
+- iOS
+   
+   theoretically impossible to obtain now‑playing metadata without jailbreaking.
+   
+- Linux arm64
+   
+   official support for building a Linux arm64 Flutter app requires a native Linux arm64 machine
+   
+   but I don't own a physical one...
+   
+   that means additional time and effort for an architecture I cannot test
+   
+   PR welcome (if that comes with consistent test and feedback).
+
+- Other platforms/architectures not natively supported by Flutter, PRs for them are no-op.
 
 ## Installations
 
