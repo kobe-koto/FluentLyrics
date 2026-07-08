@@ -535,6 +535,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
         if (!completer.isCompleted) {
           completer.complete(info.image.clone());
         }
+        info.dispose();
         stream.removeListener(listener);
       },
       onError: (Object error, StackTrace? stack) {
@@ -586,6 +587,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
             Size(info.image.width.toDouble(), info.image.height.toDouble()),
           );
         }
+        info.dispose();
         stream.removeListener(listener);
       },
       onError: (Object error, StackTrace? stack) {
