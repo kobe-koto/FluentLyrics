@@ -136,6 +136,12 @@ jobs:
         run: |
           fastforge release --name production --jobs=release-linux-zip,release-linux-appimage
 
+      - name: Normalize Linux artifact names
+        env:
+          RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
+        run: |
+          bash ./tool/normalize-artifacts/linux.sh
+
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
