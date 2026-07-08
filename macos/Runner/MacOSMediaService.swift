@@ -238,12 +238,27 @@ private final class MediaRemoteAdapterClient {
 
     let isDiff = boolValue(event["diff"]) ?? false
     if isDiff {
+      let elapsedTimeChanged =
+        payload["elapsedTimeMicros"] != nil ||
+        payload["elapsedTime"] != nil ||
+        payload["elapsedTimeNowMicros"] != nil
+      let timestampChanged =
+        payload["timestampEpochMicros"] != nil ||
+        payload["timestamp"] != nil
+
       for (key, value) in payload {
         if value is NSNull {
           currentPayload.removeValue(forKey: key)
         } else {
           currentPayload[key] = value
         }
+      }
+
+      if elapsedTimeChanged && !timestampChanged {
+        // Keep elapsed/timestamp pairs coherent when diff events split them.
+        currentPayload["timestampEpochMicros"] = Int64(
+          Date().timeIntervalSince1970 * 1_000_000
+        )
       }
     } else {
       currentPayload = payload.filter { !($0.value is NSNull) }
@@ -534,6 +549,12 @@ private func boolValue(_ value: Any?) -> Bool? {
 }
 
 private func int64Value(_ value: Any?) -> Int64? {
+  if let int = value as? Int {
+    return Int64(int)
+  }
+  if let int64 = value as? Int64 {
+    return int64
+  }
   if let number = value as? NSNumber {
     return number.int64Value
   }
