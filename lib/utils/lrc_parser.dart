@@ -1,3 +1,4 @@
+import 'dart:math';
 import '../models/lyric_model.dart';
 import '../../utils/string_similarity.dart';
 import 'package:html_unescape/html_unescape.dart';
@@ -165,32 +166,8 @@ class LrcParser {
     final List<Lyric> result = List<Lyric>.from(lyrics);
     final Map<String, String> trimmedMetadata = {};
 
-    // attempt to remove the 'title - artist' line
-    if (lrcMetadata.isNotEmpty) {
-      String title = lrcMetadata['title'] ?? lrcMetadata['ti'] ?? '';
-      String artist = lrcMetadata['artist'] ?? lrcMetadata['ar'] ?? '';
-      String trimTitleKeyword_1 = '$title - $artist';
-      String trimTitleKeyword_2 = '$artist - $title';
-      // check the similarity of the first line with the title keyword
-      final firstLine = lyrics.first.text.trim();
-      final similarity_1 = JaroWinklerSimilarity.getJaroWinklerScore(
-        firstLine,
-        trimTitleKeyword_1,
-      );
-      final similarity_2 = JaroWinklerSimilarity.getJaroWinklerScore(
-        firstLine,
-        trimTitleKeyword_2,
-      );
-      AppLogger.debug(
-        '[trimMetadataLines] similarity for first line "$firstLine" with keyword "$trimTitleKeyword_1": $similarity_1',
-      );
-      AppLogger.debug(
-        '[trimMetadataLines] similarity for first line "$firstLine" with keyword "$trimTitleKeyword_2": $similarity_2',
-      );
-      if (similarity_1 >= 0.6 || similarity_2 >= 0.6) {
-        result.removeAt(0);
-      }
-    }
+    String? title = lrcMetadata['title'] ?? lrcMetadata['ti'];
+    String? artist = lrcMetadata['artist'] ?? lrcMetadata['ar'];
 
     // Pattern for metadata: text contains full-width colon ： followed by names
     // Common metadata positions: 作词, 作曲, 编曲, 制作, 混音, 母带
@@ -210,7 +187,13 @@ class LrcParser {
       } else if (text.isEmpty) {
         result.removeAt(0);
       } else {
-        break;
+        if (title != null &&
+            artist != null &&
+            _isTitleAndArtistLine(title, artist, text) >= 0.6) {
+          result.removeAt(0);
+        } else {
+          break;
+        }
       }
     }
 
@@ -228,10 +211,41 @@ class LrcParser {
       } else if (text.isEmpty) {
         result.removeLast();
       } else {
-        break;
+        if (title != null &&
+            artist != null &&
+            _isTitleAndArtistLine(title, artist, text) >= 0.6) {
+          result.removeLast();
+        } else {
+          break;
+        }
       }
     }
 
     return LrcParseResult(lyrics: result, trimmedMetadata: trimmedMetadata);
+  }
+
+  static double _isTitleAndArtistLine(
+    String title,
+    String artist,
+    String line,
+  ) {
+    String trimTitleKeyword_1 = '$title - $artist';
+    String trimTitleKeyword_2 = '$artist - $title';
+    // check the similarity of the first line with the title keyword
+    final similarity_1 = JaroWinklerSimilarity.getJaroWinklerScore(
+      line,
+      trimTitleKeyword_1,
+    );
+    final similarity_2 = JaroWinklerSimilarity.getJaroWinklerScore(
+      line,
+      trimTitleKeyword_2,
+    );
+    AppLogger.debug(
+      '[trimMetadataLines] similarity for first line "$line" with keyword "$trimTitleKeyword_1": $similarity_1',
+    );
+    AppLogger.debug(
+      '[trimMetadataLines] similarity for first line "$line" with keyword "$trimTitleKeyword_2": $similarity_2',
+    );
+    return max(similarity_1, similarity_2);
   }
 }
