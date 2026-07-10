@@ -56,6 +56,8 @@ class NeteaseService {
           trimMetadata,
           translationBias,
           onTranslation,
+          title,
+          artist,
         );
 
         if (lyricData == null) {
@@ -229,6 +231,8 @@ class NeteaseService {
     bool trimMetadata,
     int translationBias,
     Function(LyricsResult)? onTranslation,
+    String title,
+    List<String> artist,
   ) async {
     try {
       final lyricUri = Uri.parse('https://music.163.com/api/song/lyric')
@@ -277,7 +281,10 @@ class NeteaseService {
         if (richSyncedYRC != null && richSyncedYRC.isNotEmpty) {
           richLyrics = _NeteaseYrcParser.parse(richSyncedYRC);
           if (trimMetadata) {
-            final trimResult = LrcParser.trimMetadataLines(richLyrics);
+            final trimResult = LrcParser.trimMetadataLines(
+              richLyrics,
+              lrcMetadata: {'title': title, 'artist': artist.join(', ')},
+            );
             richLyrics = trimResult.lyrics;
             trimmedMetadata = trimResult.trimmedMetadata;
           }
