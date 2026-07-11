@@ -10,6 +10,12 @@ releases:
         package:
           platform: linux
           target: appimage
+      # Fastforge builds Linux bundles for the native runner architecture.
+      # This job is run on the ARM64 GitHub runner by the release workflow.
+      - name: release-linux-arm64-zip
+        package:
+          platform: linux
+          target: zip
       - name: release-android
         package:
           platform: android
