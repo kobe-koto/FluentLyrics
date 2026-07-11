@@ -12,9 +12,9 @@
             <tr>
             <td>Android</td>
                 <td>
-                    <a href="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/fluent_lyrics-${VERSION_NAME}-arm64-v8a-android.apk"><img src="https://img.shields.io/badge/APK-ARMv8-168039.svg?logo=android"></a><br>
-                    <a href="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/fluent_lyrics-${VERSION_NAME}-armeabi-v7a-android.apk"><img src="https://img.shields.io/badge/APK-ARMv7-45bf55.svg?logo=android"></a><br>
-                    <a href="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/fluent_lyrics-${VERSION_NAME}-x86_64-android.apk"><img src="https://img.shields.io/badge/APK-x64-96ed89.svg?logo=android"></a>
+                    <a href="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/fluent_lyrics-${VERSION_NAME}-android-arm64-v8a.apk"><img src="https://img.shields.io/badge/APK-ARMv8-168039.svg?logo=android"></a><br>
+                    <a href="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/fluent_lyrics-${VERSION_NAME}-android-armeabi-v7a.apk"><img src="https://img.shields.io/badge/APK-ARMv7-45bf55.svg?logo=android"></a><br>
+                    <a href="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/fluent_lyrics-${VERSION_NAME}-android-x86_64.apk"><img src="https://img.shields.io/badge/APK-x64-96ed89.svg?logo=android"></a>
                 </td>
             </tr>
             <tr>

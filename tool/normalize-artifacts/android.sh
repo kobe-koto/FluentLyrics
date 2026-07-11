@@ -10,5 +10,5 @@ for apk in build/app/outputs/flutter-apk/app-*-release.apk; do
     [ -e "$apk" ] || continue
     abi="${apk##*/app-}"
     abi="${abi%-release.apk}"
-    cp "$apk" "$DIST_DIR/fluent_lyrics-$VERSION_NAME-$abi-android.apk"
+    cp "$apk" "$DIST_DIR/fluent_lyrics-$VERSION_NAME-android-$abi.apk"
 done
