@@ -22,44 +22,44 @@ A desktop lyrics viewer built with Flutter, displays and syncs song lyrics from 
 The main interface.
 
 ## Supported platforms
-- Linux x86_64
+- Linux
    - retrieve now-playing metadata via the MPRIS D‑Bus interface.
 - Android
+- macOS
+   - obtain now-playing metadata via the [MediaRemote adapter](https://github.com/ungive/mediaremote-adapter)
 
 ## Limited support
 - macOS
-   - obtain now-playing metadata via the [MediaRemote adapter](https://github.com/ungive/mediaremote-adapter)
-   - HUGE thanks to [@watchdogexd](https://github.com/watchdogexd) for testing and contributing.
-   - I don't have a macOS device, so I can't test it, expect limited support.
-- No other platform support is planned
-- PR welcome
+
+   HUGE thanks to [@watchdogexd](https://github.com/watchdogexd) for testing and contributing.
+   
+   I don't have a macOS device, so I can't test it, expect limited support.
+
+- Linux arm64
+
+   I don't have a Linux arm64 device, that means I cannot test on this architecture.
+   
+   Because [fastforge hardcoded x86_64 for appimagetools](https://github.com/fastforgedev/fastforge/blob/main/crates/app_packager/src/linux/appimage.rs#L86), there is no AppImage for arm64.
 
 ## Cannot support
+
 - Windows
 
    we dun want to :3
 
 - iOS
-   
+
    theoretically impossible to obtain now‑playing metadata without jailbreaking.
-   
-- Linux arm64
-   
-   official support for building a Linux arm64 Flutter app requires a native Linux arm64 machine
-   
-   but I don't own a physical one...
-   
-   that means additional time and effort for an architecture I cannot test
-   
-   PR welcome (if that comes with consistent test and feedback).
 
 - Other platforms/architectures not natively supported by Flutter, PRs for them are no-op.
+
+- Other platforms/architectures thats natively supported, PRs are welcome if comes with consistent test and feedback.
 
 ## Installations
 
 ### Linux
 
-1. Arch Linux (x86_64)
+1. Arch Linux (x86_64/arm64)
 
 ```bash
 paru -Sy fluent-lyrics-bin
