@@ -333,7 +333,7 @@ jobs:
           cp -a fdroid-config fdroid-work
           mkdir -p fdroid-work/repo fdroid-public
 
-          find dist -type f -name 'fluent_lyrics-*-android.apk' -exec cp '{}' fdroid-work/repo/ ';'
+          find dist -type f -name 'fluent_lyrics-*-android-*.apk' -exec cp '{}' fdroid-work/repo/ ';'
           apk_count="$(find fdroid-work/repo -type f -name '*.apk' | wc -l)"
           if [ "$apk_count" -eq 0 ]; then
             echo "No Android APKs found in dist for F-Droid repository" >&2
