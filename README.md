@@ -38,8 +38,6 @@ The main interface.
 - Linux arm64
 
    I don't have a Linux arm64 device, that means I cannot test on this architecture.
-   
-   Because [fastforge hardcoded x86_64 for appimagetools](https://github.com/fastforgedev/fastforge/blob/main/crates/app_packager/src/linux/appimage.rs#L86), there is no AppImage for arm64.
 
 ## Cannot support
 
@@ -67,7 +65,7 @@ paru -Sy fluent-lyrics-bin
 
 2. Other Linux Distros
 
-Please use the AppImage or kindly package it yourself :3
+Download the portable archive from [GitHub Releases](https://github.com/kobe-koto/FluentLyrics/releases) or kindly package it yourself :3
 
 ### Android
 
@@ -105,7 +103,6 @@ flutter pub get # get deps
 flutter run -d <device> --[debug|profile|release] # run the app
 dart run build_runner build --delete-conflicting-outputs  # after modifying Isar @Collection 
 dart run slang # after modifying i18n datasets
-dart pub global activate fastforge # Install Fastforge (refer to fastforge for packaging)
 ./tool/macos_prepare_mediaremote_adapter.sh [version] # macOS only, prepared media remote adapter is required before building, defaults to v0.7.6
 ```
 

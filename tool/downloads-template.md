@@ -20,7 +20,6 @@
             <tr>
                 <td>Linux</td>
                 <td>
-                    <a href="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/fluent_lyrics-${VERSION_NAME}-linux-x64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29.svg?logo=linux"> </a><br>
                     <a href="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/fluent_lyrics-${VERSION_NAME}-linux-x64.zip"><img src="https://img.shields.io/badge/Portable-x64-67b7d1.svg?logo=linux"></a><br>
                     <a href="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/fluent_lyrics-${VERSION_NAME}-linux-arm64.zip"><img src="https://img.shields.io/badge/Portable-arm64-67b7d1.svg?logo=linux"></a><br>
                     <a href="https://aur.archlinux.org/packages/fluent-lyrics-bin"> <img src="https://img.shields.io/badge/AUR-fluent--lyrics--bin-67b7d1.svg?logo=archlinux"></a>

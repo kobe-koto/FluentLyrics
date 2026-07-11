@@ -98,10 +98,8 @@ jobs:
         include:
           - arch: x64
             runner: ubuntu-latest
-            fastforge_jobs: release-linux-zip,release-linux-appimage
           - arch: arm64
             runner: ubuntu-24.04-arm
-            fastforge_jobs: release-linux-arm64-zip
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -111,25 +109,12 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev locate libfuse2 libayatana-appindicator3-dev
-
-      - name: Install AppImage tool
-        if: ${{ matrix.arch == 'x64' }}
-        run: |
-          wget -nv -O appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
-          chmod +x appimagetool
-          sudo mv appimagetool /usr/local/bin/
+          sudo apt-get install -y clang cmake ninja-build pkg-config zip libgtk-3-dev liblzma-dev libayatana-appindicator3-dev
 
       - uses: subosito/flutter-action@v2
         with:
           channel: master
           cache: false
-
-      - name: Install Fastforge
-        run: dart pub global activate fastforge
-
-      - name: Add path
-        run: echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
 
       - name: Get dependencies
         run: flutter pub get
@@ -144,16 +129,21 @@ jobs:
       - name: Build Linux
         env:
           RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
-          FASTFORGE_JOBS: ${{ matrix.fastforge_jobs }}
-        run: |
-          fastforge release --name production --jobs="$FASTFORGE_JOBS"
-
-      - name: Normalize Linux artifact names
-        env:
-          RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
           TARGET_ARCH: ${{ matrix.arch }}
         run: |
-          bash ./tool/normalize-artifacts/linux.sh
+          flutter build linux --release
+          version_string="${RELEASE_VERSION#v}"
+          version_name="${version_string%%+*}"
+          bundle_dir="$(find build/linux -type d -path '*/release/bundle' -print -quit)"
+          [ -n "$bundle_dir" ] && [ -d "$bundle_dir" ] || {
+            echo "Linux bundle was not produced." >&2
+            exit 1
+          }
+          mkdir -p dist
+          (
+            cd "$bundle_dir"
+            zip -qr "$GITHUB_WORKSPACE/dist/fluent_lyrics-${version_name}-linux-${TARGET_ARCH}.zip" .
+          )
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -175,12 +165,6 @@ jobs:
           channel: master
           cache: false
 
-      - name: Install Fastforge
-        run: dart pub global activate fastforge
-
-      - name: Add path
-        run: echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
-
       - name: Get dependencies
         run: flutter pub get
 
@@ -199,13 +183,12 @@ jobs:
 
       - name: Build Android
         env:
-          RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/android/upload-keystore.jks
         run: |
-          fastforge release --name production --jobs=release-android
+          flutter build apk --release --split-per-abi
 
       - name: Normalize Android artifact names
         env:
@@ -233,12 +216,6 @@ jobs:
           channel: master
           cache: false
 
-      - name: Install Fastforge
-        run: dart pub global activate fastforge
-
-      - name: Add path
-        run: echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
-
       - name: Get dependencies
         run: flutter pub get
 
@@ -255,28 +232,17 @@ jobs:
       - name: Build macOS
         env:
           RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
-        run: fastforge release --name production --jobs=release-macos-zip
-
-      - name: Normalize macOS artifact names
-        env:
-          RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
         run: |
+          flutter build macos --release
           version_string="${RELEASE_VERSION#v}"
           version_name="${version_string%%+*}"
-          dist_dir="dist/$version_string"
-          if [ ! -d "$dist_dir" ] && [ -d dist ]; then
-            dist_dir="$(find dist -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)"
-          fi
-          [ -n "$dist_dir" ] && [ -d "$dist_dir" ] || exit 0
-
-          for artifact in "$dist_dir"/*; do
-            [ -e "$artifact" ] || continue
-            filename="$(basename "$artifact")"
-            target="$dist_dir/${filename//$version_string/$version_name}"
-            if [ "$target" != "$artifact" ]; then
-              mv "$artifact" "$target"
-            fi
-          done
+          app_path="build/macos/Build/Products/Release/Fluent Lyrics.app"
+          [ -d "$app_path" ] || {
+            echo "macOS app bundle was not produced." >&2
+            exit 1
+          }
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" "dist/fluent_lyrics-${version_name}-macos.zip"
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
