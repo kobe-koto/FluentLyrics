@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         applicationId = "cc.koto.fluent_lyrics"
-        minSdk = 28
+        minSdk = 24
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName

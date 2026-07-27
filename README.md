@@ -25,6 +25,8 @@ The main interface.
 - Linux
    - retrieve now-playing metadata via the MPRIS D‑Bus interface.
 - Android
+   - requires Android 7.0 (API 24) or later.
+   - currently tested only on Android 15 and later.
 - macOS
    - obtain now-playing metadata via the [MediaRemote adapter](https://github.com/ungive/mediaremote-adapter)
 
