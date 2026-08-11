@@ -452,6 +452,8 @@ class Translations$about$diagnosticsPage$zh_TW extends Translations$about$diagno
 	@override String get automaticCopySuccess => '自檢資訊已自動複製';
 	@override String get automaticCopyFailed => '自動複製失敗，請點擊按鈕重試';
 	@override String get copyFailed => '無法複製自檢資訊';
+	@override String get includeConfiguration => '包含目前設定';
+	@override String get includeConfigurationSubtitle => '包含 provider 順序和應用程式設定，不包含金鑰與檔案路徑';
 }
 
 // Path: lyrics.info

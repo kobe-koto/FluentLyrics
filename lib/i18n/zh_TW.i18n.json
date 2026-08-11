@@ -252,7 +252,9 @@
       "copied": "自檢資訊已複製",
       "automaticCopySuccess": "自檢資訊已自動複製",
       "automaticCopyFailed": "自動複製失敗，請點擊按鈕重試",
-      "copyFailed": "無法複製自檢資訊"
+      "copyFailed": "無法複製自檢資訊",
+      "includeConfiguration": "包含目前設定",
+      "includeConfigurationSubtitle": "包含 provider 順序和應用程式設定，不包含金鑰與檔案路徑"
     },
     "linkUnavailable": "無法開啟此連結",
     "builtWith": "使用 Flutter 建置"

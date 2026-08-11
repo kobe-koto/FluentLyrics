@@ -850,6 +850,12 @@ class Translations$about$diagnosticsPage$en {
 
 	/// en: 'Unable to copy diagnostic info'
 	String get copyFailed => 'Unable to copy diagnostic info';
+
+	/// en: 'Include current configuration'
+	String get includeConfiguration => 'Include current configuration';
+
+	/// en: 'Include provider order and app settings; secrets and file paths are omitted'
+	String get includeConfigurationSubtitle => 'Include provider order and app settings; secrets and file paths are omitted';
 }
 
 // Path: lyrics.info

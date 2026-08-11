@@ -252,7 +252,9 @@
       "copied": "Diagnostic info copied",
       "automaticCopySuccess": "Diagnostic info copied automatically",
       "automaticCopyFailed": "Automatic copy failed; use the button to try again",
-      "copyFailed": "Unable to copy diagnostic info"
+      "copyFailed": "Unable to copy diagnostic info",
+      "includeConfiguration": "Include current configuration",
+      "includeConfigurationSubtitle": "Include provider order and app settings; secrets and file paths are omitted"
     },
     "linkUnavailable": "Unable to open this link",
     "builtWith": "Built with Flutter"

@@ -252,7 +252,9 @@
       "copied": "自检信息已复制",
       "automaticCopySuccess": "自检信息已自动复制",
       "automaticCopyFailed": "自动复制失败，请点击按钮重试",
-      "copyFailed": "无法复制自检信息"
+      "copyFailed": "无法复制自检信息",
+      "includeConfiguration": "包含当前配置",
+      "includeConfigurationSubtitle": "包含 provider 顺序和应用设置，不包含密钥与文件路径"
     },
     "linkUnavailable": "无法打开此链接",
     "builtWith": "使用 Flutter 构建"
