@@ -39,7 +39,7 @@ jobs:
       release_version: ${{ steps.version.outputs.release_version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -102,7 +102,7 @@ jobs:
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -146,7 +146,7 @@ jobs:
           )
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-dist-${{ matrix.arch }}
           path: dist/**/*
@@ -156,7 +156,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' || inputs.build_android }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -197,7 +197,7 @@ jobs:
           bash ./tool/normalize-artifacts/android.sh
 
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-dist
           path: dist/**/*
@@ -207,7 +207,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' || inputs.build_macos }}
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -245,7 +245,7 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent "$app_path" "dist/fluent_lyrics-${version_name}-macos.zip"
 
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macos-dist
           path: dist/**/*
@@ -261,12 +261,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
@@ -301,7 +301,7 @@ jobs:
           bash ./tool/generate-release-notes.sh
 
       - name: Upload Release Artifacts
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.prepare-version.outputs.release_version }}
           prerelease: ${{ needs.prepare-version.outputs.prerelease }}
