@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../i18n/strings.g.dart';
 import '../widgets/settings_scaffold.dart';
+import 'about/providers_screen.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -61,6 +62,10 @@ class _AboutContentState extends State<AboutContent> {
     if (!opened && mounted) {
       _showMessage(t.about.linkUnavailable);
     }
+  }
+
+  void _openScreen(Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 
   void _showMessage(String message) {
@@ -120,38 +125,6 @@ class _AboutContentState extends State<AboutContent> {
             build: packageInfo.buildNumber,
           );
 
-    final providers = [
-      _AboutProvider(
-        icon: Icons.library_music_outlined,
-        name: about.providers.musixmatch.name,
-        description: about.providers.musixmatch.description,
-        uri: Uri.parse('https://www.musixmatch.com/'),
-      ),
-      _AboutProvider(
-        icon: Icons.library_music_outlined,
-        name: about.providers.netease.name,
-        description: about.providers.netease.description,
-        uri: Uri.parse('https://music.163.com/'),
-      ),
-      _AboutProvider(
-        icon: Icons.library_music_outlined,
-        name: about.providers.qqmusic.name,
-        description: about.providers.qqmusic.description,
-        uri: Uri.parse('https://y.qq.com/'),
-      ),
-      _AboutProvider(
-        icon: Icons.lyrics_outlined,
-        name: about.providers.lrclib.name,
-        description: about.providers.lrclib.description,
-        uri: Uri.parse('https://lrclib.net/'),
-      ),
-      _AboutProvider(
-        icon: Icons.auto_awesome_outlined,
-        name: about.providers.llm.name,
-        description: about.providers.llm.description,
-      ),
-    ];
-
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
       child: Center(
@@ -198,15 +171,8 @@ class _AboutContentState extends State<AboutContent> {
                     icon: Icons.library_music_outlined,
                     title: about.lyricsProviders,
                     subtitle: about.lyricsProvidersSubtitle,
-                    onTap: null,
+                    onTap: () => _openScreen(const AboutProvidersScreen()),
                   ),
-                  for (final provider in providers)
-                    _AboutProviderRow(
-                      provider: provider,
-                      onTap: provider.uri == null
-                          ? null
-                          : () => _openExternal(provider.uri!),
-                    ),
                 ],
               ),
               const SizedBox(height: 28),
@@ -361,42 +327,12 @@ class _AboutActionRow extends StatelessWidget {
   }
 }
 
-class _AboutProviderRow extends StatelessWidget {
-  final _AboutProvider provider;
-  final VoidCallback? onTap;
-
-  const _AboutProviderRow({required this.provider, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return _AboutRowSurface(
-      onTap: onTap,
-      leading: Icon(
-        provider.icon,
-        color: Colors.white.withValues(alpha: 0.58),
-        size: 20,
-      ),
-      title: provider.name,
-      subtitle: provider.description,
-      trailing: onTap == null
-          ? null
-          : Icon(
-              Icons.open_in_new_rounded,
-              size: 18,
-              color: Colors.white.withValues(alpha: 0.32),
-            ),
-      dense: true,
-    );
-  }
-}
-
 class _AboutRowSurface extends StatelessWidget {
   final VoidCallback? onTap;
   final Widget leading;
   final String title;
   final String subtitle;
   final Widget? trailing;
-  final bool dense;
 
   const _AboutRowSurface({
     required this.onTap,
@@ -404,16 +340,12 @@ class _AboutRowSurface extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.trailing,
-    this.dense = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final content = Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: dense ? 16 : 18,
-        vertical: dense ? 12 : 15,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
       child: Row(
         children: [
           SizedBox(width: 28, child: Center(child: leading)),
@@ -428,7 +360,7 @@ class _AboutRowSurface extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.88),
-                    fontSize: dense ? 14 : 15,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -470,18 +402,4 @@ class _AboutRowSurface extends StatelessWidget {
             ),
     );
   }
-}
-
-class _AboutProvider {
-  final IconData icon;
-  final String name;
-  final String description;
-  final Uri? uri;
-
-  const _AboutProvider({
-    required this.icon,
-    required this.name,
-    required this.description,
-    this.uri,
-  });
 }
