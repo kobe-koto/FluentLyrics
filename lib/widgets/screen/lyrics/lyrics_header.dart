@@ -212,7 +212,7 @@ class LyricsHeader extends StatelessWidget {
                 cacheHeight: cacheSize,
                 errorBuilder: (context, error, stackTrace) {
                   AppLogger.debug('Error loading album art: $error');
-                  return Image.asset('assets/album_art.png', fit: BoxFit.cover);
+                  return Image.asset('assets/album_art_512.webp', fit: BoxFit.cover);
                 },
               );
             },

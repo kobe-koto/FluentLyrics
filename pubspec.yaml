@@ -51,7 +51,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/album_art.png
+    - assets/album_art_512.webp
     - assets/icons/logo-rounded.png
     - assets/fonts/Outfit/OFL.txt
 

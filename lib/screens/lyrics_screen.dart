@@ -433,7 +433,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
         _backgroundPlaceholderColor = _defaultBackgroundPlaceholderColor;
         if (metadata == null) {
           _lastArtUrl = null;
-          _foregroundArtProvider = const AssetImage('assets/album_art.png');
+          _foregroundArtProvider = const AssetImage('assets/album_art_512.webp');
           _backgroundArtProvider = _foregroundArtProvider;
         } else {
           _lastArtUrl = artUrl;
@@ -633,7 +633,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
   ImageProvider _getArtProvider(String? artUrl, MediaService mediaService) {
     if (artUrl == null || artUrl.isEmpty || artUrl == 'fallback') {
-      return const AssetImage('assets/album_art.png');
+      return const AssetImage('assets/album_art_512.webp');
     }
 
     if (artUrl.startsWith('data:')) {
@@ -647,7 +647,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               .trim();
           return MemoryImage(base64Decode(base64String));
         } catch (e) {
-          return const AssetImage('assets/album_art.png');
+          return const AssetImage('assets/album_art_512.webp');
         }
       }
     }
@@ -656,7 +656,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
       try {
         return FileImage(File(Uri.parse(artUrl).toFilePath()));
       } catch (e) {
-        return const AssetImage('assets/album_art.png');
+        return const AssetImage('assets/album_art_512.webp');
       }
     }
 
@@ -664,14 +664,14 @@ class _LyricsScreenState extends State<LyricsScreen> {
       try {
         return FileImage(File(artUrl));
       } catch (e) {
-        return const AssetImage('assets/album_art.png');
+        return const AssetImage('assets/album_art_512.webp');
       }
     }
 
     try {
       return CachedNetworkImageProvider(artUrl);
     } catch (e) {
-      return const AssetImage('assets/album_art.png');
+      return const AssetImage('assets/album_art_512.webp');
     }
   }
 
@@ -752,7 +752,7 @@ class _BackgroundSection extends StatelessWidget {
         final bgArt =
             getBackgroundArt() ??
             getForegroundArt() ??
-            const AssetImage('assets/album_art.png');
+            const AssetImage('assets/album_art_512.webp');
         return LyricsBackground(
           artProvider: bgArt,
           motionEnabled: s.motion,
@@ -795,7 +795,7 @@ class _HeaderSection extends StatelessWidget {
           prev.candidatesLen != next.candidatesLen,
       builder: (context, _, _) {
         final fg =
-            getForegroundArt() ?? const AssetImage('assets/album_art.png');
+            getForegroundArt() ?? const AssetImage('assets/album_art_512.webp');
         return LyricsHeader(
           provider: provider,
           artProvider: fg,
