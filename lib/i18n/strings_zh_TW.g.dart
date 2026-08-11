@@ -75,7 +75,6 @@ class Translations$settings$zh_TW extends Translations$settings$en {
 
 	// Translations
 	@override String get title => '設定';
-	@override String get preferences => '偏好設定';
 	@override late final Translations$settings$language$zh_TW language = Translations$settings$language$zh_TW.internal(_root);
 	@override late final Translations$settings$destinations$zh_TW destinations = Translations$settings$destinations$zh_TW.internal(_root);
 	@override late final Translations$settings$display$zh_TW display = Translations$settings$display$zh_TW.internal(_root);

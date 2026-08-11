@@ -94,9 +94,6 @@ class Translations$settings$en {
 	/// en: 'Settings'
 	String get title => 'Settings';
 
-	/// en: 'Preferences'
-	String get preferences => 'Preferences';
-
 	late final Translations$settings$language$en language = Translations$settings$language$en.internal(_root);
 	late final Translations$settings$destinations$en destinations = Translations$settings$destinations$en.internal(_root);
 	late final Translations$settings$display$en display = Translations$settings$display$en.internal(_root);

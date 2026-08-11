@@ -41,23 +41,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildCompactLayout(BuildContext context, Translations i18n) {
-    return ListView(
+    return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      children: [
-        for (final destination in _SettingsDestination.values)
-          _SettingsEntry(
-            destination: destination,
-            i18n: i18n,
-            selected: false,
-            showAccentBar: false,
-            trailing: Icon(
-              Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.3),
-            ),
-            onTap: () => _push(context, destination.screen),
+      itemCount: _SettingsDestination.values.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final destination = _SettingsDestination.values[index];
+        return _SettingsEntry(
+          destination: destination,
+          i18n: i18n,
+          selected: false,
+          showAccentBar: false,
+          trailing: Icon(
+            Icons.chevron_right,
+            color: Colors.white.withValues(alpha: 0.3),
           ),
-        const SizedBox(height: 16),
-      ],
+          onTap: () => _push(context, destination.screen),
+        );
+      },
     );
   }
 
@@ -73,58 +74,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.04),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.06),
-                      ),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
-                          child: Text(
-                            i18n.settings.preferences,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            clipBehavior: Clip.antiAlias,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: ListView.separated(
-                              itemCount: _SettingsDestination.values.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(height: 6),
-                              itemBuilder: (context, index) {
-                                final item = _SettingsDestination.values[index];
-                                return _SettingsEntry(
-                                  destination: item,
-                                  i18n: i18n,
-                                  selected: item == destination,
-                                  showAccentBar: true,
-                                  trailing: null,
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedDestination = item;
-                                    });
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: ScrollConfiguration(
+                      behavior: ScrollConfiguration.of(
+                        context,
+                      ).copyWith(scrollbars: false),
+                      child: ListView.separated(
+                        itemCount: _SettingsDestination.values.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final destination =
+                              _SettingsDestination.values[index];
+                          return _SettingsEntry(
+                            destination: destination,
+                            i18n: i18n,
+                            selected: destination == _selectedDestination,
+                            showAccentBar: true,
+                            trailing: null,
+                            onTap: () {
+                              setState(() {
+                                _selectedDestination = destination;
+                              });
+                            },
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -233,120 +210,117 @@ class _SettingsEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = destination.color;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            decoration: BoxDecoration(
-              color: selected
-                  ? color.withValues(alpha: 0.15)
-                  : Colors.white.withValues(alpha: 0.05),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: selected
+                ? color.withValues(alpha: 0.15)
+                : Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
               borderRadius: BorderRadius.circular(16),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: onTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 16.0,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(destination.icon, color: color, size: 20),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 16.0,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              destination.localizedTitle(i18n),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
+                      child: Icon(destination.icon, color: color, size: 20),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            destination.localizedTitle(i18n),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              destination.localizedSubtitle(i18n),
-                              style: TextStyle(
-                                color: Colors.white.withValues(
-                                  alpha: selected ? 0.72 : 0.4,
-                                ),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            destination.localizedSubtitle(i18n),
+                            style: TextStyle(
+                              color: Colors.white.withValues(
+                                alpha: selected ? 0.72 : 0.4,
                               ),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      ?trailing,
-                    ],
-                  ),
+                    ),
+                    ?trailing,
+                  ],
                 ),
               ),
             ),
           ),
-          if (showAccentBar)
-            Positioned(
-              left: -4,
-              top: 12,
-              bottom: 12,
-              child: IgnorePointer(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: ScaleTransition(
-                        scale: Tween<double>(
-                          begin: 0.4,
-                          end: 1.0,
-                        ).animate(animation),
-                        alignment: Alignment.centerLeft,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: selected
-                      ? Container(
-                          key: const ValueKey('bar'),
-                          width: 4,
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.5),
-                                blurRadius: 8,
-                              ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox.shrink(key: ValueKey('empty')),
-                ),
+        ),
+        if (showAccentBar)
+          Positioned(
+            left: -4,
+            top: 12,
+            bottom: 12,
+            child: IgnorePointer(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(
+                      scale: Tween<double>(
+                        begin: 0.4,
+                        end: 1.0,
+                      ).animate(animation),
+                      alignment: Alignment.centerLeft,
+                      child: child,
+                    ),
+                  );
+                },
+                child: selected
+                    ? Container(
+                        key: const ValueKey('bar'),
+                        width: 4,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.5),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(key: ValueKey('empty')),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
