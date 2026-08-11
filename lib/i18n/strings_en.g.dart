@@ -127,8 +127,11 @@ class Translations$about$en {
 	/// en: 'Focused lyrics, synced well'
 	String get tagline => 'Focused lyrics, synced well';
 
-	/// en: 'Version {{version}} (build {{build}})'
-	String version({required Object version, required Object build}) => 'Version ${version} (build ${build})';
+	/// en: 'Version {{version}} + {{build}}'
+	String version({required Object version, required Object build}) => 'Version ${version} + ${build}';
+
+	/// en: 'dev, parent {{version}} + {{build}}'
+	String debugVersion({required Object version, required Object build}) => 'dev, parent ${version} + ${build}';
 
 	/// en: 'Project'
 	String get project => 'Project';

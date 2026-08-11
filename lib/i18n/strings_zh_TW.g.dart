@@ -99,7 +99,8 @@ class Translations$about$zh_TW extends Translations$about$en {
 	@override String get title => '關於';
 	@override String get subtitle => '專案詳情、致謝、授權與連結';
 	@override String get tagline => '專注歌詞，精準同步';
-	@override String version({required Object version, required Object build}) => '版本 ${version}（建置 ${build}）';
+	@override String version({required Object version, required Object build}) => '版本 ${version} + ${build}';
+	@override String debugVersion({required Object version, required Object build}) => '開發版，基於 ${version} + ${build}';
 	@override String get project => '專案';
 	@override String get sourceCode => '原始碼';
 	@override String get sourceCodeSubtitle => '在 GitHub 上瀏覽專案';

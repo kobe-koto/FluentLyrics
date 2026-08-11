@@ -99,7 +99,8 @@ class Translations$about$zh_CN extends Translations$about$en {
 	@override String get title => '关于';
 	@override String get subtitle => '项目详情、致谢、许可证与链接';
 	@override String get tagline => '专注歌词，精准同步';
-	@override String version({required Object version, required Object build}) => '版本 ${version}（构建 ${build}）';
+	@override String version({required Object version, required Object build}) => '版本 ${version} + ${build}';
+	@override String debugVersion({required Object version, required Object build}) => '开发版，基于 ${version} + ${build}';
 	@override String get project => '项目';
 	@override String get sourceCode => '源代码';
 	@override String get sourceCodeSubtitle => '在 GitHub 上浏览项目';
