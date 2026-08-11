@@ -53,6 +53,7 @@ flutter:
   assets:
     - assets/album_art.png
     - assets/icons/logo-rounded.png
+    - assets/fonts/google/Outfit/OFL.txt
 
   fonts:
     - family: Outfit
