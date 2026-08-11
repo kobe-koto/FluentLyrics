@@ -160,6 +160,8 @@ class Translations$about$en {
 	/// en: 'People who help improve the project'
 	String get contributorsSubtitle => 'People who help improve the project';
 
+	late final Translations$about$contributorsPage$en contributorsPage = Translations$about$contributorsPage$en.internal(_root);
+
 	/// en: 'Lyrics providers'
 	String get lyricsProviders => 'Lyrics providers';
 
@@ -784,6 +786,27 @@ class Translations$settings$version$en {
 
 	/// en: 'Fluent Lyrics {{version}}'
 	String label({required Object version}) => 'Fluent Lyrics ${version}';
+}
+
+// Path: about.contributorsPage
+class Translations$about$contributorsPage$en {
+	Translations$about$contributorsPage$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Unable to load contributors from GitHub'
+	String get loadFailed => 'Unable to load contributors from GitHub';
+
+	/// en: 'Try again'
+	String get retry => 'Try again';
+
+	/// en: 'No contributors found'
+	String get empty => 'No contributors found';
+
+	/// en: '{{count}} contributions'
+	String contributions({required Object count}) => '${count} contributions';
 }
 
 // Path: about.providers

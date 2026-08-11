@@ -110,6 +110,7 @@ class Translations$about$zh_CN extends Translations$about$en {
 	@override String get credits => '致谢与歌词源';
 	@override String get contributors => '贡献者';
 	@override String get contributorsSubtitle => '帮助改进项目的朋友们';
+	@override late final Translations$about$contributorsPage$zh_CN contributorsPage = Translations$about$contributorsPage$zh_CN.internal(_root);
 	@override String get lyricsProviders => '歌词源';
 	@override String get lyricsProvidersSubtitle => 'Fluent Lyrics 使用的服务';
 	@override late final Translations$about$providers$zh_CN providers = Translations$about$providers$zh_CN.internal(_root);
@@ -408,6 +409,19 @@ class Translations$settings$version$zh_CN extends Translations$settings$version$
 
 	// Translations
 	@override String label({required Object version}) => 'Fluent Lyrics ${version}';
+}
+
+// Path: about.contributorsPage
+class Translations$about$contributorsPage$zh_CN extends Translations$about$contributorsPage$en {
+	Translations$about$contributorsPage$zh_CN.internal(TranslationsZhCn root) : this._root = root, super.internal(root);
+
+	final TranslationsZhCn _root; // ignore: unused_field
+
+	// Translations
+	@override String get loadFailed => '无法从 GitHub 获取贡献者';
+	@override String get retry => '重试';
+	@override String get empty => '暂无贡献者';
+	@override String contributions({required Object count}) => '${count} 次贡献';
 }
 
 // Path: about.providers

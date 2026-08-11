@@ -210,6 +210,12 @@
     "credits": "致谢与歌词源",
     "contributors": "贡献者",
     "contributorsSubtitle": "帮助改进项目的朋友们",
+    "contributorsPage": {
+      "loadFailed": "无法从 GitHub 获取贡献者",
+      "retry": "重试",
+      "empty": "暂无贡献者",
+      "contributions": "{{count}} 次贡献"
+    },
     "lyricsProviders": "歌词源",
     "lyricsProvidersSubtitle": "Fluent Lyrics 使用的服务",
     "providers": {

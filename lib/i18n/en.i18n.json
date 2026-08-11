@@ -210,6 +210,12 @@
     "credits": "Credits & Providers",
     "contributors": "Contributors",
     "contributorsSubtitle": "People who help improve the project",
+    "contributorsPage": {
+      "loadFailed": "Unable to load contributors from GitHub",
+      "retry": "Try again",
+      "empty": "No contributors found",
+      "contributions": "{{count}} contributions"
+    },
     "lyricsProviders": "Lyrics providers",
     "lyricsProvidersSubtitle": "Services used by Fluent Lyrics",
     "providers": {

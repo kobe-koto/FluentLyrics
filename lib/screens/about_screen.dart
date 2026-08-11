@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../i18n/strings.g.dart';
 import '../widgets/settings_scaffold.dart';
+import 'about/contributors_screen.dart';
 import 'about/providers_screen.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -36,10 +37,6 @@ class _AboutContentState extends State<AboutContent> {
   static final Uri _issueUri = Uri.parse(
     'https://github.com/kobe-koto/FluentLyrics/issues',
   );
-  static final Uri _contributorsUri = Uri.parse(
-    'https://github.com/kobe-koto/FluentLyrics/graphs/contributors',
-  );
-
   PackageInfo? _packageInfo;
 
   @override
@@ -165,7 +162,7 @@ class _AboutContentState extends State<AboutContent> {
                     icon: Icons.people_outline,
                     title: about.contributors,
                     subtitle: about.contributorsSubtitle,
-                    onTap: () => _openExternal(_contributorsUri),
+                    onTap: () => _openScreen(const AboutContributorsScreen()),
                   ),
                   _AboutActionRow(
                     icon: Icons.library_music_outlined,
