@@ -135,7 +135,9 @@ jobs:
           RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
           TARGET_ARCH: ${{ matrix.arch }}
         run: |
-          flutter build linux --release
+          debug_symbols_dir="$GITHUB_WORKSPACE/debug-symbols/linux-${TARGET_ARCH}"
+          mkdir -p "$debug_symbols_dir"
+          flutter build linux --release --split-debug-info="$debug_symbols_dir"
           version_string="${RELEASE_VERSION#v}"
           version_name="${version_string%%+*}"
           bundle_dir="$(find build/linux -type d -path '*/release/bundle' -print -quit)"
@@ -154,6 +156,13 @@ jobs:
         with:
           name: linux-dist-${{ matrix.arch }}
           path: dist/**/*
+
+      - name: Upload Linux debug symbols
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-debug-symbols-${{ matrix.arch }}
+          path: debug-symbols
+          if-no-files-found: error
 
   build-android:
     needs: prepare-version
@@ -201,8 +210,10 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/android/upload-keystore.jks
+          DEBUG_SYMBOLS_DIR: ${{ github.workspace }}/debug-symbols/android
         run: |
-          flutter build apk --release --split-per-abi
+          mkdir -p "$DEBUG_SYMBOLS_DIR"
+          flutter build apk --release --split-per-abi --split-debug-info="$DEBUG_SYMBOLS_DIR"
 
       - name: Normalize Android artifact names
         env:
@@ -215,6 +226,13 @@ jobs:
         with:
           name: android-dist
           path: dist/**/*
+
+      - name: Upload Android debug symbols
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-debug-symbols
+          path: debug-symbols
+          if-no-files-found: error
 
   build-macos:
     needs: prepare-version
@@ -250,8 +268,10 @@ jobs:
       - name: Build macOS
         env:
           RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
+          DEBUG_SYMBOLS_DIR: ${{ github.workspace }}/debug-symbols/macos
         run: |
-          flutter build macos --release
+          mkdir -p "$DEBUG_SYMBOLS_DIR"
+          flutter build macos --release --split-debug-info="$DEBUG_SYMBOLS_DIR"
           version_string="${RELEASE_VERSION#v}"
           version_name="${version_string%%+*}"
           app_path="build/macos/Build/Products/Release/Fluent Lyrics.app"
@@ -267,6 +287,13 @@ jobs:
         with:
           name: macos-dist
           path: dist/**/*
+
+      - name: Upload macOS debug symbols
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-debug-symbols
+          path: debug-symbols
+          if-no-files-found: error
 
   release:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' }}
@@ -286,8 +313,28 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v8
         with:
+          pattern: '*-dist*'
           path: dist
           merge-multiple: true
+
+      - name: Download debug symbols
+        uses: actions/download-artifact@v8
+        with:
+          pattern: '*-debug-symbols*'
+          path: debug-symbols
+          merge-multiple: true
+
+      - name: Package debug symbols
+        env:
+          RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
+        run: |
+          version_string="${RELEASE_VERSION#v}"
+          version_name="${version_string%%+*}"
+          mkdir -p dist
+          (
+            cd debug-symbols
+            zip -qr "$GITHUB_WORKSPACE/dist/fluent_lyrics-${version_name}-debug-symbols.zip" .
+          )
 
       - name: Create unstable tag
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'Release Unstable' }}
