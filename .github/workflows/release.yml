@@ -118,7 +118,7 @@ jobs:
           cache: false
 
       - name: Predownload flutter artifacts
-        run: flutter doctor
+        run: flutter doctor -v
 
       - name: Get flutter dependencies
         run: flutter pub get
@@ -171,7 +171,7 @@ jobs:
           cache: false
 
       - name: Predownload flutter artifacts
-        run: flutter doctor
+        run: flutter doctor -v
 
       - name: Get flutter dependencies
         run: flutter pub get
@@ -226,7 +226,7 @@ jobs:
           cache: false
 
       - name: Predownload flutter artifacts
-        run: flutter doctor
+        run: flutter doctor -v
 
       - name: Get flutter dependencies
         run: flutter pub get
