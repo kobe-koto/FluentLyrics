@@ -53,12 +53,12 @@ flutter:
   assets:
     - assets/album_art.png
     - assets/icons/logo-rounded.png
-    - assets/fonts/google/Outfit/OFL.txt
+    - assets/fonts/Outfit/OFL.txt
 
   fonts:
     - family: Outfit
       fonts:
-        - asset: assets/fonts/google/Outfit/VariableFont_wght.ttf
+        - asset: assets/fonts/Outfit/VariableFont_wght.ttf
 
 flutter_launcher_icons:
   android: "launcher_icon"

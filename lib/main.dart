@@ -25,9 +25,9 @@ Future<void> main() async {
   HttpOverrides.global = MyHttpOverrides();
   LicenseRegistry.addLicense(() async* {
     final String license = await rootBundle.loadString(
-      'assets/fonts/google/Outfit/OFL.txt',
+      'assets/fonts/Outfit/OFL.txt',
     );
-    yield LicenseEntryWithLineBreaks(<String>['Outfit font'], license);
+    yield LicenseEntryWithLineBreaks(<String>['Outfit (font)'], license);
   });
 
   // Create the provider eagerly so the tray bridge can subscribe to it before
