@@ -333,6 +333,9 @@ class MusixmatchService {
       final translationsList = transBody?['translations_list'] as List?;
 
       if (translationsList == null || translationsList.isEmpty) {
+        AppLogger.debug(
+          '[Musixmatch] No translations found for track $trackId in language $language',
+        );
         return LyricsResult.empty();
       }
 
