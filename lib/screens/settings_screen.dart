@@ -97,25 +97,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                         Expanded(
-                          child: ListView.separated(
-                            itemCount: _SettingsDestination.values.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(height: 6),
-                            itemBuilder: (context, index) {
-                              final item = _SettingsDestination.values[index];
-                              return _SettingsEntry(
-                                destination: item,
-                                i18n: i18n,
-                                selected: item == destination,
-                                showAccentBar: true,
-                                trailing: null,
-                                onTap: () {
-                                  setState(() {
-                                    _selectedDestination = item;
-                                  });
-                                },
-                              );
-                            },
+                          child: Container(
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: ListView.separated(
+                              itemCount: _SettingsDestination.values.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 6),
+                              itemBuilder: (context, index) {
+                                final item = _SettingsDestination.values[index];
+                                return _SettingsEntry(
+                                  destination: item,
+                                  i18n: i18n,
+                                  selected: item == destination,
+                                  showAccentBar: true,
+                                  trailing: null,
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedDestination = item;
+                                    });
+                                  },
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ],
