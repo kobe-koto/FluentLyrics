@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 import '../i18n/strings.g.dart';
 import '../widgets/settings_scaffold.dart';
 import 'about_screen.dart';
-import '../widgets/screen/settings/version_section.dart';
 import 'settings/priority_screen.dart';
 import 'settings/display_screen.dart';
 import 'settings/translation_screen.dart';
@@ -22,19 +20,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  String _version = '';
   _SettingsDestination _selectedDestination = _SettingsDestination.priority;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadVersion();
-  }
-
-  Future<void> _loadVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    setState(() => _version = packageInfo.version);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,8 +56,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             onTap: () => _push(context, destination.screen),
           ),
-        const SizedBox(height: 32),
-        if (_version.isNotEmpty) VersionSection(version: _version),
         const SizedBox(height: 16),
       ],
     );
@@ -138,10 +122,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
-                if (_version.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  VersionSection(version: _version),
-                ],
               ],
             ),
           ),
