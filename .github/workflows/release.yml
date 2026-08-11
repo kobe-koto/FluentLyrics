@@ -164,6 +164,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Use Java 21
+        run: |
+          export JAVA_HOME="$JAVA_HOME_21_X64"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          java -version
+
       - uses: subosito/flutter-action@v2
         with:
           channel: master
