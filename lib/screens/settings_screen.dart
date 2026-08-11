@@ -8,7 +8,6 @@ import 'settings/display_screen.dart';
 import 'settings/translation_screen.dart';
 import 'settings/lyric_configuration_screen.dart';
 import 'settings/cache_screen.dart';
-import 'settings/experimental_screen.dart';
 import 'settings/misc_screen.dart';
 import 'settings/language_screen.dart';
 
@@ -356,12 +355,6 @@ enum _SettingsDestination {
     screen: CacheScreen(),
     content: CacheSettingsContent(),
   ),
-  experimental(
-    icon: Icons.science,
-    color: Colors.amber,
-    screen: ExperimentalScreen(),
-    content: ExperimentalSettingsContent(),
-  ),
   misc(
     icon: Icons.tune,
     color: Colors.green,
@@ -400,7 +393,6 @@ enum _SettingsDestination {
       translation => t.settings.destinations.translation.title,
       lyricConfiguration => t.settings.destinations.lyricConfiguration.title,
       cache => t.settings.destinations.cache.title,
-      experimental => t.settings.destinations.experimental.title,
       misc => t.settings.destinations.misc.title,
       language => t.settings.language.title,
       about => t.about.title,
@@ -414,7 +406,6 @@ enum _SettingsDestination {
       translation => t.settings.destinations.translation.subtitle,
       lyricConfiguration => t.settings.destinations.lyricConfiguration.subtitle,
       cache => t.settings.destinations.cache.subtitle,
-      experimental => t.settings.destinations.experimental.subtitle,
       misc => t.settings.destinations.misc.subtitle,
       language => t.settings.language.subtitle,
       about => t.about.subtitle,

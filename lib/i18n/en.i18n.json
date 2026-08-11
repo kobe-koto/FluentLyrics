@@ -38,10 +38,6 @@
         "title": "Cache Management",
         "subtitle": "Clear lyrics and artwork cache"
       },
-      "experimental": {
-        "title": "Experimental",
-        "subtitle": "Unstable features and fixes"
-      },
       "misc": {
         "title": "Misc",
         "subtitle": "System tray and other miscellaneous options"

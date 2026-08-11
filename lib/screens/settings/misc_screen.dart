@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/settings_scaffold.dart';
+import '../../widgets/screen/settings/experimental_section.dart';
 import '../../widgets/screen/settings/misc_section.dart';
 
 class MiscScreen extends StatelessWidget {
@@ -22,7 +23,9 @@ class MiscSettingsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SingleChildScrollView(
       padding: EdgeInsets.all(24.0),
-      child: MiscSection(),
+      child: Column(
+        children: [MiscSection(), SizedBox(height: 24), ExperimentalSection()],
+      ),
     );
   }
 }

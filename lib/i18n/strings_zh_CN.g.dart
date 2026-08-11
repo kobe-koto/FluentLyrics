@@ -212,7 +212,6 @@ class Translations$settings$destinations$zh_CN extends Translations$settings$des
 	@override late final Translations$settings$destinations$translation$zh_CN translation = Translations$settings$destinations$translation$zh_CN.internal(_root);
 	@override late final Translations$settings$destinations$lyricConfiguration$zh_CN lyricConfiguration = Translations$settings$destinations$lyricConfiguration$zh_CN.internal(_root);
 	@override late final Translations$settings$destinations$cache$zh_CN cache = Translations$settings$destinations$cache$zh_CN.internal(_root);
-	@override late final Translations$settings$destinations$experimental$zh_CN experimental = Translations$settings$destinations$experimental$zh_CN.internal(_root);
 	@override late final Translations$settings$destinations$misc$zh_CN misc = Translations$settings$destinations$misc$zh_CN.internal(_root);
 }
 
@@ -525,17 +524,6 @@ class Translations$settings$destinations$cache$zh_CN extends Translations$settin
 	// Translations
 	@override String get title => '缓存管理';
 	@override String get subtitle => '清理歌词与封面缓存';
-}
-
-// Path: settings.destinations.experimental
-class Translations$settings$destinations$experimental$zh_CN extends Translations$settings$destinations$experimental$en {
-	Translations$settings$destinations$experimental$zh_CN.internal(TranslationsZhCn root) : this._root = root, super.internal(root);
-
-	final TranslationsZhCn _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '实验性';
-	@override String get subtitle => '不稳定的功能与修复';
 }
 
 // Path: settings.destinations.misc

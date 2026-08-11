@@ -38,10 +38,6 @@
         "title": "快取管理",
         "subtitle": "清除歌詞與封面快取"
       },
-      "experimental": {
-        "title": "實驗性",
-        "subtitle": "不穩定的功能與修正"
-      },
       "misc": {
         "title": "雜項",
         "subtitle": "系統匣與其他雜項選項"

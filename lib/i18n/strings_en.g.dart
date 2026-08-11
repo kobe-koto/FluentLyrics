@@ -361,7 +361,6 @@ class Translations$settings$destinations$en {
 	late final Translations$settings$destinations$translation$en translation = Translations$settings$destinations$translation$en.internal(_root);
 	late final Translations$settings$destinations$lyricConfiguration$en lyricConfiguration = Translations$settings$destinations$lyricConfiguration$en.internal(_root);
 	late final Translations$settings$destinations$cache$en cache = Translations$settings$destinations$cache$en.internal(_root);
-	late final Translations$settings$destinations$experimental$en experimental = Translations$settings$destinations$experimental$en.internal(_root);
 	late final Translations$settings$destinations$misc$en misc = Translations$settings$destinations$misc$en.internal(_root);
 }
 
@@ -961,21 +960,6 @@ class Translations$settings$destinations$cache$en {
 
 	/// en: 'Clear lyrics and artwork cache'
 	String get subtitle => 'Clear lyrics and artwork cache';
-}
-
-// Path: settings.destinations.experimental
-class Translations$settings$destinations$experimental$en {
-	Translations$settings$destinations$experimental$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Experimental'
-	String get title => 'Experimental';
-
-	/// en: 'Unstable features and fixes'
-	String get subtitle => 'Unstable features and fixes';
 }
 
 // Path: settings.destinations.misc

@@ -212,7 +212,6 @@ class Translations$settings$destinations$zh_TW extends Translations$settings$des
 	@override late final Translations$settings$destinations$translation$zh_TW translation = Translations$settings$destinations$translation$zh_TW.internal(_root);
 	@override late final Translations$settings$destinations$lyricConfiguration$zh_TW lyricConfiguration = Translations$settings$destinations$lyricConfiguration$zh_TW.internal(_root);
 	@override late final Translations$settings$destinations$cache$zh_TW cache = Translations$settings$destinations$cache$zh_TW.internal(_root);
-	@override late final Translations$settings$destinations$experimental$zh_TW experimental = Translations$settings$destinations$experimental$zh_TW.internal(_root);
 	@override late final Translations$settings$destinations$misc$zh_TW misc = Translations$settings$destinations$misc$zh_TW.internal(_root);
 }
 
@@ -525,17 +524,6 @@ class Translations$settings$destinations$cache$zh_TW extends Translations$settin
 	// Translations
 	@override String get title => '快取管理';
 	@override String get subtitle => '清除歌詞與封面快取';
-}
-
-// Path: settings.destinations.experimental
-class Translations$settings$destinations$experimental$zh_TW extends Translations$settings$destinations$experimental$en {
-	Translations$settings$destinations$experimental$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
-
-	final TranslationsZhTw _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '實驗性';
-	@override String get subtitle => '不穩定的功能與修正';
 }
 
 // Path: settings.destinations.misc

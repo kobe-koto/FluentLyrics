@@ -38,10 +38,6 @@
         "title": "缓存管理",
         "subtitle": "清理歌词与封面缓存"
       },
-      "experimental": {
-        "title": "实验性",
-        "subtitle": "不稳定的功能与修复"
-      },
       "misc": {
         "title": "杂项",
         "subtitle": "系统托盘及其他杂项选项"
