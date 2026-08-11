@@ -116,7 +116,10 @@ jobs:
           channel: master
           cache: false
 
-      - name: Get dependencies
+      - name: Predownload flutter artifacts
+        run: flutter doctor
+
+      - name: Get flutter dependencies
         run: flutter pub get
 
       - name: Set release version
@@ -165,7 +168,10 @@ jobs:
           channel: master
           cache: false
 
-      - name: Get dependencies
+      - name: Predownload flutter artifacts
+        run: flutter doctor
+
+      - name: Get flutter dependencies
         run: flutter pub get
 
       - name: Set release version
@@ -216,7 +222,10 @@ jobs:
           channel: master
           cache: false
 
-      - name: Get dependencies
+      - name: Predownload flutter artifacts
+        run: flutter doctor
+
+      - name: Get flutter dependencies
         run: flutter pub get
 
       - name: Set release version
