@@ -143,7 +143,7 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
       'Translation bias: ${settings.translationBias.current} ms',
       'Translation alignment threshold: ${settings.translationAlignmentThreshold.current}%',
       'Translation coverage threshold: ${settings.translationCoverageThreshold.current}%',
-      'LLM endpoint: ${_safeEndpoint(settings.llmApiEndpoint.current)}',
+      'LLM endpoint is default: ${settings.llmApiEndpoint.current == AppDefaults.llmApiEndpoint}',
       'LLM model: ${settings.llmModel.current}',
       'LLM reasoning effort: ${settings.llmReasoningEffort.current}',
       'LLM API key configured: $apiKeyConfigured',
@@ -165,16 +165,6 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
   String _formatValues(List<String> values) {
     if (values.isEmpty) return '<none>';
     return values.join(', ');
-  }
-
-  String _safeEndpoint(String endpoint) {
-    final uri = Uri.tryParse(endpoint);
-    if (uri == null || uri.host.isEmpty) {
-      return endpoint.isEmpty ? '<not set>' : '<configured>';
-    }
-
-    final port = uri.hasPort ? ':${uri.port}' : '';
-    return '${uri.scheme}://${uri.host}$port';
   }
 
   Future<void> _copyToClipboard({required bool automatic}) async {
