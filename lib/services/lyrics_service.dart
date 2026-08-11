@@ -328,44 +328,52 @@ class LyricsService {
       }
     }
 
-    // check online
-    // Iterate translation providers
-    LyricsResult? transResult;
-    for (var targetLanguage in targetLanguages) {
-      if (bestResult.language == targetLanguage) {
-        AppLogger.debug(
-          '[LyricsService.fetchTranslation]   ==> Target language matches source language, skipping $targetLanguage',
-        );
-        continue;
-      }
+    final translationProviders = refetchTargets == null
+        ? priority
+        : refetchTargets.keys;
 
-      if (cacheEnabled && !skipCacheLookup) {
-        AppLogger.debug(
-          '[LyricsService.fetchTranslation]   ==> Checking cache for $targetLanguage',
-        );
-        final cacheId = _cacheService.generateTranslationCacheId(
-          title,
-          artist,
-          targetLanguage,
-        );
-        transResult = await _cacheService.getCachedTranslation(cacheId);
-        if (transResult != null) {
-          if (_isSkippedTranslation(transResult)) {
+    // Provider priority is the outer loop. Cache is inserted first by
+    // SettingsService and acts as a short-circuit: one valid cached result
+    // ends this request, while a complete cache miss falls through to the
+    // next provider.
+    for (var tProvider in translationProviders) {
+      if (isCancelled?.call() == true) return;
+
+      AppLogger.debug(
+        '[LyricsService.fetchTranslation]   ==> Processing provider ${tProvider.metadata['name']}',
+      );
+
+      if (tProvider == LyricProviderType.cache) {
+        if (!cacheEnabled || skipCacheLookup || refetchTargets != null) {
+          continue;
+        }
+
+        for (var targetLanguage in targetLanguages) {
+          if (bestResult.language == targetLanguage) {
             AppLogger.debug(
-              '[LyricsService.fetchTranslation]     ==> Found cached skipped $targetLanguage',
+              '[LyricsService.fetchTranslation]     ==> Target language matches source language, skipping $targetLanguage',
             );
-            transResult = transResult.copyWith(
-              translationProvider:
-                  '${transResult.translationProvider} (cached)',
-            );
-            if (_shouldYield(transResult) && !isYielded) {
-              isYielded = true;
-              yield transResult;
-            }
             continue;
           }
 
-          if (!_matchesCurrentLyrics(
+          if (isCancelled?.call() == true) return;
+
+          AppLogger.debug(
+            '[LyricsService.fetchTranslation]     ==> Checking cache for $targetLanguage',
+          );
+          final cacheId = _cacheService.generateTranslationCacheId(
+            title,
+            artist,
+            targetLanguage,
+          );
+          var transResult = await _cacheService.getCachedTranslation(cacheId);
+          if (transResult == null) continue;
+
+          if (_isSkippedTranslation(transResult)) {
+            AppLogger.debug(
+              '[LyricsService.fetchTranslation]       ==> Found cached skipped $targetLanguage',
+            );
+          } else if (!_matchesCurrentLyrics(
             transResult,
             originalSourceProvider,
             bestResult.lyrics,
@@ -373,61 +381,61 @@ class LyricsService {
             translationAlignmentThreshold,
           )) {
             AppLogger.debug(
-              '[LyricsService.fetchTranslation]     ==> Cached $targetLanguage does not match current lyrics, refetching',
+              '[LyricsService.fetchTranslation]       ==> Cached $targetLanguage does not match current lyrics, treating as miss',
             );
-            transResult = null;
+            continue;
           } else {
             AppLogger.debug(
-              '[LyricsService.fetchTranslation]     ==> Found cached $targetLanguage',
+              '[LyricsService.fetchTranslation]       ==> Found cached $targetLanguage',
             );
-            transResult = transResult.copyWith(
-              translationProvider:
-                  '${transResult.translationProvider} (cached)',
-            );
-            if (_isCandidate(transResult)) {
-              onTranslationCandidate?.call(transResult);
-            }
-            if (_shouldYield(transResult) && !isYielded) {
-              isYielded = true;
-              yield transResult;
-            }
-            continue;
+          }
+
+          transResult = transResult.copyWith(
+            translationProvider: '${transResult.translationProvider} (cached)',
+          );
+          if (_isCandidate(transResult)) {
+            onTranslationCandidate?.call(transResult);
+          }
+          if (_shouldYield(transResult)) {
+            isYielded = true;
+            yield transResult;
+            return;
           }
         }
+
+        AppLogger.debug(
+          '[LyricsService.fetchTranslation]     ==> [!] Cache missed all target languages',
+        );
+        continue;
       }
 
-      AppLogger.debug(
-        '[LyricsService.fetchTranslation]   ==> Checking providers for $targetLanguage',
-      );
-      final translationProviders = refetchTargets == null
-          ? priority
-          : refetchTargets.entries
-                .where((entry) => entry.value.contains(targetLanguage))
-                .map((entry) => entry.key);
+      final providerTargetLanguages = refetchTargets == null
+          ? targetLanguages
+          : (refetchTargets[tProvider] ?? const <String>{});
 
-      for (var tProvider in translationProviders) {
-        // break if cancelled
-        if (isCancelled?.call() == true) return;
-        // cache is checked before, ignore
-        if (tProvider == LyricProviderType.cache) continue;
-
-        // reset transResult
-        transResult = null;
-
-        final source = _sourceRegistry.sourceFor(tProvider);
-
-        // supported?
-        if (source == null || !source.checkTranslationSupport(targetLanguage)) {
+      for (var targetLanguage in providerTargetLanguages) {
+        if (bestResult.language == targetLanguage) {
           AppLogger.debug(
-            '[LyricsService.fetchTranslation]     ==> [!] Unsupported provider: $tProvider',
+            '[LyricsService.fetchTranslation]       ==> Target language matches source language, skipping $targetLanguage',
           );
           continue;
         }
-        // try fetch
+
+        if (isCancelled?.call() == true) return;
+
+        final source = _sourceRegistry.sourceFor(tProvider);
+        if (source == null || !source.checkTranslationSupport(targetLanguage)) {
+          // silence it
+          // AppLogger.debug(
+          //   '[LyricsService.fetchTranslation]     ==> [!] Provider doesn\'t support translation for $targetLanguage',
+          // );
+          continue;
+        }
+
         AppLogger.debug(
-          '[LyricsService.fetchTranslation]     ==> Fetching from ${tProvider.metadata['name']}',
+          '[LyricsService.fetchTranslation]     ==> Fetching translation for $targetLanguage',
         );
-        transResult = await source.fetchTranslation(
+        var transResult = await source.fetchTranslation(
           LyricsTranslationRequest(
             data: requestData,
             targetLanguage: targetLanguage,
@@ -437,45 +445,41 @@ class LyricsService {
         transResult = transResult.copyWith(
           sourceProvider: originalSourceProvider,
         );
-        // check if successed (malformed? null?)
+
         final bool usableResult =
             transResult.translation || transResult.source == 'SKIPPED';
-
-        if (usableResult) {
-          // New usable translation found
-          AppLogger.debug(
-            '[LyricsService.fetchTranslation]       ==> New translation received',
-          );
-
-          // cache it if enabled
-          if (cacheEnabled) {
-            AppLogger.debug(
-              '[LyricsService.fetchTranslation]         ==> Caching translation',
-            );
-            final cacheId = _cacheService.generateTranslationCacheId(
-              title,
-              artist,
-              targetLanguage,
-            );
-            await _cacheService.cacheTranslation(cacheId, transResult);
-          }
-
-          // Report as a candidate regardless of cache/first status.
-          if (_isCandidate(transResult)) {
-            onTranslationCandidate?.call(transResult);
-          }
-
-          // Continue to next provider to collect more candidates; only yield
-          // the first successful result for the actual display (auto-pick).
-          if (_shouldYield(transResult) && !isYielded) {
-            isYielded = true;
-            yield transResult;
-          }
-        } else {
+        if (!usableResult) {
           AppLogger.debug(
             '[LyricsService.fetchTranslation]       ==> [!] Failed',
           );
           continue;
+        }
+
+        AppLogger.debug(
+          '[LyricsService.fetchTranslation]       ==> New translation received',
+        );
+
+        if (cacheEnabled) {
+          AppLogger.debug(
+            '[LyricsService.fetchTranslation]         ==> Caching translation',
+          );
+          final cacheId = _cacheService.generateTranslationCacheId(
+            title,
+            artist,
+            targetLanguage,
+          );
+          await _cacheService.cacheTranslation(cacheId, transResult);
+        }
+
+        if (_isCandidate(transResult)) {
+          onTranslationCandidate?.call(transResult);
+        }
+
+        // Keep querying after the first yield so the candidate sheet can show
+        // alternatives from lower-priority providers.
+        if (_shouldYield(transResult) && !isYielded) {
+          isYielded = true;
+          yield transResult;
         }
       }
     }

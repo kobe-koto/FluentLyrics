@@ -72,7 +72,12 @@ class _FakeSettingsService extends SettingsService {
   }
 
   @override
-  Future<List<LyricProviderType>> getPriority() async => priority;
+  Future<List<LyricProviderType>> getPriority() async {
+    if (cacheEnabled && !priority.contains(LyricProviderType.cache)) {
+      return [LyricProviderType.cache, ...priority];
+    }
+    return priority;
+  }
 }
 
 class _FakeLyricsCacheService extends LyricsCacheService {
@@ -148,9 +153,11 @@ void main() {
     );
   }
 
-  test('fetchTranslation yields only the first online result', () async {
+  test('fetchTranslation uses provider priority for online results', () async {
     final service = LyricsService(
-      settingsService: _FakeSettingsService(),
+      settingsService: _FakeSettingsService(
+        targetLanguages: const ['zht', 'zh_CN'],
+      ),
       sourceRegistry: LyricsSourceRegistry(
         sources: [
           _FakeTranslationSource(LyricProviderType.musixmatch, 'Musixmatch'),
@@ -178,71 +185,73 @@ void main() {
 
     expect(results, hasLength(1));
     expect(results.single.translationProvider, 'Musixmatch');
-    expect(candidates, ['Musixmatch', 'Netease Music']);
+    expect(candidates, [
+      'Musixmatch',
+      'Musixmatch',
+      'Netease Music',
+      'Netease Music',
+    ]);
   });
 
-  test(
-    'fetchTranslation keeps target language priority with partial cache',
-    () async {
-      final cacheService = _FakeLyricsCacheService({
-        'zh_CN': LyricsResult(
-          lyrics: const [],
-          source: 'Cache',
-          translation: true,
-          language: 'zh_CN',
-          translationProvider: 'Cache',
-          rawTranslation: const [
-            {'original': 'hello', 'translated': '你好'},
-          ],
-        ),
-      });
-      final onlineRequestedLanguages = <String>[];
-      final candidates = <String>[];
-      final service = LyricsService(
-        settingsService: _FakeSettingsService(
-          cacheEnabled: true,
-          targetLanguages: const ['zht', 'zh_CN'],
-          priority: const [LyricProviderType.musixmatch],
-        ),
-        cacheService: cacheService,
-        sourceRegistry: LyricsSourceRegistry(
-          sources: [
-            _FakeTranslationSource(
-              LyricProviderType.musixmatch,
-              'Musixmatch',
-              requestedLanguages: onlineRequestedLanguages,
-            ),
-          ],
-        ),
-      );
+  test('fetchTranslation stops on the first valid cache hit', () async {
+    final cacheService = _FakeLyricsCacheService({
+      'zh_CN': LyricsResult(
+        lyrics: const [],
+        source: 'Cache',
+        translation: true,
+        language: 'zh_CN',
+        translationProvider: 'Cache',
+        rawTranslation: const [
+          {'original': 'hello', 'translated': '你好'},
+        ],
+      ),
+    });
+    final onlineRequestedLanguages = <String>[];
+    final candidates = <String>[];
+    final service = LyricsService(
+      settingsService: _FakeSettingsService(
+        cacheEnabled: true,
+        targetLanguages: const ['zht', 'zh_CN'],
+        priority: const [LyricProviderType.musixmatch],
+      ),
+      cacheService: cacheService,
+      sourceRegistry: LyricsSourceRegistry(
+        sources: [
+          _FakeTranslationSource(
+            LyricProviderType.musixmatch,
+            'Musixmatch',
+            requestedLanguages: onlineRequestedLanguages,
+          ),
+        ],
+      ),
+    );
 
-      final results = await service
-          .fetchTranslation(
-            bestResult: LyricsResult(
-              lyrics: [lyric('hello', 1)],
-              source: 'lyrics',
-            ),
-            title: 'Song',
-            artist: const ['Artist'],
-            album: 'Album',
-            durationSeconds: 120,
-            onTranslationCandidate: (candidate) {
-              candidates.add(candidate.translationProvider!);
-            },
-          )
-          .toList();
+    final results = await service
+        .fetchTranslation(
+          bestResult: LyricsResult(
+            lyrics: [lyric('hello', 1)],
+            source: 'lyrics',
+          ),
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          durationSeconds: 120,
+          onTranslationCandidate: (candidate) {
+            candidates.add(candidate.translationProvider!);
+          },
+        )
+        .toList();
 
-      expect(cacheService.requestedCacheIds, [
-        LyricsCacheService.manualTranslationSkipLanguage,
-        'zht',
-        'zh_CN',
-      ]);
-      expect(onlineRequestedLanguages, ['zht']);
-      expect(candidates, ['Musixmatch', 'Cache (cached)']);
-      expect(results, hasLength(1));
-      expect(results.single.translationProvider, 'Musixmatch');
-    },
-  );
+    expect(cacheService.requestedCacheIds, [
+      LyricsCacheService.manualTranslationSkipLanguage,
+      'zht',
+      'zh_CN',
+    ]);
+    expect(onlineRequestedLanguages, isEmpty);
+    expect(candidates, ['Cache (cached)']);
+    expect(results, hasLength(1));
+    expect(results.single.translationProvider, 'Cache (cached)');
+  });
 
   test(
     'fetchTranslation skips only the matching source language target',
