@@ -458,16 +458,19 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
     precacheImage(provider, context)
         .then((_) async {
-          if (!mounted || generation != _artLoadGeneration ||
+          if (!mounted ||
+              generation != _artLoadGeneration ||
               _lastArtUrl != url) {
             return;
           }
 
           final minSize = context.read<LyricsProvider>().artworkMinSize.current;
           if (minSize > 0 && url.startsWith('data:')) {
-            final size = await _resolveImageSize(provider)
-                .catchError((_) => Size.zero);
-            if (!mounted || generation != _artLoadGeneration ||
+            final size = await _resolveImageSize(
+              provider,
+            ).catchError((_) => Size.zero);
+            if (!mounted ||
+                generation != _artLoadGeneration ||
                 _lastArtUrl != url) {
               return;
             }

@@ -117,8 +117,7 @@ class DisplaySection extends StatelessWidget {
               valueText: provider.artworkMinSize.current == 0
                   ? 'Off'
                   : '${provider.artworkMinSize.current}px',
-              onChanged: (value) =>
-                  provider.setArtworkMinSize(value.toInt()),
+              onChanged: (value) => provider.setArtworkMinSize(value.toInt()),
               onReset: provider.artworkMinSize.changed
                   ? () => provider.setArtworkMinSize(
                       provider.artworkMinSize.defaultValue,

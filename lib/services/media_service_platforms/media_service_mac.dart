@@ -192,10 +192,10 @@ class MacOSMediaService extends MediaService implements MediaController {
       final interpolated = (_positionAnchorTime != null && _status.isPlaying)
           ? _positionAnchor + now.difference(_positionAnchorTime!)
           : newStatus.position;
-      final isSmallBackward = newStatus.isPlaying &&
+      final isSmallBackward =
+          newStatus.isPlaying &&
           newStatus.position < interpolated &&
-          (interpolated - newStatus.position) <=
-              const Duration(seconds: 1) &&
+          (interpolated - newStatus.position) <= const Duration(seconds: 1) &&
           !trackChanged;
       if (isSmallBackward) {
         newStatus = MediaPlaybackStatus(
