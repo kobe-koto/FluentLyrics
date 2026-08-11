@@ -18,9 +18,9 @@ A desktop lyrics viewer built with Flutter, displays and syncs song lyrics from 
 ## Screenshots
 
 <div style="display: flex; overflow: auto; height: 85vh;">
-<img alt="The main interface" src="https://raw.githubusercontent.com/kobe-koto/FluentLyrics/main/previews/android/main_playing.png" />
-<img alt="The lyrics candidate interface" src="https://raw.githubusercontent.com/kobe-koto/FluentLyrics/main/previews/android/candidate_lyrics.png" />
-<img alt="The settings interface" src="https://raw.githubusercontent.com/kobe-koto/FluentLyrics/main/previews/android/settings_main.png" />
+<img style="height: 85vh;" alt="The main interface" src="https://raw.githubusercontent.com/kobe-koto/FluentLyrics/main/previews/android/main_playing.png" />
+<img style="height: 85vh;" alt="The lyrics candidate interface" src="https://raw.githubusercontent.com/kobe-koto/FluentLyrics/main/previews/android/candidate_lyrics.png" />
+<img style="height: 85vh;" alt="The settings interface" src="https://raw.githubusercontent.com/kobe-koto/FluentLyrics/main/previews/android/settings_main.png" />
 </div>
 
 
