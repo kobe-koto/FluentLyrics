@@ -38,6 +38,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$language$en language = Translations$language$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
+	late final Translations$about$en about = Translations$about$en.internal(_root);
 	late final Translations$lyrics$en lyrics = Translations$lyrics$en.internal(_root);
 	late final Translations$permission$en permission = Translations$permission$en.internal(_root);
 	late final Translations$candidateSheet$en candidateSheet = Translations$candidateSheet$en.internal(_root);
@@ -107,6 +108,89 @@ class Translations$settings$en {
 	late final Translations$settings$misc$en misc = Translations$settings$misc$en.internal(_root);
 	late final Translations$settings$appBar$en appBar = Translations$settings$appBar$en.internal(_root);
 	late final Translations$settings$version$en version = Translations$settings$version$en.internal(_root);
+}
+
+// Path: about
+class Translations$about$en {
+	Translations$about$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'About'
+	String get title => 'About';
+
+	/// en: 'Project details, credits, licenses, and links'
+	String get subtitle => 'Project details, credits, licenses, and links';
+
+	/// en: 'Focused lyrics, synced well'
+	String get tagline => 'Focused lyrics, synced well';
+
+	/// en: 'Version {{version}} (build {{build}})'
+	String version({required Object version, required Object build}) => 'Version ${version} (build ${build})';
+
+	/// en: 'Project'
+	String get project => 'Project';
+
+	/// en: 'Source code'
+	String get sourceCode => 'Source code';
+
+	/// en: 'Browse the project on GitHub'
+	String get sourceCodeSubtitle => 'Browse the project on GitHub';
+
+	/// en: 'Release notes'
+	String get releaseNotes => 'Release notes';
+
+	/// en: 'See what is new'
+	String get releaseNotesSubtitle => 'See what is new';
+
+	/// en: 'Report an issue'
+	String get reportIssue => 'Report an issue';
+
+	/// en: 'Help improve Fluent Lyrics'
+	String get reportIssueSubtitle => 'Help improve Fluent Lyrics';
+
+	/// en: 'Credits & Providers'
+	String get credits => 'Credits & Providers';
+
+	/// en: 'Contributors'
+	String get contributors => 'Contributors';
+
+	/// en: 'People who help improve the project'
+	String get contributorsSubtitle => 'People who help improve the project';
+
+	/// en: 'Lyrics providers'
+	String get lyricsProviders => 'Lyrics providers';
+
+	/// en: 'Services used by Fluent Lyrics'
+	String get lyricsProvidersSubtitle => 'Services used by Fluent Lyrics';
+
+	late final Translations$about$providers$en providers = Translations$about$providers$en.internal(_root);
+
+	/// en: 'Legal'
+	String get legal => 'Legal';
+
+	/// en: 'Open-source licenses'
+	String get openSourceLicenses => 'Open-source licenses';
+
+	/// en: 'Flutter and third-party package notices'
+	String get openSourceLicensesSubtitle => 'Flutter and third-party package notices';
+
+	/// en: 'Copy diagnostic info'
+	String get diagnostics => 'Copy diagnostic info';
+
+	/// en: 'Version and platform details without secrets'
+	String get diagnosticsSubtitle => 'Version and platform details without secrets';
+
+	/// en: 'Diagnostic info copied'
+	String get diagnosticsCopied => 'Diagnostic info copied';
+
+	/// en: 'Unable to open this link'
+	String get linkUnavailable => 'Unable to open this link';
+
+	/// en: 'Built with Flutter'
+	String get builtWith => 'Built with Flutter';
 }
 
 // Path: lyrics
@@ -702,6 +786,20 @@ class Translations$settings$version$en {
 	String label({required Object version}) => 'Fluent Lyrics ${version}';
 }
 
+// Path: about.providers
+class Translations$about$providers$en {
+	Translations$about$providers$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	late final Translations$about$providers$musixmatch$en musixmatch = Translations$about$providers$musixmatch$en.internal(_root);
+	late final Translations$about$providers$netease$en netease = Translations$about$providers$netease$en.internal(_root);
+	late final Translations$about$providers$qqmusic$en qqmusic = Translations$about$providers$qqmusic$en.internal(_root);
+	late final Translations$about$providers$lrclib$en lrclib = Translations$about$providers$lrclib$en.internal(_root);
+	late final Translations$about$providers$llm$en llm = Translations$about$providers$llm$en.internal(_root);
+}
+
 // Path: lyrics.info
 class Translations$lyrics$info$en {
 	Translations$lyrics$info$en.internal(this._root);
@@ -880,4 +978,79 @@ class Translations$settings$priority$providers$en {
 
 	/// en: 'Cached lyrics'
 	String get cacheDescription => 'Cached lyrics';
+}
+
+// Path: about.providers.musixmatch
+class Translations$about$providers$musixmatch$en {
+	Translations$about$providers$musixmatch$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Musixmatch'
+	String get name => 'Musixmatch';
+
+	/// en: 'Lyrics catalog and translation data'
+	String get description => 'Lyrics catalog and translation data';
+}
+
+// Path: about.providers.netease
+class Translations$about$providers$netease$en {
+	Translations$about$providers$netease$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Netease Music'
+	String get name => 'Netease Music';
+
+	/// en: 'Lyrics and translation data from Netease Music'
+	String get description => 'Lyrics and translation data from Netease Music';
+}
+
+// Path: about.providers.qqmusic
+class Translations$about$providers$qqmusic$en {
+	Translations$about$providers$qqmusic$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'QQ Music'
+	String get name => 'QQ Music';
+
+	/// en: 'Lyrics and translation data from QQ Music'
+	String get description => 'Lyrics and translation data from QQ Music';
+}
+
+// Path: about.providers.lrclib
+class Translations$about$providers$lrclib$en {
+	Translations$about$providers$lrclib$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'LRCLIB'
+	String get name => 'LRCLIB';
+
+	/// en: 'Open lyrics database'
+	String get description => 'Open lyrics database';
+}
+
+// Path: about.providers.llm
+class Translations$about$providers$llm$en {
+	Translations$about$providers$llm$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'LLM Translation'
+	String get name => 'LLM Translation';
+
+	/// en: 'Optional translation through an OpenAI-compatible API'
+	String get description => 'Optional translation through an OpenAI-compatible API';
 }

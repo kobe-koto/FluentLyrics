@@ -195,6 +195,54 @@
       "label": "Fluent Lyrics {{version}}"
     }
   },
+  "about": {
+    "title": "About",
+    "subtitle": "Project details, credits, licenses, and links",
+    "tagline": "Focused lyrics, synced well",
+    "version": "Version {{version}} (build {{build}})",
+    "project": "Project",
+    "sourceCode": "Source code",
+    "sourceCodeSubtitle": "Browse the project on GitHub",
+    "releaseNotes": "Release notes",
+    "releaseNotesSubtitle": "See what is new",
+    "reportIssue": "Report an issue",
+    "reportIssueSubtitle": "Help improve Fluent Lyrics",
+    "credits": "Credits & Providers",
+    "contributors": "Contributors",
+    "contributorsSubtitle": "People who help improve the project",
+    "lyricsProviders": "Lyrics providers",
+    "lyricsProvidersSubtitle": "Services used by Fluent Lyrics",
+    "providers": {
+      "musixmatch": {
+        "name": "Musixmatch",
+        "description": "Lyrics catalog and translation data"
+      },
+      "netease": {
+        "name": "Netease Music",
+        "description": "Lyrics and translation data from Netease Music"
+      },
+      "qqmusic": {
+        "name": "QQ Music",
+        "description": "Lyrics and translation data from QQ Music"
+      },
+      "lrclib": {
+        "name": "LRCLIB",
+        "description": "Open lyrics database"
+      },
+      "llm": {
+        "name": "LLM Translation",
+        "description": "Optional translation through an OpenAI-compatible API"
+      }
+    },
+    "legal": "Legal",
+    "openSourceLicenses": "Open-source licenses",
+    "openSourceLicensesSubtitle": "Flutter and third-party package notices",
+    "diagnostics": "Copy diagnostic info",
+    "diagnosticsSubtitle": "Version and platform details without secrets",
+    "diagnosticsCopied": "Diagnostic info copied",
+    "linkUnavailable": "Unable to open this link",
+    "builtWith": "Built with Flutter"
+  },
   "lyrics": {
     "noMedia": "No Media Playing",
     "waitForMusic": "Wait for music...",

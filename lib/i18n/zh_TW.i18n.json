@@ -195,6 +195,54 @@
       "label": "Fluent Lyrics {{version}}"
     }
   },
+  "about": {
+    "title": "關於",
+    "subtitle": "專案詳情、致謝、授權與連結",
+    "tagline": "專注歌詞，精準同步",
+    "version": "版本 {{version}}（建置 {{build}}）",
+    "project": "專案",
+    "sourceCode": "原始碼",
+    "sourceCodeSubtitle": "在 GitHub 上瀏覽專案",
+    "releaseNotes": "發行說明",
+    "releaseNotesSubtitle": "查看最新變更",
+    "reportIssue": "回報問題",
+    "reportIssueSubtitle": "協助改進 Fluent Lyrics",
+    "credits": "致謝與歌詞來源",
+    "contributors": "貢獻者",
+    "contributorsSubtitle": "協助改進專案的朋友們",
+    "lyricsProviders": "歌詞來源",
+    "lyricsProvidersSubtitle": "Fluent Lyrics 使用的服務",
+    "providers": {
+      "musixmatch": {
+        "name": "Musixmatch",
+        "description": "歌詞目錄與翻譯資料"
+      },
+      "netease": {
+        "name": "網易雲音樂",
+        "description": "來自網易雲音樂的歌詞與翻譯資料"
+      },
+      "qqmusic": {
+        "name": "QQ 音樂",
+        "description": "來自 QQ 音樂的歌詞與翻譯資料"
+      },
+      "lrclib": {
+        "name": "LRCLIB",
+        "description": "開放歌詞資料庫"
+      },
+      "llm": {
+        "name": "LLM 翻譯",
+        "description": "透過 OpenAI 相容 API 提供的選用翻譯"
+      }
+    },
+    "legal": "法律資訊",
+    "openSourceLicenses": "開源授權",
+    "openSourceLicensesSubtitle": "Flutter 與第三方依賴的授權資訊",
+    "diagnostics": "複製診斷資訊",
+    "diagnosticsSubtitle": "複製版本和平台資訊，不包含金鑰",
+    "diagnosticsCopied": "診斷資訊已複製",
+    "linkUnavailable": "無法開啟此連結",
+    "builtWith": "使用 Flutter 建置"
+  },
   "lyrics": {
     "noMedia": "未在播放",
     "waitForMusic": "等待音樂...",

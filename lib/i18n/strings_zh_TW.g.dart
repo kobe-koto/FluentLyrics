@@ -36,6 +36,7 @@ class TranslationsZhTw extends Translations with BaseTranslations<AppLocale, Tra
 	@override late final Translations$language$zh_TW language = Translations$language$zh_TW.internal(_root);
 	@override late final Translations$common$zh_TW common = Translations$common$zh_TW.internal(_root);
 	@override late final Translations$settings$zh_TW settings = Translations$settings$zh_TW.internal(_root);
+	@override late final Translations$about$zh_TW about = Translations$about$zh_TW.internal(_root);
 	@override late final Translations$lyrics$zh_TW lyrics = Translations$lyrics$zh_TW.internal(_root);
 	@override late final Translations$permission$zh_TW permission = Translations$permission$zh_TW.internal(_root);
 	@override late final Translations$candidateSheet$zh_TW candidateSheet = Translations$candidateSheet$zh_TW.internal(_root);
@@ -86,6 +87,40 @@ class Translations$settings$zh_TW extends Translations$settings$en {
 	@override late final Translations$settings$misc$zh_TW misc = Translations$settings$misc$zh_TW.internal(_root);
 	@override late final Translations$settings$appBar$zh_TW appBar = Translations$settings$appBar$zh_TW.internal(_root);
 	@override late final Translations$settings$version$zh_TW version = Translations$settings$version$zh_TW.internal(_root);
+}
+
+// Path: about
+class Translations$about$zh_TW extends Translations$about$en {
+	Translations$about$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
+
+	final TranslationsZhTw _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '關於';
+	@override String get subtitle => '專案詳情、致謝、授權與連結';
+	@override String get tagline => '專注歌詞，精準同步';
+	@override String version({required Object version, required Object build}) => '版本 ${version}（建置 ${build}）';
+	@override String get project => '專案';
+	@override String get sourceCode => '原始碼';
+	@override String get sourceCodeSubtitle => '在 GitHub 上瀏覽專案';
+	@override String get releaseNotes => '發行說明';
+	@override String get releaseNotesSubtitle => '查看最新變更';
+	@override String get reportIssue => '回報問題';
+	@override String get reportIssueSubtitle => '協助改進 Fluent Lyrics';
+	@override String get credits => '致謝與歌詞來源';
+	@override String get contributors => '貢獻者';
+	@override String get contributorsSubtitle => '協助改進專案的朋友們';
+	@override String get lyricsProviders => '歌詞來源';
+	@override String get lyricsProvidersSubtitle => 'Fluent Lyrics 使用的服務';
+	@override late final Translations$about$providers$zh_TW providers = Translations$about$providers$zh_TW.internal(_root);
+	@override String get legal => '法律資訊';
+	@override String get openSourceLicenses => '開源授權';
+	@override String get openSourceLicensesSubtitle => 'Flutter 與第三方依賴的授權資訊';
+	@override String get diagnostics => '複製診斷資訊';
+	@override String get diagnosticsSubtitle => '複製版本和平台資訊，不包含金鑰';
+	@override String get diagnosticsCopied => '診斷資訊已複製';
+	@override String get linkUnavailable => '無法開啟此連結';
+	@override String get builtWith => '使用 Flutter 建置';
 }
 
 // Path: lyrics
@@ -375,6 +410,20 @@ class Translations$settings$version$zh_TW extends Translations$settings$version$
 	@override String label({required Object version}) => 'Fluent Lyrics ${version}';
 }
 
+// Path: about.providers
+class Translations$about$providers$zh_TW extends Translations$about$providers$en {
+	Translations$about$providers$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
+
+	final TranslationsZhTw _root; // ignore: unused_field
+
+	// Translations
+	@override late final Translations$about$providers$musixmatch$zh_TW musixmatch = Translations$about$providers$musixmatch$zh_TW.internal(_root);
+	@override late final Translations$about$providers$netease$zh_TW netease = Translations$about$providers$netease$zh_TW.internal(_root);
+	@override late final Translations$about$providers$qqmusic$zh_TW qqmusic = Translations$about$providers$qqmusic$zh_TW.internal(_root);
+	@override late final Translations$about$providers$lrclib$zh_TW lrclib = Translations$about$providers$lrclib$zh_TW.internal(_root);
+	@override late final Translations$about$providers$llm$zh_TW llm = Translations$about$providers$llm$zh_TW.internal(_root);
+}
+
 // Path: lyrics.info
 class Translations$lyrics$info$zh_TW extends Translations$lyrics$info$en {
 	Translations$lyrics$info$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
@@ -487,4 +536,59 @@ class Translations$settings$priority$providers$zh_TW extends Translations$settin
 	@override String get llmDescription => 'OpenAI 相容的 LLM API';
 	@override String get cacheName => '快取';
 	@override String get cacheDescription => '已快取的歌詞';
+}
+
+// Path: about.providers.musixmatch
+class Translations$about$providers$musixmatch$zh_TW extends Translations$about$providers$musixmatch$en {
+	Translations$about$providers$musixmatch$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
+
+	final TranslationsZhTw _root; // ignore: unused_field
+
+	// Translations
+	@override String get name => 'Musixmatch';
+	@override String get description => '歌詞目錄與翻譯資料';
+}
+
+// Path: about.providers.netease
+class Translations$about$providers$netease$zh_TW extends Translations$about$providers$netease$en {
+	Translations$about$providers$netease$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
+
+	final TranslationsZhTw _root; // ignore: unused_field
+
+	// Translations
+	@override String get name => '網易雲音樂';
+	@override String get description => '來自網易雲音樂的歌詞與翻譯資料';
+}
+
+// Path: about.providers.qqmusic
+class Translations$about$providers$qqmusic$zh_TW extends Translations$about$providers$qqmusic$en {
+	Translations$about$providers$qqmusic$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
+
+	final TranslationsZhTw _root; // ignore: unused_field
+
+	// Translations
+	@override String get name => 'QQ 音樂';
+	@override String get description => '來自 QQ 音樂的歌詞與翻譯資料';
+}
+
+// Path: about.providers.lrclib
+class Translations$about$providers$lrclib$zh_TW extends Translations$about$providers$lrclib$en {
+	Translations$about$providers$lrclib$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
+
+	final TranslationsZhTw _root; // ignore: unused_field
+
+	// Translations
+	@override String get name => 'LRCLIB';
+	@override String get description => '開放歌詞資料庫';
+}
+
+// Path: about.providers.llm
+class Translations$about$providers$llm$zh_TW extends Translations$about$providers$llm$en {
+	Translations$about$providers$llm$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
+
+	final TranslationsZhTw _root; // ignore: unused_field
+
+	// Translations
+	@override String get name => 'LLM 翻譯';
+	@override String get description => '透過 OpenAI 相容 API 提供的選用翻譯';
 }

@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../i18n/strings.g.dart';
 import '../widgets/settings_scaffold.dart';
+import 'about_screen.dart';
 import '../widgets/screen/settings/version_section.dart';
 import 'settings/priority_screen.dart';
 import 'settings/display_screen.dart';
@@ -412,6 +413,12 @@ enum _SettingsDestination {
     color: Colors.cyan,
     screen: LanguageScreen(),
     content: LanguageSettingsContent(),
+  ),
+  about(
+    icon: Icons.info_outline,
+    color: Colors.blueGrey,
+    screen: AboutScreen(),
+    content: AboutContent(),
   );
 
   final IconData icon;
@@ -436,6 +443,7 @@ enum _SettingsDestination {
       experimental => t.settings.destinations.experimental.title,
       misc => t.settings.destinations.misc.title,
       language => t.settings.language.title,
+      about => t.about.title,
     };
   }
 
@@ -449,6 +457,7 @@ enum _SettingsDestination {
       experimental => t.settings.destinations.experimental.subtitle,
       misc => t.settings.destinations.misc.subtitle,
       language => t.settings.language.subtitle,
+      about => t.about.subtitle,
     };
   }
 }
