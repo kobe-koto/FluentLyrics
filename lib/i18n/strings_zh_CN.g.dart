@@ -120,6 +120,7 @@ class Translations$about$zh_CN extends Translations$about$en {
 	@override String get diagnostics => '复制诊断信息';
 	@override String get diagnosticsSubtitle => '复制版本和平台信息，不包含密钥';
 	@override String get diagnosticsCopied => '诊断信息已复制';
+	@override late final Translations$about$diagnosticsPage$zh_CN diagnosticsPage = Translations$about$diagnosticsPage$zh_CN.internal(_root);
 	@override String get linkUnavailable => '无法打开此链接';
 	@override String get builtWith => '使用 Flutter 构建';
 }
@@ -436,6 +437,21 @@ class Translations$about$providers$zh_CN extends Translations$about$providers$en
 	@override late final Translations$about$providers$qqmusic$zh_CN qqmusic = Translations$about$providers$qqmusic$zh_CN.internal(_root);
 	@override late final Translations$about$providers$lrclib$zh_CN lrclib = Translations$about$providers$lrclib$zh_CN.internal(_root);
 	@override late final Translations$about$providers$llm$zh_CN llm = Translations$about$providers$llm$zh_CN.internal(_root);
+}
+
+// Path: about.diagnosticsPage
+class Translations$about$diagnosticsPage$zh_CN extends Translations$about$diagnosticsPage$en {
+	Translations$about$diagnosticsPage$zh_CN.internal(TranslationsZhCn root) : this._root = root, super.internal(root);
+
+	final TranslationsZhCn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '自检信息';
+	@override String get copy => '复制自检信息';
+	@override String get copied => '自检信息已复制';
+	@override String get automaticCopySuccess => '自检信息已自动复制';
+	@override String get automaticCopyFailed => '自动复制失败，请点击按钮重试';
+	@override String get copyFailed => '无法复制自检信息';
 }
 
 // Path: lyrics.info

@@ -246,6 +246,14 @@
     "diagnostics": "Copy diagnostic info",
     "diagnosticsSubtitle": "Version and platform details without secrets",
     "diagnosticsCopied": "Diagnostic info copied",
+    "diagnosticsPage": {
+      "title": "Diagnostics",
+      "copy": "Copy diagnostic info",
+      "copied": "Diagnostic info copied",
+      "automaticCopySuccess": "Diagnostic info copied automatically",
+      "automaticCopyFailed": "Automatic copy failed; use the button to try again",
+      "copyFailed": "Unable to copy diagnostic info"
+    },
     "linkUnavailable": "Unable to open this link",
     "builtWith": "Built with Flutter"
   },

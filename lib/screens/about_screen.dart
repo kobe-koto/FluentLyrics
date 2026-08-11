@@ -1,14 +1,11 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../i18n/strings.g.dart';
 import '../widgets/settings_scaffold.dart';
 import 'about/contributors_screen.dart';
+import 'about/diagnostics_screen.dart';
 import 'about/providers_screen.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -73,23 +70,6 @@ class _AboutContentState extends State<AboutContent> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
-  }
-
-  Future<void> _copyDiagnostics() async {
-    final packageInfo = _packageInfo;
-    final version = packageInfo == null
-        ? 'unknown'
-        : '${packageInfo.version}+${packageInfo.buildNumber}';
-    final mode = kDebugMode ? 'debug' : (kProfileMode ? 'profile' : 'release');
-    final diagnostics = [
-      'Fluent Lyrics $version',
-      'Platform: ${Platform.operatingSystem}',
-      'OS: ${Platform.operatingSystemVersion}',
-      'Mode: $mode',
-    ].join('\n');
-
-    await Clipboard.setData(ClipboardData(text: diagnostics));
-    if (mounted) _showMessage(t.about.diagnosticsCopied);
   }
 
   void _showLicenses() {
@@ -186,7 +166,7 @@ class _AboutContentState extends State<AboutContent> {
                     icon: Icons.content_copy_outlined,
                     title: about.diagnostics,
                     subtitle: about.diagnosticsSubtitle,
-                    onTap: _copyDiagnostics,
+                    onTap: () => _openScreen(const AboutDiagnosticsScreen()),
                   ),
                 ],
               ),

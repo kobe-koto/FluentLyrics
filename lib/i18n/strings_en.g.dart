@@ -188,6 +188,8 @@ class Translations$about$en {
 	/// en: 'Diagnostic info copied'
 	String get diagnosticsCopied => 'Diagnostic info copied';
 
+	late final Translations$about$diagnosticsPage$en diagnosticsPage = Translations$about$diagnosticsPage$en.internal(_root);
+
 	/// en: 'Unable to open this link'
 	String get linkUnavailable => 'Unable to open this link';
 
@@ -821,6 +823,33 @@ class Translations$about$providers$en {
 	late final Translations$about$providers$qqmusic$en qqmusic = Translations$about$providers$qqmusic$en.internal(_root);
 	late final Translations$about$providers$lrclib$en lrclib = Translations$about$providers$lrclib$en.internal(_root);
 	late final Translations$about$providers$llm$en llm = Translations$about$providers$llm$en.internal(_root);
+}
+
+// Path: about.diagnosticsPage
+class Translations$about$diagnosticsPage$en {
+	Translations$about$diagnosticsPage$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Diagnostics'
+	String get title => 'Diagnostics';
+
+	/// en: 'Copy diagnostic info'
+	String get copy => 'Copy diagnostic info';
+
+	/// en: 'Diagnostic info copied'
+	String get copied => 'Diagnostic info copied';
+
+	/// en: 'Diagnostic info copied automatically'
+	String get automaticCopySuccess => 'Diagnostic info copied automatically';
+
+	/// en: 'Automatic copy failed; use the button to try again'
+	String get automaticCopyFailed => 'Automatic copy failed; use the button to try again';
+
+	/// en: 'Unable to copy diagnostic info'
+	String get copyFailed => 'Unable to copy diagnostic info';
 }
 
 // Path: lyrics.info

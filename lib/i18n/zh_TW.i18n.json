@@ -246,6 +246,14 @@
     "diagnostics": "複製診斷資訊",
     "diagnosticsSubtitle": "複製版本和平台資訊，不包含金鑰",
     "diagnosticsCopied": "診斷資訊已複製",
+    "diagnosticsPage": {
+      "title": "自檢資訊",
+      "copy": "複製自檢資訊",
+      "copied": "自檢資訊已複製",
+      "automaticCopySuccess": "自檢資訊已自動複製",
+      "automaticCopyFailed": "自動複製失敗，請點擊按鈕重試",
+      "copyFailed": "無法複製自檢資訊"
+    },
     "linkUnavailable": "無法開啟此連結",
     "builtWith": "使用 Flutter 建置"
   },
