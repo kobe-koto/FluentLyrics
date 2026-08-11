@@ -31,7 +31,7 @@ on:
 
 jobs:
   prepare-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       build_version: ${{ steps.version.outputs.build_version }}
       version_name: ${{ steps.version.outputs.version_name }}
@@ -97,9 +97,9 @@ jobs:
       matrix:
         include:
           - arch: x64
-            runner: ubuntu-latest
+            runner: ubuntu-26.04
           - arch: arm64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
@@ -154,7 +154,7 @@ jobs:
   build-android:
     needs: prepare-version
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' || inputs.build_android }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
         with:
@@ -257,7 +257,7 @@ jobs:
       - build-linux
       - build-android
       - build-macos
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:
