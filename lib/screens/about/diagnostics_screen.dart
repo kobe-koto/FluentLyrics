@@ -126,6 +126,7 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
       'Disabled providers: ${_formatProviders(disabledProviders)}',
       'Cache enabled: ${settings.cacheEnabled.current}',
       'Lines before active: ${settings.linesBefore.current}',
+      'Landscape leading space: ${settings.landscapeLeadingSpace.current}%',
       'Global lyrics offset: ${settings.globalOffsetMs.current} ms',
       'Auto-resume delay: ${settings.scrollAutoResumeDelay.current} s',
       'Blur enabled: ${settings.blurEnabled.current}',

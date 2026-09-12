@@ -230,8 +230,10 @@ class _LyricsListState extends State<LyricsList> {
               : MediaQuery.sizeOf(context).height;
           final isLandscape =
               MediaQuery.orientationOf(context) == Orientation.landscape;
+          final landscapeSpace = (provider.landscapeLeadingSpace.current / 100)
+              .clamp(0.0, 1.0);
           final listPadding = EdgeInsets.only(
-            top: isLandscape ? viewportHeight * 0.3 : 0.0,
+            top: isLandscape ? viewportHeight * landscapeSpace : 0.0,
             bottom: viewportHeight / 3,
           );
           return ScrollConfiguration(

@@ -1,3 +1,4 @@
+import 'package:fluent_lyrics/constants/app_defaults.dart';
 import 'package:fluent_lyrics/i18n/strings.g.dart';
 import 'package:fluent_lyrics/models/lyric_model.dart';
 import 'package:fluent_lyrics/models/lyric_provider_type.dart';
@@ -11,6 +12,7 @@ import 'package:fluent_lyrics/services/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class _FakeMediaController implements MediaController {
   @override
@@ -358,6 +360,39 @@ class _MutableTrackLyricsProvider extends _ScreenTestLyricsProvider {
   }
 }
 
+/// Provider whose landscape leading space can be changed at runtime, so a test
+/// can observe how the highlighted row is anchored in landscape.
+class _LandscapeSpaceLyricsProvider extends _ScreenTestLyricsProvider {
+  _LandscapeSpaceLyricsProvider(this._space);
+
+  int _space;
+  List<Lyric> _lyrics = const [];
+  int _index = 0;
+
+  @override
+  Setting<int> get landscapeLeadingSpace => Setting(
+    current: _space,
+    defaultValue: AppDefaults.landscapeLeadingSpace,
+    changed: _space != AppDefaults.landscapeLeadingSpace,
+  );
+
+  @override
+  List<Lyric> get lyrics => _lyrics;
+
+  @override
+  int get currentIndex => _index;
+
+  void setLandscapeSpace(int percent) => _space = percent;
+
+  void setTrack(List<Lyric> lyrics, {int index = 0}) {
+    // A fresh list instance makes the lyrics-reference change detection in
+    // LyricsScreen fire, which is what re-anchors the list.
+    _lyrics = List<Lyric>.of(lyrics);
+    _index = index;
+    notifyListeners();
+  }
+}
+
 Widget _buildHarness(LyricsProvider provider) {
   return TranslationProvider(
     child: ChangeNotifierProvider<LyricsProvider>.value(
@@ -497,5 +532,55 @@ void main() {
       reason: 'rendered lyric rows should be contiguous',
     );
     expect(_isTextVisible(tester, 'New 0', size), isTrue);
+  });
+
+  testWidgets('landscape leading space follows the user setting', (
+    tester,
+  ) async {
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    final provider = _LandscapeSpaceLyricsProvider(
+      AppDefaults.landscapeLeadingSpace,
+    );
+
+    addTearDown(() {
+      tester.view.reset();
+      provider.dispose();
+    });
+
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(800, 450);
+    await tester.pumpWidget(_buildHarness(provider));
+    await tester.pump();
+
+    final lyrics = List.generate(
+      30,
+      (index) => Lyric(
+        startTime: Duration(seconds: index),
+        text: 'Line $index',
+      ),
+    );
+
+    Future<double> measureActiveRow(int spacePercent) async {
+      provider.setLandscapeSpace(spacePercent);
+      // A new lyrics instance re-anchors the list, applying the new spacing.
+      provider.setTrack(lyrics, index: 10);
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      final viewport = tester.getRect(
+        find.byType(ScrollablePositionedList).first,
+      );
+      final row = tester.getRect(find.text('Line 10'));
+      return (row.top - viewport.top) / viewport.height;
+    }
+
+    final at30 = await measureActiveRow(30);
+    final at0 = await measureActiveRow(0);
+    final at50 = await measureActiveRow(50);
+
+    // The active row sits `spacePercent` of the viewport height below the top,
+    // so the deltas between settings are the deltas of the setting itself.
+    expect(at30 - at0, closeTo(0.30, 0.05));
+    expect(at50 - at0, closeTo(0.50, 0.05));
   });
 }

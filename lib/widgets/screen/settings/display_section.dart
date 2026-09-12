@@ -86,6 +86,25 @@ class DisplaySection extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             SettingsSliderCard(
+              title: i18n.landscapeLeadingSpace,
+              subtitle: i18n.landscapeLeadingSpaceSubtitle,
+              value: provider.landscapeLeadingSpace.current.toDouble(),
+              min: 0,
+              max: 60,
+              divisions: 12,
+              label: '${provider.landscapeLeadingSpace.current}%',
+              valueText: '${provider.landscapeLeadingSpace.current}%',
+              onChanged: (value) =>
+                  provider.setLandscapeLeadingSpace(value.toInt()),
+              onReset: provider.landscapeLeadingSpace.changed
+                  ? () => provider.setLandscapeLeadingSpace(
+                      provider.landscapeLeadingSpace.defaultValue,
+                    )
+                  : null,
+              resetTooltip: i18n.landscapeLeadingSpaceReset,
+            ),
+            const SizedBox(height: 24),
+            SettingsSliderCard(
               title: i18n.autoResumeDelay,
               subtitle: i18n.autoResumeDelaySubtitle,
               value: provider.scrollAutoResumeDelay.current.toDouble(),

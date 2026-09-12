@@ -237,6 +237,9 @@ class Translations$settings$display$zh_CN extends Translations$settings$display$
 	@override String get linesBefore => '活动行前显示数';
 	@override String get linesBeforeSubtitle => '自动滚动时活动行之前显示的行数。';
 	@override String get linesBeforeReset => '重置为 2';
+	@override String get landscapeLeadingSpace => '横屏活动行留白';
+	@override String get landscapeLeadingSpaceSubtitle => '横屏时活动行上方保留的留白，按屏幕高度百分比计算。竖屏不使用此项（见“活动行前显示数”）。';
+	@override String get landscapeLeadingSpaceReset => '重置为 30%';
 	@override String get autoResumeDelay => '自动恢复延迟';
 	@override String get autoResumeDelaySubtitle => '手动滚动后,等待多少时间再恢复自动滚动。';
 	@override String get autoResumeDelayReset => '重置为 5 秒';

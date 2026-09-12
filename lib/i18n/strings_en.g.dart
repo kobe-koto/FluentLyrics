@@ -417,6 +417,15 @@ class Translations$settings$display$en {
 	/// en: 'Reset to 2'
 	String get linesBeforeReset => 'Reset to 2';
 
+	/// en: 'Landscape Active Line Space'
+	String get landscapeLeadingSpace => 'Landscape Active Line Space';
+
+	/// en: 'Space kept above the active line in landscape, as a percentage of the screen height. Ignored in portrait (see Lines Before Active).'
+	String get landscapeLeadingSpaceSubtitle => 'Space kept above the active line in landscape, as a percentage of the screen height. Ignored in portrait (see Lines Before Active).';
+
+	/// en: 'Reset to 30%'
+	String get landscapeLeadingSpaceReset => 'Reset to 30%';
+
 	/// en: 'Auto-Resume Delay'
 	String get autoResumeDelay => 'Auto-Resume Delay';
 

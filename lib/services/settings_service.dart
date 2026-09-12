@@ -14,6 +14,7 @@ class SettingsService {
   static const String _priorityKey = 'lyric_provider_priority';
   static const String _musixmatchTokenKey = 'musixmatch_token';
   static const String _linesBeforeKey = 'lines_before';
+  static const String _landscapeLeadingSpaceKey = 'landscape_leading_space';
   static const String _globalOffsetKey = 'global_offset_ms';
   static const String _scrollAutoResumeDelayKey = 'scroll_auto_resume_delay';
   static const String _blurEnabledKey = 'blur_enabled';
@@ -157,6 +158,23 @@ class SettingsService {
   Future<void> setLinesBefore(int lines) async {
     final prefs = await _prefs;
     await prefs.setInt(_linesBeforeKey, lines);
+  }
+
+  Future<Setting<int>> getLandscapeLeadingSpace() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getInt(_landscapeLeadingSpaceKey) ??
+        AppDefaults.landscapeLeadingSpace;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.landscapeLeadingSpace,
+      changed: current != AppDefaults.landscapeLeadingSpace,
+    );
+  }
+
+  Future<void> setLandscapeLeadingSpace(int percent) async {
+    final prefs = await _prefs;
+    await prefs.setInt(_landscapeLeadingSpaceKey, percent);
   }
 
   Future<Setting<int>> getGlobalOffset() async {

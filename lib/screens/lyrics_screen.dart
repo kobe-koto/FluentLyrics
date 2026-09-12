@@ -96,6 +96,14 @@ class _LyricsScreenState extends State<LyricsScreen> {
     _syncWakelock(provider.keepScreenOn.current);
   }
 
+  /// Fraction of the viewport height kept above the highlighted row in
+  /// landscape. User configurable (`landscapeLeadingSpace`, percent); portrait
+  /// ignores it and uses `linesBefore` instead.
+  double _landscapeAlignment() {
+    final provider = context.read<LyricsProvider>();
+    return (provider.landscapeLeadingSpace.current / 100).clamp(0.0, 1.0);
+  }
+
   ({int targetIndex, double alignment}) _resolveScrollTarget(
     int index,
     int linesBefore,
@@ -106,7 +114,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
     final targetIndex = isLandscape
         ? safeIndex
         : (safeIndex - linesBefore).clamp(0, safeIndex);
-    final alignment = isLandscape ? 0.3 : 0.0;
+    final alignment = isLandscape ? _landscapeAlignment() : 0.0;
     return (targetIndex: targetIndex, alignment: alignment);
   }
 

@@ -2,6 +2,7 @@ import '../models/lyric_provider_type.dart';
 
 class AppDefaults {
   static const int linesBefore = 1;
+  static const int landscapeLeadingSpace = 30;
   static const int globalOffsetMs = 0;
   static const int scrollAutoResumeDelay = 5;
   static const bool blurEnabled = true;
