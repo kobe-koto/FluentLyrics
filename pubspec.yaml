@@ -1,7 +1,7 @@
 name: fluent_lyrics
 description: "Fluent Lyrics, a lyrics viewer supports various sources."
 
-version: 0.0.44+44
+version: 0.0.45+45
 
 publish_to: 'none'
 
