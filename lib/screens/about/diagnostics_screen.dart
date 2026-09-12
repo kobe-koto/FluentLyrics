@@ -154,7 +154,6 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
       'Hide to tray on close: ${settings.hideToTrayOnClose.current}',
       'Lyrics stream configured: ${settings.lyricsStreamPath.current.isNotEmpty}',
       'Translation stream configured: ${settings.translationStreamPath.current.isNotEmpty}',
-      'Configuration secrets and file paths omitted: true',
     ];
   }
 
