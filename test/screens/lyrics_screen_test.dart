@@ -316,6 +316,48 @@ class _ScreenTestLyricsProvider extends LyricsProvider {
   Future<void> seek(Duration position) async {}
 }
 
+/// Mutable provider that drives the lyrics through a track switch
+/// (loading state -> new lyrics), mirroring how [LyricsProvider] notifies
+/// its listeners when the media service reports a new track.
+class _MutableTrackLyricsProvider extends _ScreenTestLyricsProvider {
+  List<Lyric> _lyrics = const [];
+  LyricsResult _result = LyricsResult(
+    lyrics: const [],
+    source: '',
+    isSynced: false,
+  );
+  int _index = -1;
+  bool _loading = true;
+
+  @override
+  List<Lyric> get lyrics => _lyrics;
+
+  @override
+  LyricsResult get lyricsResult => _result;
+
+  @override
+  int get currentIndex => _index;
+
+  @override
+  bool get isLoading => _loading;
+
+  void setTrack(List<Lyric> lyrics, {int index = 0}) {
+    _lyrics = lyrics;
+    _result = LyricsResult(lyrics: lyrics, source: '', isSynced: true);
+    _index = index;
+    _loading = false;
+    notifyListeners();
+  }
+
+  void beginLoading() {
+    _lyrics = const [];
+    _result = LyricsResult(lyrics: const [], source: '', isSynced: false);
+    _index = -1;
+    _loading = true;
+    notifyListeners();
+  }
+}
+
 Widget _buildHarness(LyricsProvider provider) {
   return TranslationProvider(
     child: ChangeNotifierProvider<LyricsProvider>.value(
@@ -386,4 +428,74 @@ void main() {
       expect(_isTextVisible(tester, 'Line 10', landscapeSize), isTrue);
     },
   );
+
+  testWidgets('replaces the lyrics list when switching to a shorter track', (
+    tester,
+  ) async {
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    const size = Size(360, 640);
+    final provider = _MutableTrackLyricsProvider();
+
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+      provider.dispose();
+    });
+
+    await tester.binding.setSurfaceSize(size);
+    await tester.pumpWidget(_buildHarness(provider));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    provider.setTrack(
+      List.generate(
+        60,
+        (index) => Lyric(
+          startTime: Duration(seconds: index),
+          text: 'Old $index',
+        ),
+      ),
+      index: 40,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(_isTextVisible(tester, 'Old 40', size), isTrue);
+
+    // A real track switch passes through the loading state, which disposes
+    // the ScrollablePositionedList and remounts it for the new track.
+    provider.beginLoading();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    provider.setTrack(
+      List.generate(
+        12,
+        (index) => Lyric(
+          startTime: Duration(seconds: index),
+          text: 'New $index',
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // The visible rows must form a contiguous window anchored on the current
+    // line. A non-contiguous set means ScrollablePositionedList is stuck
+    // mid fade-transition, still rendering rows from the previous scroll
+    // offset — the "no lyrics after a track switch" failure.
+    final rendered = <int>[];
+    for (final element in find.byType(Text).evaluate()) {
+      final data = (element.widget as Text).data;
+      if (data != null && data.startsWith('New ')) {
+        rendered.add(int.parse(data.substring(4)));
+      }
+    }
+    rendered.sort();
+    expect(rendered, isNotEmpty);
+    expect(
+      rendered,
+      List.generate(rendered.length, (index) => rendered.first + index),
+      reason: 'rendered lyric rows should be contiguous',
+    );
+    expect(_isTextVisible(tester, 'New 0', size), isTrue);
+  });
 }

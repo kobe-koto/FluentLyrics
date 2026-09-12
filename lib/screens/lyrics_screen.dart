@@ -110,9 +110,31 @@ class _LyricsScreenState extends State<LyricsScreen> {
     return (targetIndex: targetIndex, alignment: alignment);
   }
 
+  /// Whether [index] is currently laid out by the list. When it is not, SPL's
+  /// `scrollTo` cannot take its direct-animation fast path and instead enters
+  /// the two-list fade transition (`_isTransitioning`), which is asynchronous
+  /// and re-entrant: overlapping scrolls can leave it stuck mid-transition,
+  /// showing the previous scroll offset (i.e. no visible lyrics) until the
+  /// list is rebuilt from scratch.
+  bool _isIndexLaidOut(int index) {
+    for (final position in _itemPositionsListener.itemPositions.value) {
+      if (position.index == index) return true;
+    }
+    return false;
+  }
+
   void _scrollToCurrentIndex(int index, int linesBefore) {
     if (!_itemScrollController.isAttached) return;
     final target = _resolveScrollTarget(index, linesBefore);
+    // A far-away target (first tick after a track switch, a seek) would send
+    // SPL through its fade transition; snap there deterministically instead.
+    if (!_isIndexLaidOut(target.targetIndex)) {
+      _itemScrollController.jumpTo(
+        index: target.targetIndex,
+        alignment: target.alignment,
+      );
+      return;
+    }
     _itemScrollController.scrollTo(
       index: target.targetIndex,
       duration: const Duration(milliseconds: 250),
@@ -126,21 +148,35 @@ class _LyricsScreenState extends State<LyricsScreen> {
   /// re-anchors to the current line instead of letting line-height changes
   /// shift everything visually.
   ///
-  /// Implemented via a 1μs `scrollTo` instead of `ItemScrollController.jumpTo`
-  /// because SPL's `_jumpTo` unconditionally calls
-  /// `primary.scrollController.jumpTo(0)` inside a `setState`, which produces
-  /// a visible single-frame layout twitch (most apparent in landscape, where
-  /// the anchor row IS the highlighted row). The 1μs `scrollTo` takes SPL's
-  /// `_startScroll` fast path when the target is already visible, which just
-  /// animates the existing primary scroll controller without forcing a
-  /// `pixels = 0` round trip.
+  /// While the target row is laid out we use a 1μs `scrollTo` rather than
+  /// [ItemScrollController.jumpTo] because SPL's `_jumpTo` unconditionally
+  /// calls `primary.scrollController.jumpTo(0)` inside a `setState`, which
+  /// produces a visible single-frame layout twitch (most apparent in
+  /// landscape, where the anchor row IS the highlighted row). The 1μs
+  /// `scrollTo` takes SPL's `_startScroll` fast path, which just animates the
+  /// existing primary scroll controller without that `pixels = 0` round trip.
+  /// (SPL asserts `duration > Duration.zero` in debug, hence 1μs rather than
+  /// zero.)
   ///
-  /// * > assert(duration > Duration.zero);
-  ///   SPL requies a non-zero positive duration for `scrollTo` during debug profile,
-  ///   so we use 1μs as effectively zero.
+  /// The fast path only exists while the target row is laid out. When it is
+  /// not — most notably right after the lyrics list is swapped for a new
+  /// track, since the freshly mounted list sits at its initial position —
+  /// `scrollTo` enters SPL's two-list fade transition instead. That path is
+  /// asynchronous and re-entrant, so a resnap racing another scroll can strand
+  /// the list mid-transition at a stale offset and the new lyrics never become
+  /// visible until something remounts the list (e.g. a layout switch).
+  /// `jumpTo` cancels any in-flight transition and re-anchors synchronously,
+  /// so prefer it for out-of-window targets.
   void _jumpToCurrentIndex(int index, int linesBefore) {
     if (!_itemScrollController.isAttached) return;
     final target = _resolveScrollTarget(index, linesBefore);
+    if (!_isIndexLaidOut(target.targetIndex)) {
+      _itemScrollController.jumpTo(
+        index: target.targetIndex,
+        alignment: target.alignment,
+      );
+      return;
+    }
     _itemScrollController.scrollTo(
       index: target.targetIndex,
       alignment: target.alignment,
@@ -433,7 +469,9 @@ class _LyricsScreenState extends State<LyricsScreen> {
         _backgroundPlaceholderColor = _defaultBackgroundPlaceholderColor;
         if (metadata == null) {
           _lastArtUrl = null;
-          _foregroundArtProvider = const AssetImage('assets/album_art_512.webp');
+          _foregroundArtProvider = const AssetImage(
+            'assets/album_art_512.webp',
+          );
           _backgroundArtProvider = _foregroundArtProvider;
         } else {
           _lastArtUrl = artUrl;
