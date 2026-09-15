@@ -131,6 +131,7 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
       'Auto-resume delay: ${settings.scrollAutoResumeDelay.current} s',
       'Blur enabled: ${settings.blurEnabled.current}',
       'Rich sync enabled: ${settings.richSyncEnabled.current}',
+      'Rich sync threshold: ${settings.richSyncThresholdMs.current} ms',
       'Metadata trim providers: ${_formatProviders(settings.trimMetadataProviders.current)}',
       'Font size: ${settings.fontSize.current}',
       'Inactive line scale: ${settings.inactiveScale.current}',

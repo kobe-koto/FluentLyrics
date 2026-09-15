@@ -8,6 +8,7 @@ class LyricsProviderSettings {
     required this.cacheEnabled,
     required this.linesBefore,
     required this.landscapeLeadingSpace,
+    required this.richSyncThresholdMs,
     required this.globalOffsetMs,
     required this.scrollAutoResumeDelay,
     required this.blurEnabled,
@@ -51,6 +52,11 @@ class LyricsProviderSettings {
       landscapeLeadingSpace: const Setting(
         current: AppDefaults.landscapeLeadingSpace,
         defaultValue: AppDefaults.landscapeLeadingSpace,
+        changed: false,
+      ),
+      richSyncThresholdMs: const Setting(
+        current: AppDefaults.richSyncThresholdMs,
+        defaultValue: AppDefaults.richSyncThresholdMs,
         changed: false,
       ),
       globalOffsetMs: const Setting(
@@ -193,6 +199,7 @@ class LyricsProviderSettings {
       cacheEnabled: await settingsService.getCacheEnabled(),
       linesBefore: await settingsService.getLinesBefore(),
       landscapeLeadingSpace: await settingsService.getLandscapeLeadingSpace(),
+      richSyncThresholdMs: await settingsService.getRichSyncThresholdMs(),
       globalOffsetMs: await settingsService.getGlobalOffset(),
       scrollAutoResumeDelay: await settingsService.getScrollAutoResumeDelay(),
       blurEnabled: await settingsService.getBlurEnabled(),
@@ -232,6 +239,7 @@ class LyricsProviderSettings {
   Setting<bool> cacheEnabled;
   Setting<int> linesBefore;
   Setting<int> landscapeLeadingSpace;
+  Setting<int> richSyncThresholdMs;
   Setting<int> globalOffsetMs;
   Setting<int> scrollAutoResumeDelay;
   Setting<bool> blurEnabled;

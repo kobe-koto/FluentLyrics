@@ -46,6 +46,10 @@ class LyricsProvider with ChangeNotifier {
   set _landscapeLeadingSpace(Setting<int> value) =>
       _settings.landscapeLeadingSpace = value;
 
+  Setting<int> get _richSyncThresholdMs => _settings.richSyncThresholdMs;
+  set _richSyncThresholdMs(Setting<int> value) =>
+      _settings.richSyncThresholdMs = value;
+
   Setting<int> get _globalOffsetMs => _settings.globalOffsetMs;
   set _globalOffsetMs(Setting<int> value) => _settings.globalOffsetMs = value;
 
@@ -283,6 +287,7 @@ class LyricsProvider with ChangeNotifier {
   Setting<bool> get cacheEnabled => _cacheEnabled;
   Setting<int> get linesBefore => _linesBefore;
   Setting<int> get landscapeLeadingSpace => _landscapeLeadingSpace;
+  Setting<int> get richSyncThresholdMs => _richSyncThresholdMs;
   Setting<int> get scrollAutoResumeDelay => _scrollAutoResumeDelay;
   Setting<bool> get blurEnabled => _blurEnabled;
   Setting<bool> get richSyncEnabled => _richSyncEnabled;
@@ -637,6 +642,15 @@ class LyricsProvider with ChangeNotifier {
       value: percent,
       assign: (value) => _landscapeLeadingSpace = value,
       persist: _settingsService.setLandscapeLeadingSpace,
+    );
+  }
+
+  void setRichSyncThresholdMs(int ms) {
+    _setSettingValue(
+      currentSetting: _richSyncThresholdMs,
+      value: ms,
+      assign: (value) => _richSyncThresholdMs = value,
+      persist: _settingsService.setRichSyncThresholdMs,
     );
   }
 

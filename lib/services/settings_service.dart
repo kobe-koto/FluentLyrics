@@ -15,6 +15,7 @@ class SettingsService {
   static const String _musixmatchTokenKey = 'musixmatch_token';
   static const String _linesBeforeKey = 'lines_before';
   static const String _landscapeLeadingSpaceKey = 'landscape_leading_space';
+  static const String _richSyncThresholdMsKey = 'rich_sync_threshold_ms';
   static const String _globalOffsetKey = 'global_offset_ms';
   static const String _scrollAutoResumeDelayKey = 'scroll_auto_resume_delay';
   static const String _blurEnabledKey = 'blur_enabled';
@@ -175,6 +176,23 @@ class SettingsService {
   Future<void> setLandscapeLeadingSpace(int percent) async {
     final prefs = await _prefs;
     await prefs.setInt(_landscapeLeadingSpaceKey, percent);
+  }
+
+  Future<Setting<int>> getRichSyncThresholdMs() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getInt(_richSyncThresholdMsKey) ??
+        AppDefaults.richSyncThresholdMs;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.richSyncThresholdMs,
+      changed: current != AppDefaults.richSyncThresholdMs,
+    );
+  }
+
+  Future<void> setRichSyncThresholdMs(int ms) async {
+    final prefs = await _prefs;
+    await prefs.setInt(_richSyncThresholdMsKey, ms);
   }
 
   Future<Setting<int>> getGlobalOffset() async {

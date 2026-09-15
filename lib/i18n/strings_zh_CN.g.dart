@@ -304,6 +304,9 @@ class Translations$settings$lyricConfig$zh_CN extends Translations$settings$lyri
 	@override String get sectionDescription => '配置歌词的获取与处理方式。';
 	@override String get richSync => 'Rich Sync';
 	@override String get richSyncSubtitle => '启用逐词同步。';
+	@override String get richSyncThreshold => 'Rich Sync 片段阈值';
+	@override String get richSyncThresholdSubtitle => '短于该时长的词片段会整体高亮，而不播放进度擦除动画。设为 0 则每个片段都播放动画。';
+	@override String get richSyncThresholdReset => '重置为 800ms';
 	@override String get globalOffset => '全局歌词偏移';
 	@override String get globalOffsetSubtitle => '为所有歌词设置默认偏移 (例如设备存在音频延迟)。';
 	@override String get globalOffsetReset => '重置为 0 秒';

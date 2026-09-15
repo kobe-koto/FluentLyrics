@@ -582,6 +582,15 @@ class Translations$settings$lyricConfig$en {
 	/// en: 'Enable word-level synchronization.'
 	String get richSyncSubtitle => 'Enable word-level synchronization.';
 
+	/// en: 'Rich Sync Segment Threshold'
+	String get richSyncThreshold => 'Rich Sync Segment Threshold';
+
+	/// en: 'Word segments shorter than this are highlighted as a whole instead of animating a progress wipe. 0 animates every segment.'
+	String get richSyncThresholdSubtitle => 'Word segments shorter than this are highlighted as a whole instead of animating a progress wipe. 0 animates every segment.';
+
+	/// en: 'Reset to 800ms'
+	String get richSyncThresholdReset => 'Reset to 800ms';
+
 	/// en: 'Global Lyrics Offset'
 	String get globalOffset => 'Global Lyrics Offset';
 

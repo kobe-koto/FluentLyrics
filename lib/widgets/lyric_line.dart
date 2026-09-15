@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import '../constants/app_defaults.dart';
 import '../models/lyric_model.dart';
 
 class LyricLine extends StatelessWidget {
@@ -38,6 +39,10 @@ class LyricLine extends StatelessWidget {
   final double inactiveScale;
   final bool translationHighlightOnly;
   final bool experimentalRichInlineFontSizeGlitching;
+
+  /// Rich-sync word segments shorter than this are rendered as a whole instead
+  /// of animating a per-word progress wipe. See `_RichPartState`.
+  final Duration richSyncThreshold;
   final Duration adjustedPosition;
   final bool isPlaying;
 
@@ -50,6 +55,9 @@ class LyricLine extends StatelessWidget {
     required this.inactiveScale,
     required this.translationHighlightOnly,
     required this.experimentalRichInlineFontSizeGlitching,
+    this.richSyncThreshold = const Duration(
+      milliseconds: AppDefaults.richSyncThresholdMs,
+    ),
     required this.adjustedPosition,
     required this.isPlaying,
     this.distance = 0,
@@ -251,6 +259,7 @@ class LyricLine extends StatelessWidget {
               adjustedPosition: adjustedPosition,
               isPlaying: isPlaying,
               isHighlighted: isHighlighted,
+              richSyncThreshold: richSyncThreshold,
             ),
           );
         }).toList(),
@@ -358,6 +367,7 @@ class _RichPart extends StatefulWidget {
   final Duration adjustedPosition;
   final bool isPlaying;
   final bool isHighlighted;
+  final Duration richSyncThreshold;
 
   const _RichPart({
     required this.text,
@@ -367,6 +377,7 @@ class _RichPart extends StatefulWidget {
     required this.adjustedPosition,
     required this.isPlaying,
     required this.isHighlighted,
+    required this.richSyncThreshold,
   });
 
   @override
@@ -380,9 +391,6 @@ class _RichPartState extends State<_RichPart>
   bool _hasReachedStartTime = false;
   static const Duration _defaultProgressAnimationDuration = Duration(
     milliseconds: 500,
-  );
-  static const Duration _progressAnimationThreshold = Duration(
-    milliseconds: 800,
   );
   static const Duration _positionResyncThreshold = Duration(milliseconds: 400);
 
@@ -525,7 +533,7 @@ class _RichPartState extends State<_RichPart>
         final progress = _controller.value;
         final bool isLifting = _hasReachedStartTime;
         final bool isShort =
-            duration < _progressAnimationThreshold ||
+            duration < widget.richSyncThreshold ||
             (widget.text.length <= 1 &&
                 widget.text.contains(
                   RegExp(r'[\p{P}\p{S}]', unicode: true),

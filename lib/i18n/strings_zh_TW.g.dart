@@ -304,6 +304,9 @@ class Translations$settings$lyricConfig$zh_TW extends Translations$settings$lyri
 	@override String get sectionDescription => '設定歌詞的擷取與處理方式。';
 	@override String get richSync => 'Rich Sync';
 	@override String get richSyncSubtitle => '啟用逐字同步。';
+	@override String get richSyncThreshold => 'Rich Sync 片段閾值';
+	@override String get richSyncThresholdSubtitle => '短於該時長的詞片段會整體高亮，而不播放進度擦除動畫。設為 0 則每個片段都播放動畫。';
+	@override String get richSyncThresholdReset => '重設為 800ms';
 	@override String get globalOffset => '全域歌詞偏移';
 	@override String get globalOffsetSubtitle => '為所有歌詞設定預設偏移 (例如裝置存在音訊延遲)。';
 	@override String get globalOffsetReset => '重設為 0 秒';

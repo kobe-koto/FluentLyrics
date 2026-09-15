@@ -40,6 +40,25 @@ class LyricConfigurationSection extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             SettingsSliderCard(
+              title: i18n.richSyncThreshold,
+              subtitle: i18n.richSyncThresholdSubtitle,
+              value: provider.richSyncThresholdMs.current.toDouble(),
+              min: 0,
+              max: 2000,
+              divisions: 20,
+              label: '${provider.richSyncThresholdMs.current}ms',
+              valueText: '${provider.richSyncThresholdMs.current}ms',
+              onChanged: (value) =>
+                  provider.setRichSyncThresholdMs(value.toInt()),
+              onReset: provider.richSyncThresholdMs.changed
+                  ? () => provider.setRichSyncThresholdMs(
+                      provider.richSyncThresholdMs.defaultValue,
+                    )
+                  : null,
+              resetTooltip: i18n.richSyncThresholdReset,
+            ),
+            const SizedBox(height: 24),
+            SettingsSliderCard(
               title: i18n.globalOffset,
               subtitle: i18n.globalOffsetSubtitle,
               value: (provider.globalOffset.inMilliseconds / 100).toDouble(),
