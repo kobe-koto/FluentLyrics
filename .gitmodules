@@ -1,0 +1,4 @@
+[submodule "third_party/opencc"]
+	path = third_party/opencc
+	url = https://github.com/BYVoid/OpenCC
+	shallow = true
