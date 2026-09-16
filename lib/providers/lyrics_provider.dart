@@ -12,6 +12,8 @@ import '../services/providers/lyrics_cache_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/lyrics_candidate_helper.dart';
 import '../utils/lyrics_display_helper.dart';
+import '../services/opencc/zh_conversion.dart';
+import '../services/opencc/zh_conversion_service.dart';
 import '../utils/richify_helper.dart';
 import '../utils/translation_helper.dart';
 
@@ -49,6 +51,15 @@ class LyricsProvider with ChangeNotifier {
   Setting<int> get _richSyncThresholdMs => _settings.richSyncThresholdMs;
   set _richSyncThresholdMs(Setting<int> value) =>
       _settings.richSyncThresholdMs = value;
+
+  Setting<String> get _zhConversionTarget => _settings.zhConversionTarget;
+  set _zhConversionTarget(Setting<String> value) =>
+      _settings.zhConversionTarget = value;
+
+  Setting<List<String>> get _zhConversionIgnoredLanguages =>
+      _settings.zhConversionIgnoredLanguages;
+  set _zhConversionIgnoredLanguages(Setting<List<String>> value) =>
+      _settings.zhConversionIgnoredLanguages = value;
 
   Setting<int> get _globalOffsetMs => _settings.globalOffsetMs;
   set _globalOffsetMs(Setting<int> value) => _settings.globalOffsetMs = value;
@@ -213,7 +224,45 @@ class LyricsProvider with ChangeNotifier {
   List<Lyric>? _cachedStrippedLyrics;
   LyricsResult? _lastLyricsResultForStripping;
 
-  List<Lyric> get lyrics {
+  List<Lyric>? _convertedLyrics;
+  List<Lyric>? _convertedLyricsSource;
+  String? _convertedLyricsTarget;
+  List<String>? _convertedLyricsIgnoredLanguages;
+  String? _convertedLyricsLanguageHint;
+
+  List<Lyric> _applyZhConversion(List<Lyric> lyrics) {
+    final target = ZhConversionTarget.fromSetting(_zhConversionTarget.current);
+    if (target == ZhConversionTarget.off) return lyrics;
+
+    final ignoredLanguages = _zhConversionIgnoredLanguages.current;
+    final languageHint = _lyricsResult.language ?? _translationResult?.language;
+    if (identical(_convertedLyricsSource, lyrics) &&
+        _convertedLyricsTarget == target.settingValue &&
+        _convertedLyricsLanguageHint == languageHint &&
+        listEquals(_convertedLyricsIgnoredLanguages, ignoredLanguages)) {
+      return _convertedLyrics!;
+    }
+
+    final converted = ZhConversionService.instance.convertLyrics(
+      lyrics,
+      target: target,
+      ignoredLanguages: ignoredLanguages,
+      languageHint: languageHint,
+    );
+    _convertedLyricsSource = lyrics;
+    _convertedLyrics = converted;
+    _convertedLyricsTarget = target.settingValue;
+    _convertedLyricsIgnoredLanguages = ignoredLanguages;
+    _convertedLyricsLanguageHint = languageHint;
+    return converted;
+  }
+
+  /// The lyrics as rendered: rich-sync stripping, translation alignment and
+  /// the optional Simplified/Traditional conversion, all memoized so repeated
+  /// reads (position ticks, rebuilds) stay cheap.
+  List<Lyric> get lyrics => _applyZhConversion(_buildDisplayedLyrics());
+
+  List<Lyric> _buildDisplayedLyrics() {
     final curRichSync = _richSyncEnabled.current;
 
     List<Lyric> baseLyrics;
@@ -288,6 +337,9 @@ class LyricsProvider with ChangeNotifier {
   Setting<int> get linesBefore => _linesBefore;
   Setting<int> get landscapeLeadingSpace => _landscapeLeadingSpace;
   Setting<int> get richSyncThresholdMs => _richSyncThresholdMs;
+  Setting<String> get zhConversionTarget => _zhConversionTarget;
+  Setting<List<String>> get zhConversionIgnoredLanguages =>
+      _zhConversionIgnoredLanguages;
   Setting<int> get scrollAutoResumeDelay => _scrollAutoResumeDelay;
   Setting<bool> get blurEnabled => _blurEnabled;
   Setting<bool> get richSyncEnabled => _richSyncEnabled;
@@ -594,6 +646,15 @@ class LyricsProvider with ChangeNotifier {
     _settings = await LyricsProviderSettings.load(_settingsService);
 
     notifyListeners();
+
+    // Extracting the bundled OpenCC data is not instant; notify again so the
+    // lyrics are converted as soon as converters become available.
+    unawaited(
+      ZhConversionService.instance.ensureInitialized().then((_) {
+        if (_disposed) return;
+        notifyListeners();
+      }),
+    );
   }
 
   bool _setSettingValue<T>({
@@ -651,6 +712,25 @@ class LyricsProvider with ChangeNotifier {
       value: ms,
       assign: (value) => _richSyncThresholdMs = value,
       persist: _settingsService.setRichSyncThresholdMs,
+    );
+  }
+
+  void setZhConversionTarget(String target) {
+    _setSettingValue(
+      currentSetting: _zhConversionTarget,
+      value: target,
+      assign: (value) => _zhConversionTarget = value,
+      persist: _settingsService.setZhConversionTarget,
+    );
+  }
+
+  void setZhConversionIgnoredLanguages(List<String> languages) {
+    _setSettingValue(
+      currentSetting: _zhConversionIgnoredLanguages,
+      value: languages,
+      assign: (value) => _zhConversionIgnoredLanguages = value,
+      persist: _settingsService.setZhConversionIgnoredLanguages,
+      equals: listEquals,
     );
   }
 
@@ -1596,8 +1676,11 @@ class LyricsProvider with ChangeNotifier {
     }
   }
 
+  bool _disposed = false;
+
   @override
   void dispose() {
+    _disposed = true;
     _permissionTimer?.cancel();
     mediaService.removeListener(_onMediaChanged);
     mediaService.stopPolling();

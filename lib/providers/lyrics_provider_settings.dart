@@ -9,6 +9,8 @@ class LyricsProviderSettings {
     required this.linesBefore,
     required this.landscapeLeadingSpace,
     required this.richSyncThresholdMs,
+    required this.zhConversionTarget,
+    required this.zhConversionIgnoredLanguages,
     required this.globalOffsetMs,
     required this.scrollAutoResumeDelay,
     required this.blurEnabled,
@@ -57,6 +59,16 @@ class LyricsProviderSettings {
       richSyncThresholdMs: const Setting(
         current: AppDefaults.richSyncThresholdMs,
         defaultValue: AppDefaults.richSyncThresholdMs,
+        changed: false,
+      ),
+      zhConversionTarget: const Setting(
+        current: AppDefaults.zhConversionTarget,
+        defaultValue: AppDefaults.zhConversionTarget,
+        changed: false,
+      ),
+      zhConversionIgnoredLanguages: const Setting(
+        current: AppDefaults.zhConversionIgnoredLanguages,
+        defaultValue: AppDefaults.zhConversionIgnoredLanguages,
         changed: false,
       ),
       globalOffsetMs: const Setting(
@@ -200,6 +212,9 @@ class LyricsProviderSettings {
       linesBefore: await settingsService.getLinesBefore(),
       landscapeLeadingSpace: await settingsService.getLandscapeLeadingSpace(),
       richSyncThresholdMs: await settingsService.getRichSyncThresholdMs(),
+      zhConversionTarget: await settingsService.getZhConversionTarget(),
+      zhConversionIgnoredLanguages: await settingsService
+          .getZhConversionIgnoredLanguages(),
       globalOffsetMs: await settingsService.getGlobalOffset(),
       scrollAutoResumeDelay: await settingsService.getScrollAutoResumeDelay(),
       blurEnabled: await settingsService.getBlurEnabled(),
@@ -240,6 +255,8 @@ class LyricsProviderSettings {
   Setting<int> linesBefore;
   Setting<int> landscapeLeadingSpace;
   Setting<int> richSyncThresholdMs;
+  Setting<String> zhConversionTarget;
+  Setting<List<String>> zhConversionIgnoredLanguages;
   Setting<int> globalOffsetMs;
   Setting<int> scrollAutoResumeDelay;
   Setting<bool> blurEnabled;

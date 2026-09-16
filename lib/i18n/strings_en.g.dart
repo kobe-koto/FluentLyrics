@@ -591,6 +591,24 @@ class Translations$settings$lyricConfig$en {
 	/// en: 'Reset to 800ms'
 	String get richSyncThresholdReset => 'Reset to 800ms';
 
+	/// en: 'Chinese Script Conversion'
+	String get zhConversion => 'Chinese Script Conversion';
+
+	/// en: 'Convert lyric and translation text to the selected Chinese script. Japanese text is left untouched.'
+	String get zhConversionSubtitle => 'Convert lyric and translation text to the selected Chinese script. Japanese text is left untouched.';
+
+	/// en: 'Off'
+	String get zhConversionOff => 'Off';
+
+	/// en: 'Simplified Chinese (zh_CN)'
+	String get zhConversionSimplified => 'Simplified Chinese (zh_CN)';
+
+	/// en: 'Traditional Chinese, Taiwan (zh_TW)'
+	String get zhConversionTraditionalTaiwan => 'Traditional Chinese, Taiwan (zh_TW)';
+
+	/// en: 'Traditional Chinese, Hong Kong (zh_HK)'
+	String get zhConversionTraditionalHongKong => 'Traditional Chinese, Hong Kong (zh_HK)';
+
 	/// en: 'Global Lyrics Offset'
 	String get globalOffset => 'Global Lyrics Offset';
 
