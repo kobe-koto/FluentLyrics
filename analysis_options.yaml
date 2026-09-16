@@ -1,6 +1,11 @@
 analyzer:
   errors:
     experimental_member_use: ignore # for Isar
+  exclude:
+    - build/**
+    - android/**
+    - macos/**
+    - linux/**
 include: package:flutter_lints/flutter.yaml
 
 linter:
