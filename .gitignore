@@ -50,3 +50,8 @@ release.md
 # F-Droid related
 fdroid-work/
 fdroid-public/
+
+# Generated OpenCC data for the asset bundle. Run tool/sync_opencc_assets.sh
+# before building (CI does this in each build job).
+/assets/opencc/
+/android/build/reports

@@ -307,6 +307,12 @@ class Translations$settings$lyricConfig$zh_TW extends Translations$settings$lyri
 	@override String get richSyncThreshold => 'Rich Sync 片段閾值';
 	@override String get richSyncThresholdSubtitle => '短於該時長的詞片段會整體高亮，而不播放進度擦除動畫。設為 0 則每個片段都播放動畫。';
 	@override String get richSyncThresholdReset => '重設為 800ms';
+	@override String get zhConversion => '中文簡繁轉換';
+	@override String get zhConversionSubtitle => '將歌詞與譯文轉換為你選擇的中文形態。日文文本不會被轉換。';
+	@override String get zhConversionOff => '關閉';
+	@override String get zhConversionSimplified => '簡體中文 (zh_CN)';
+	@override String get zhConversionTraditionalTaiwan => '繁體中文·台灣 (zh_TW)';
+	@override String get zhConversionTraditionalHongKong => '繁體中文·香港 (zh_HK)';
 	@override String get globalOffset => '全域歌詞偏移';
 	@override String get globalOffsetSubtitle => '為所有歌詞設定預設偏移 (例如裝置存在音訊延遲)。';
 	@override String get globalOffsetReset => '重設為 0 秒';

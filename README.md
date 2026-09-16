@@ -111,6 +111,18 @@ Requirements:
 - Android toolchain (for android)
 - Linux toolchain (for Linux)
 - Xcode tools (for macOS)
+- CMake and a C/C++ toolchain (for the vendored OpenCC)
+
+OpenCC is vendored as a git submodule under `third_party/opencc`, and the
+configs/dictionaries it ships are **generated, not committed** (they live in
+`assets/opencc/`, which is gitignored). Clone with submodules (or fetch them
+afterwards) and sync the generated assets once before building:
+
+```bash
+git clone --recurse-submodules <repo-url>
+# existing clone:
+git submodule update --init --depth 1
+```
 
 Common commands:
 
@@ -119,6 +131,9 @@ flutter pub get # get deps
 flutter run -d <device> --[debug|profile|release] # run the app
 dart run build_runner build --delete-conflicting-outputs  # after modifying Isar @Collection 
 dart run slang # after modifying i18n datasets
+./tool/prepare_opencc.sh [tag] # fetch/trim the pinned OpenCC submodule, defaults to ver.1.4.2
+./tool/sync_opencc_assets.sh # (re)generate assets/opencc from the pinned OpenCC; required before building or testing
+./tool/build_opencc.sh # build libopencc for the host, so `flutter test` can use it (output: build/opencc/out)
 ./tool/macos_prepare_mediaremote_adapter.sh [version] # macOS only, prepared media remote adapter is required before building, defaults to v0.7.6
 ```
 

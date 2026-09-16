@@ -307,6 +307,12 @@ class Translations$settings$lyricConfig$zh_CN extends Translations$settings$lyri
 	@override String get richSyncThreshold => 'Rich Sync 片段阈值';
 	@override String get richSyncThresholdSubtitle => '短于该时长的词片段会整体高亮，而不播放进度擦除动画。设为 0 则每个片段都播放动画。';
 	@override String get richSyncThresholdReset => '重置为 800ms';
+	@override String get zhConversion => '中文简繁转换';
+	@override String get zhConversionSubtitle => '将歌词与译文转换为你选择的中文形态。日文文本不会被转换。';
+	@override String get zhConversionOff => '关闭';
+	@override String get zhConversionSimplified => '简体中文 (zh_CN)';
+	@override String get zhConversionTraditionalTaiwan => '繁体中文·台湾 (zh_TW)';
+	@override String get zhConversionTraditionalHongKong => '繁体中文·香港 (zh_HK)';
 	@override String get globalOffset => '全局歌词偏移';
 	@override String get globalOffsetSubtitle => '为所有歌词设置默认偏移 (例如设备存在音频延迟)。';
 	@override String get globalOffsetReset => '重置为 0 秒';

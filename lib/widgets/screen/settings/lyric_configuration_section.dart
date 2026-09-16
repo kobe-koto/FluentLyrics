@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../../providers/lyrics_provider.dart';
+import '../../../services/opencc/zh_conversion.dart';
 import '../../../utils/lyric_configuration_helper.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_section.dart';
+import '../../settings_dropdown_card.dart';
 import '../../settings_slider_card.dart';
 import '../../settings_toggle_card.dart';
 
@@ -56,6 +58,36 @@ class LyricConfigurationSection extends StatelessWidget {
                     )
                   : null,
               resetTooltip: i18n.richSyncThresholdReset,
+            ),
+            const SizedBox(height: 24),
+            SettingsDropdownCard<String>(
+              title: i18n.zhConversion,
+              subtitle: i18n.zhConversionSubtitle,
+              value: provider.zhConversionTarget.current,
+              options: [
+                SettingsDropdownOption(
+                  value: ZhConversionTarget.off.settingValue,
+                  label: i18n.zhConversionOff,
+                ),
+                SettingsDropdownOption(
+                  value: ZhConversionTarget.simplified.settingValue,
+                  label: i18n.zhConversionSimplified,
+                ),
+                SettingsDropdownOption(
+                  value: ZhConversionTarget.traditionalTaiwan.settingValue,
+                  label: i18n.zhConversionTraditionalTaiwan,
+                ),
+                SettingsDropdownOption(
+                  value: ZhConversionTarget.traditionalHongKong.settingValue,
+                  label: i18n.zhConversionTraditionalHongKong,
+                ),
+              ],
+              onChanged: (value) => provider.setZhConversionTarget(value),
+              onReset: provider.zhConversionTarget.changed
+                  ? () => provider.setZhConversionTarget(
+                      provider.zhConversionTarget.defaultValue,
+                    )
+                  : null,
             ),
             const SizedBox(height: 24),
             SettingsSliderCard(

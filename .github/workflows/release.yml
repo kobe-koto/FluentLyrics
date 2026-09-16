@@ -130,6 +130,9 @@ jobs:
           version="${VERSION#v}"
           VERSION="$version" perl -0pi -e 's/^version: .*/version: $ENV{VERSION}/m' pubspec.yaml
 
+      - name: Sync OpenCC assets
+        run: ./tool/sync_opencc_assets.sh
+
       - name: Build Linux
         env:
           RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
@@ -204,6 +207,9 @@ jobs:
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
 
+      - name: Sync OpenCC assets
+        run: ./tool/sync_opencc_assets.sh
+
       - name: Build Android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -264,6 +270,9 @@ jobs:
 
       - name: Prepare MediaRemote adapter
         run: ./tool/macos_prepare_mediaremote_adapter.sh
+
+      - name: Sync OpenCC assets
+        run: ./tool/sync_opencc_assets.sh
 
       - name: Build macOS
         env:

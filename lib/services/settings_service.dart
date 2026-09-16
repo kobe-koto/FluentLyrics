@@ -16,6 +16,9 @@ class SettingsService {
   static const String _linesBeforeKey = 'lines_before';
   static const String _landscapeLeadingSpaceKey = 'landscape_leading_space';
   static const String _richSyncThresholdMsKey = 'rich_sync_threshold_ms';
+  static const String _zhConversionTargetKey = 'zh_conversion_target';
+  static const String _zhConversionIgnoredLanguagesKey =
+      'zh_conversion_ignored_languages';
   static const String _globalOffsetKey = 'global_offset_ms';
   static const String _scrollAutoResumeDelayKey = 'scroll_auto_resume_delay';
   static const String _blurEnabledKey = 'blur_enabled';
@@ -193,6 +196,40 @@ class SettingsService {
   Future<void> setRichSyncThresholdMs(int ms) async {
     final prefs = await _prefs;
     await prefs.setInt(_richSyncThresholdMsKey, ms);
+  }
+
+  Future<Setting<String>> getZhConversionTarget() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getString(_zhConversionTargetKey) ??
+        AppDefaults.zhConversionTarget;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.zhConversionTarget,
+      changed: current != AppDefaults.zhConversionTarget,
+    );
+  }
+
+  Future<void> setZhConversionTarget(String target) async {
+    final prefs = await _prefs;
+    await prefs.setString(_zhConversionTargetKey, target);
+  }
+
+  Future<Setting<List<String>>> getZhConversionIgnoredLanguages() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getStringList(_zhConversionIgnoredLanguagesKey) ??
+        AppDefaults.zhConversionIgnoredLanguages;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.zhConversionIgnoredLanguages,
+      changed: !listEquals(current, AppDefaults.zhConversionIgnoredLanguages),
+    );
+  }
+
+  Future<void> setZhConversionIgnoredLanguages(List<String> languages) async {
+    final prefs = await _prefs;
+    await prefs.setStringList(_zhConversionIgnoredLanguagesKey, languages);
   }
 
   Future<Setting<int>> getGlobalOffset() async {
