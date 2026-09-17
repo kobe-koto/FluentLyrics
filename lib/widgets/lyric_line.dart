@@ -214,17 +214,20 @@ class LyricLine extends StatelessWidget {
     );
   }
 
-  /// Ruby for rich (word level) lines: each inline part stays the widget it
-  /// was — including its progress wipe — and only the *first* part that carries
-  /// an annotated run gets the reading above it.
+  /// Ruby for rich (word level) lines.
   ///
-  /// A kanji run often spans several parts (`最低` + `界隈` for さいていかいわい),
-  /// so repeating the reading above every part would render it once per kanji.
+  /// An annotated kanji run is rendered as one plain ruby block (`最低界隈` with
+  /// さいていかいわい above it) even when the rich sync payload splits it into
+  /// several parts: parts cannot share one reading, and repeating the reading
+  /// above each of them would print it once per kanji. Everything outside the
+  /// annotated runs stays a rich widget, so the progress wipe is kept where it
+  /// can be.
   Widget _buildRichAnnotatedText(
     BuildContext context,
     List<FuriganaAnnotation> annotations,
     List<LyricInlinePart> parts,
   ) {
+    final text = lyric.text;
     final baseStyle = DefaultTextStyle.of(context).style;
     final annotationStyle = baseStyle.copyWith(
       fontSize: (baseStyle.fontSize ?? 36) * 0.42,
@@ -240,62 +243,63 @@ class LyricLine extends StatelessWidget {
       height: 1.2,
     );
 
-    final text = lyric.text;
-    final spans = <InlineSpan>[];
-    final shown = <FuriganaAnnotation>{};
+    // Word level ranges in line coordinates. Richify can merge parts from
+    // another provider, whose boundaries do not line up, so each part is
+    // re-anchored in the line text instead of trusting the running offset.
+    final ranges = <({int start, int end, LyricInlinePart part})>[];
     var offset = 0;
     for (final part in parts) {
       var start = offset;
       var end = start + part.text.length;
-
-      // Richify can merge parts from another provider, whose word boundaries do
-      // not line up with this line's text: re-anchor the part in the line
-      // instead of trusting the running offset.
-      if (start > text.length ||
-          (part.text.isNotEmpty &&
-              text.substring(start, end > text.length ? text.length : end) !=
-                  part.text)) {
-        final found = text.indexOf(
-          part.text,
-          offset > text.length ? 0 : offset,
-        );
+      final matches =
+          start <= text.length &&
+          end <= text.length &&
+          text.substring(start, end) == part.text;
+      if (!matches && part.text.isNotEmpty) {
+        final found = text.indexOf(part.text);
         if (found >= 0) {
           start = found;
           end = found + part.text.length;
         }
       }
+      ranges.add((start: start, end: end, part: part));
       offset = end;
+    }
 
-      final readings = [
-        for (final annotation in annotations)
-          if (annotation.start < end &&
-              annotation.end > start &&
-              shown.add(annotation))
-            annotation.reading,
-      ];
+    final spans = <InlineSpan>[];
 
-      final richPart = _RichPart(
-        text: part.text,
-        startTime: part.startTime,
-        endTime: part.endTime,
-        style: richTextStyle,
-        adjustedPosition: adjustedPosition,
-        isPlaying: isPlaying,
-        isHighlighted: isHighlighted,
-        richSyncThreshold: richSyncThreshold,
-      );
-
-      if (readings.isEmpty || part.text.trim().isEmpty) {
+    void addRichRange(int from, int to) {
+      if (to <= from) return;
+      for (final range in ranges) {
+        final clipStart = from > range.start ? from : range.start;
+        final clipEnd = to < range.end ? to : range.end;
+        if (clipEnd <= clipStart) continue;
         spans.add(
           WidgetSpan(
             alignment: PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic,
-            child: richPart,
+            child: _RichPart(
+              text: text.substring(clipStart, clipEnd),
+              startTime: range.part.startTime,
+              endTime: range.part.endTime,
+              style: richTextStyle,
+              adjustedPosition: adjustedPosition,
+              isPlaying: isPlaying,
+              isHighlighted: isHighlighted,
+              richSyncThreshold: richSyncThreshold,
+            ),
           ),
         );
-        continue;
       }
+    }
 
+    final sorted = [...annotations]..sort((a, b) => a.start.compareTo(b.start));
+    var cursor = 0;
+    for (final annotation in sorted) {
+      final start = annotation.start.clamp(0, text.length);
+      final end = annotation.end.clamp(0, text.length);
+      if (end <= start) continue;
+      addRichRange(cursor, start);
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.bottom,
@@ -303,17 +307,19 @@ class LyricLine extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                readings.join(' '),
+                annotation.reading,
                 style: annotationStyle,
                 maxLines: 1,
                 overflow: TextOverflow.clip,
               ),
-              richPart,
+              Text(text.substring(start, end)),
             ],
           ),
         ),
       );
+      cursor = end;
     }
+    addRichRange(cursor, text.length);
 
     return Text.rich(
       TextSpan(children: spans),

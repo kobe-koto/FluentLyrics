@@ -290,7 +290,9 @@ void main() {
     await tester.pumpWidget(_buildMultiPartAnnotatedHarness());
     await tester.pump();
 
-    // The run spans 最低 and 界隈, but its reading belongs above the run once.
+    // The run spans 最低 and 界隈: it degrades to one plain ruby block, so the
+    // reading shows once and the covered characters are a single widget.
     expect(find.text('さいていかいわい'), findsOneWidget);
+    expect(find.text('最低界隈'), findsOneWidget);
   });
 }
