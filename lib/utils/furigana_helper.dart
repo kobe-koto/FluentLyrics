@@ -31,16 +31,16 @@ class FuriganaAnnotation {
 /// Both the kana and the romanized flavours are supported: the algorithm walks
 /// the original text and matches the kana it already contains against the
 /// reading, and whatever reading is left over belongs to the kanji run in front
-/// of it. Anything that does not line up (a different reading, romanization the
-/// table does not know, a line the provider mistimed) makes the whole line bail
-/// out with no annotations rather than showing wrong readings.
+/// of it. Anything that does not line up makes the whole line bail out with no
+/// annotations rather than showing wrong readings.
 class FuriganaHelper {
   const FuriganaHelper._();
 
-  /// How far a reading unit may be from where we expect it before giving up.
-  /// Covers particles romanized the way they are spoken and small kana a
-  /// provider merged into the previous unit.
-  static const int _maxSkip = 3;
+  /// How far a reading unit may be from where we expect it. Kanji compounds
+  /// read long (`満員電車` is 7 units) and providers merge small kana into the
+  /// previous unit, so the window is generous; a mismatch anywhere still
+  /// discards the whole line.
+  static const int _maxSkip = 8;
 
   static List<FuriganaAnnotation> align({
     required String text,
@@ -49,8 +49,13 @@ class FuriganaHelper {
   }) {
     if (text.isEmpty || reading.isEmpty) return const [];
 
+    // Providers separate mora with spaces, ん from a following vowel with an
+    // apostrophe (`ma n'i n de n`), and punctuation is its own unit.
     final units = readingIsRomaji
-        ? reading.split(RegExp(r'\s+')).where((u) => u.isNotEmpty).toList()
+        ? reading
+              .split(RegExp(r"[\s'!?,;:()\[\]{}]+"))
+              .where((unit) => unit.isNotEmpty)
+              .toList()
         : _kanaUnits(reading);
     if (units.isEmpty) return const [];
 
@@ -59,44 +64,84 @@ class FuriganaHelper {
     var position = 0; // index into `units`
     var index = 0; // index into `text`
     var runStart = -1;
+    var runEnd = -1;
 
-    void closeRun(int end) {
-      if (runStart >= 0 && runUnits.isNotEmpty) {
+    void closeRun() {
+      if (runStart >= 0 && runEnd > runStart && runUnits.isNotEmpty) {
         annotations.add(
           FuriganaAnnotation(
             start: runStart,
-            end: end,
+            end: runEnd,
             reading: readingIsRomaji ? runUnits.join(' ') : runUnits.join(),
           ),
         );
       }
       runStart = -1;
+      runEnd = -1;
       runUnits.clear();
     }
 
     while (index < text.length) {
       final char = text[index];
-      if (!_isKanaOrMark(char)) {
-        if (_isKanji(char) && runStart < 0) runStart = index;
-        index += _charLength(text, index);
+
+      if (_isKanji(char)) {
+        if (runStart < 0) runStart = index;
+        runEnd = index + _charLength(text, index);
+        index = runEnd;
         continue;
       }
 
-      final kanaStart = index;
-      final expected = _expectedUnits(text, index, readingIsRomaji);
-      var match = _findMatch(units, position, expected);
-      if (match == null) return const [];
-
-      // A kanji run that is still empty may be waiting for the reading the
-      // nearest match would consume (particles written as spoken: `は` -> `wa`).
-      // Take a later occurrence when there is one.
-      if (match == position && runStart >= 0 && runUnits.isEmpty) {
-        final farther = _findMatch(units, position + 1, expected);
-        if (farther != null) match = farther;
+      if (!_isKanaOrMark(char)) {
+        if (_isLatinRunChar(char)) {
+          final consumed = _consumeLatinRun(text, index, units, position);
+          index = consumed.$1;
+          position = consumed.$2;
+        } else {
+          // Punctuation and the like are not read; they only end a run.
+          index += _charLength(text, index);
+        }
+        continue;
       }
 
-      // Reading the kana skipped over belongs to the kanji run before it.
-      runUnits.addAll(units.sublist(position, match));
+      final expected = _expectedUnits(text, index, readingIsRomaji);
+      // While a kanji run is still waiting for its reading the anchor can be
+      // arbitrarily far away (`満員電車触` is 8 units before ん), so the search
+      // is unbounded there; between kana the window stays tight.
+      final window = runStart >= 0 && runUnits.isEmpty
+          ? units.length
+          : _maxSkip;
+      final candidates = _candidates(units, position, expected, window);
+      if (candidates.isEmpty) {
+        // Providers merge a long vowel into the previous unit (`su kaa to`),
+        // so a ー the reading already covered is skipped.
+        if (char == 'ー') {
+          index += _charLength(text, index);
+          continue;
+        }
+        return const [];
+      }
+
+      // Repeated kana make several anchors plausible: take the one the rest of
+      // the line continues from, closest first.
+      final nextIndex = index + _charLength(text, index);
+      final runEndsHere =
+          nextIndex >= text.length || !_isKanji(text[nextIndex]);
+      final match = _bestMatch(
+        text,
+        index,
+        units,
+        position,
+        candidates,
+        // A kanji run that ends on this kana may be racing it for the reading
+        // (`私は` = わたし + は), so give the run the reading and the kana the
+        // last occurrence. Inside a run, or when another kanji follows, the
+        // nearest anchor is the right one.
+        preferLast: runStart >= 0 && runUnits.isEmpty && runEndsHere,
+      );
+
+      runUnits.addAll(
+        units.sublist(position, match).where((unit) => unit.isNotEmpty),
+      );
       position = match + 1;
 
       // Romanized っ and small kana merge with the following kana (`tta` for
@@ -106,27 +151,70 @@ class FuriganaHelper {
       if (merged && index < text.length && _isKanaOrMark(text[index])) {
         index += _charLength(text, index);
       }
-      closeRun(kanaStart);
+      closeRun();
     }
 
-    if (annotations.isEmpty) return const [];
-
+    // The line may end with a kanji run: hand it whatever reading is left.
     if (position < units.length) {
-      // Trailing reading no kanji claimed: hand it to the last annotation
-      // instead of dropping it silently.
-      final extra = units.sublist(position);
-      final last = annotations.removeLast();
-      annotations.add(
-        FuriganaAnnotation(
-          start: last.start,
-          end: last.end,
-          reading: readingIsRomaji
-              ? '${last.reading} ${extra.join(' ')}'
-              : last.reading + extra.join(),
-        ),
-      );
+      runUnits.addAll(units.sublist(position).where((unit) => unit.isNotEmpty));
+      position = units.length;
     }
+    closeRun();
+
     return annotations;
+  }
+
+  /// Picks the anchor whose reading leaves the following text the least to
+  /// travel to. When the line ends there ([preferLast]) a kanji run that has no
+  /// reading yet takes the furthest anchor instead, so the kana in front of it
+  /// (`私は` -> `wa ta shi wa`) is not mistaken for the run's own reading.
+  static int _bestMatch(
+    String text,
+    int index,
+    List<String> units,
+    int position,
+    List<int> candidates, {
+    required bool preferLast,
+  }) {
+    if (candidates.length == 1) return candidates.first;
+
+    final nextIndex = index + _charLength(text, index);
+    if (nextIndex < text.length && _isKanaOrMark(text[nextIndex])) {
+      final nextExpected = _expectedUnits(text, nextIndex, true);
+      int? best;
+      var bestGap = 1 << 30;
+      for (final candidate in candidates) {
+        final next = _findMatch(units, candidate + 1, nextExpected, _maxSkip);
+        if (next == null) continue;
+        final gap = next - candidate;
+        if (gap < bestGap) {
+          bestGap = gap;
+          best = candidate;
+        }
+      }
+      if (best != null) return best;
+    }
+
+    return preferLast ? candidates.last : candidates.first;
+  }
+
+  static List<int> _candidates(
+    List<String> units,
+    int position,
+    List<String> expected,
+    int window,
+  ) {
+    final candidates = <int>[];
+    for (
+      var skip = 0;
+      skip <= window && position + skip < units.length;
+      skip++
+    ) {
+      final unit = units[position + skip];
+      if (unit.isEmpty) continue;
+      if (expected.contains(_toHiragana(unit))) candidates.add(position + skip);
+    }
+    return candidates;
   }
 
   /// Nearest reading unit matching [expected] within [_maxSkip], or null.
@@ -134,18 +222,11 @@ class FuriganaHelper {
     List<String> units,
     int position,
     List<String> expected,
+    int window,
   ) {
     if (expected.isEmpty) return null;
-    for (
-      var skip = 0;
-      skip <= _maxSkip && position + skip < units.length;
-      skip++
-    ) {
-      if (expected.contains(_toHiragana(units[position + skip]))) {
-        return position + skip;
-      }
-    }
-    return null;
+    final candidates = _candidates(units, position, expected, window);
+    return candidates.isEmpty ? null : candidates.first;
   }
 
   static bool _mergesWithNext(String text, int index) {
@@ -159,7 +240,7 @@ class FuriganaHelper {
   }
 
   /// Accepted readings for the kana at [index], including the っ merge with the
-  /// following kana, small kana combinations and ー repeating the last vowel.
+  /// following kana, small kana combinations and long vowels.
   static List<String> _expectedUnits(String text, int index, bool romaji) {
     final char = text[index];
     if (!romaji) return [_toHiragana(char)];
@@ -169,7 +250,15 @@ class FuriganaHelper {
       if (next == null) return const ['tsu', 'tu'];
       final merged = kanaRomajiTable[_toHiragana(next)];
       if (merged == null || merged.isEmpty) return const ['tsu', 'tu'];
-      return merged.map((unit) => unit[0] + unit).toList();
+      final forms = <String>[];
+      for (final unit in merged) {
+        forms.add(unit[0] + unit);
+        // Hepburn doubles `ch` and `ts` with a `t` prefix (matcha, tsupparu).
+        if (unit.startsWith('ch') || unit.startsWith('ts')) {
+          forms.add('t$unit');
+        }
+      }
+      return forms;
     }
     if (char == 'ー') {
       final previous = _previousKana(text, index);
@@ -185,7 +274,14 @@ class FuriganaHelper {
           kanaRomajiTable['${_toHiragana(char)}${_toHiragana(next)}'];
       if (combined != null && combined.isNotEmpty) return combined;
     }
-    return kanaRomajiTable[_toHiragana(char)] ?? const [];
+
+    final forms = kanaRomajiTable[_toHiragana(char)];
+    if (forms == null) return const [];
+    // Providers merge a long vowel into the previous unit (`su kaa to`), so the
+    // vowel-doubled spelling is accepted too.
+    return [
+      for (final form in forms) ...[form, if (next == 'ー') _vowelDoubled(form)],
+    ];
   }
 
   static String? _nextKana(String text, int index) {
@@ -204,8 +300,7 @@ class FuriganaHelper {
     return null;
   }
 
-  /// Reading units the line's own kana must consume, in the provider's script
-  /// (katakana stays katakana so annotations match the source).
+  /// Reading units the line's own kana must consume, in the provider's script.
   static List<String> _kanaUnits(String reading) {
     final units = <String>[];
     for (var i = 0; i < reading.length; i++) {
@@ -213,6 +308,39 @@ class FuriganaHelper {
       if (_isKanaOrMark(char)) units.add(char);
     }
     return units;
+  }
+
+  /// Latin words (and numbers) are written the same way in the lyrics and in
+  /// the reading track, so consume the matching units: `gimme` covers one unit,
+  /// while a unit the provider merged with a following kana (`BeRealde`) keeps
+  /// the leftover for that kana.
+  static (int, int) _consumeLatinRun(
+    String text,
+    int index,
+    List<String> units,
+    int position,
+  ) {
+    var end = index;
+    while (end < text.length && _isLatinRunChar(text[end])) {
+      end += _charLength(text, end);
+    }
+
+    final run = text.substring(index, end).toLowerCase();
+    // Repeated words (`gimme gimme`) take the next occurrence, so scan a little
+    // ahead instead of only looking at the current unit.
+    for (var i = position; i < units.length && i <= position + 8; i++) {
+      final unit = units[i].toLowerCase();
+      if (unit.isEmpty) continue;
+      if (unit == run) {
+        units[i] = '';
+        return (end, i + 1);
+      }
+      if (unit.startsWith(run)) {
+        units[i] = units[i].substring(run.length);
+        return (end, i);
+      }
+    }
+    return (end, position);
   }
 
   static int _charLength(String text, int index) =>
@@ -224,6 +352,11 @@ class FuriganaHelper {
       return String.fromCharCode(code - 0x60);
     }
     return char;
+  }
+
+  static String _vowelDoubled(String form) {
+    final last = form[form.length - 1];
+    return RegExp(r'[aeiou]').hasMatch(last) ? '$form$last' : form;
   }
 
   static bool _isKana(String char) {
@@ -239,12 +372,20 @@ class FuriganaHelper {
       const {'ゃ', 'ゅ', 'ょ', 'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ'}.contains(char) ||
       const {'ャ', 'ュ', 'ョ', 'ァ', 'ィ', 'ゥ', 'ェ', 'ォ'}.contains(char);
 
+  /// Parts of a Latin word (`Wi-Fi`, `BeReal`), which the reading track spells
+  /// out the same way.
+  static final RegExp _latinRunChar = RegExp(r"[A-Za-z0-9'.&-]");
+
+  static bool _isLatinRunChar(String char) => _latinRunChar.hasMatch(char);
+
   static String? _nextChar(String text, int index) {
     final next = index + _charLength(text, index);
     return next < text.length ? text[next] : null;
   }
 
   static bool _isKanji(String char) {
+    // 々/〻 iterate the kanji before them and are read with it.
+    if (char == '々' || char == '〻') return true;
     final code = char.codeUnitAt(0);
     return (code >= 0x3400 && code <= 0x4DBF) ||
         (code >= 0x4E00 && code <= 0x9FFF) ||

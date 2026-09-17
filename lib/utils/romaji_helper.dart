@@ -93,8 +93,14 @@ class RomajiHelper {
           });
 
     final map = <String, String>{};
+    // Two passes so the *primary* spelling of a kana wins: `wa` is わ, not the
+    // particle は (whose alternative spelling is also `wa`).
     for (final entry in indexed) {
-      for (final romaji in entry.value.value) {
+      final romaji = entry.value.value.first.toLowerCase();
+      map.putIfAbsent(romaji, () => entry.value.key);
+    }
+    for (final entry in indexed) {
+      for (final romaji in entry.value.value.skip(1)) {
         map.putIfAbsent(romaji.toLowerCase(), () => entry.value.key);
       }
     }
