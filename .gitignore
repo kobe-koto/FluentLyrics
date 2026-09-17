@@ -55,3 +55,4 @@ fdroid-public/
 # before building (CI does this in each build job).
 /assets/opencc/
 /android/build/reports
+/.widget_preview
