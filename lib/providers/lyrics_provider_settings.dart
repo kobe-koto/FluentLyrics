@@ -9,6 +9,8 @@ class LyricsProviderSettings {
     required this.linesBefore,
     required this.landscapeLeadingSpace,
     required this.richSyncThresholdMs,
+    required this.annotationEnabled,
+    required this.annotationBias,
     required this.zhConversionTarget,
     required this.zhConversionIgnoredLanguages,
     required this.globalOffsetMs,
@@ -59,6 +61,16 @@ class LyricsProviderSettings {
       richSyncThresholdMs: const Setting(
         current: AppDefaults.richSyncThresholdMs,
         defaultValue: AppDefaults.richSyncThresholdMs,
+        changed: false,
+      ),
+      annotationEnabled: const Setting(
+        current: AppDefaults.annotationEnabled,
+        defaultValue: AppDefaults.annotationEnabled,
+        changed: false,
+      ),
+      annotationBias: const Setting(
+        current: AppDefaults.annotationBias,
+        defaultValue: AppDefaults.annotationBias,
         changed: false,
       ),
       zhConversionTarget: const Setting(
@@ -212,6 +224,8 @@ class LyricsProviderSettings {
       linesBefore: await settingsService.getLinesBefore(),
       landscapeLeadingSpace: await settingsService.getLandscapeLeadingSpace(),
       richSyncThresholdMs: await settingsService.getRichSyncThresholdMs(),
+      annotationEnabled: await settingsService.getAnnotationEnabled(),
+      annotationBias: await settingsService.getAnnotationBias(),
       zhConversionTarget: await settingsService.getZhConversionTarget(),
       zhConversionIgnoredLanguages: await settingsService
           .getZhConversionIgnoredLanguages(),
@@ -255,6 +269,8 @@ class LyricsProviderSettings {
   Setting<int> linesBefore;
   Setting<int> landscapeLeadingSpace;
   Setting<int> richSyncThresholdMs;
+  Setting<bool> annotationEnabled;
+  Setting<int> annotationBias;
   Setting<String> zhConversionTarget;
   Setting<List<String>> zhConversionIgnoredLanguages;
   Setting<int> globalOffsetMs;

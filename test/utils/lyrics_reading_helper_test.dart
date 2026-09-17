@@ -145,4 +145,69 @@ void main() {
       expect(LyricsResult.fromJson(result.toJson()).reading, isNull);
     });
   });
+
+  group('LyricsReadingHelper.pairReadings', () {
+    List<Lyric> lines(List<(int, String)> entries) => [
+      for (final (ms, text) in entries)
+        Lyric(
+          startTime: Duration(milliseconds: ms),
+          text: text,
+        ),
+    ];
+
+    test('pairs by exact timestamp first', () {
+      final paired = LyricsReadingHelper.pairReadings(
+        lines([(0, 'a'), (1000, 'b')]),
+        lines([(0, 'A'), (1000, 'B')]),
+      );
+      expect(paired, ['A', 'B']);
+    });
+
+    test('falls back to the nearest line inside the tolerance', () {
+      // QQ serves the reading from the word level payload: line starts drift.
+      final paired = LyricsReadingHelper.pairReadings(
+        lines([(0, 'a'), (1000, 'b'), (2000, 'c')]),
+        lines([(30, 'A'), (1120, 'B'), (1890, 'C')]),
+      );
+      expect(paired, ['A', 'B', 'C']);
+    });
+
+    test('falls back to positions when the track has the same length', () {
+      final paired = LyricsReadingHelper.pairReadings(
+        lines([(0, 'a'), (5000, 'b')]),
+        lines([(900, 'A'), (9000, 'B')]),
+      );
+      expect(paired, ['A', 'B']);
+    });
+
+    test('honours a custom tolerance (annotation bias)', () {
+      List<Lyric> lines(List<(int, String)> entries) => [
+        for (final (ms, text) in entries)
+          Lyric(
+            startTime: Duration(milliseconds: ms),
+            text: text,
+          ),
+      ];
+      // Line counts differ so the positional fallback stays out of the way.
+      final lyrics = lines([(0, 'a'), (10000, 'b')]);
+      final reading = lines([(300, 'A')]);
+
+      expect(
+        LyricsReadingHelper.pairReadings(lyrics, reading, toleranceMs: 100),
+        [null, null],
+      );
+      expect(
+        LyricsReadingHelper.pairReadings(lyrics, reading, toleranceMs: 500),
+        ['A', null],
+      );
+    });
+
+    test('leaves lines without a plausible reading unpaired', () {
+      final paired = LyricsReadingHelper.pairReadings(
+        lines([(0, 'a'), (10000, 'b')]),
+        lines([(0, 'A')]),
+      );
+      expect(paired, ['A', null]);
+    });
+  });
 }

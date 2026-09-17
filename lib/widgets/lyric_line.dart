@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants/app_defaults.dart';
 import '../models/lyric_model.dart';
+import '../utils/furigana_helper.dart';
+import 'ruby_text.dart';
 
 class LyricLine extends StatelessWidget {
   static const Duration _translationAnimationDuration = Duration(
@@ -213,10 +215,207 @@ class LyricLine extends StatelessWidget {
     );
   }
 
+  /// Ruby for rich (word level) lines.
+  ///
+  /// An annotated kanji run is rendered as one plain ruby block (`最低界隈` with
+  /// さいていかいわい above it) even when the rich sync payload splits it into
+  /// several parts: parts cannot share one reading, and repeating the reading
+  /// above each of them would print it once per kanji. Everything outside the
+  /// annotated runs stays a rich widget, so the progress wipe is kept where it
+  /// can be.
+  Widget _buildRichAnnotatedText(
+    BuildContext context,
+    List<FuriganaAnnotation> annotations,
+    List<LyricInlinePart> parts,
+  ) {
+    final text = lyric.text;
+    final baseStyle = DefaultTextStyle.of(context).style;
+    final annotationStyle = baseStyle.copyWith(
+      fontSize: (baseStyle.fontSize ?? 36) * 0.42,
+      height: 1.0,
+      fontWeight: FontWeight.w600,
+      color: Colors.white60,
+    );
+    final richTextStyle = baseStyle.copyWith(
+      color: Colors.white,
+      fontSize: experimentalRichInlineFontSizeGlitching
+          ? (baseStyle.fontSize ?? 36) / 0.9
+          : baseStyle.fontSize,
+      height: 1.2,
+    );
+
+    // Word level ranges in line coordinates. Richify can merge parts from
+    // another provider, whose boundaries do not line up, so each part is
+    // re-anchored in the line text instead of trusting the running offset.
+    final ranges = <({int start, int end, LyricInlinePart part})>[];
+    var offset = 0;
+    for (final part in parts) {
+      var start = offset;
+      var end = start + part.text.length;
+      final matches =
+          start <= text.length &&
+          end <= text.length &&
+          text.substring(start, end) == part.text;
+      if (!matches && part.text.isNotEmpty) {
+        final found = text.indexOf(part.text);
+        if (found >= 0) {
+          start = found;
+          end = found + part.text.length;
+        }
+      }
+      ranges.add((start: start, end: end, part: part));
+      offset = end;
+    }
+
+    final spans = <InlineSpan>[];
+
+    void addRichRange(int from, int to) {
+      if (to <= from) return;
+      for (final range in ranges) {
+        final clipStart = from > range.start ? from : range.start;
+        final clipEnd = to < range.end ? to : range.end;
+        if (clipEnd <= clipStart) continue;
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: _RichPart(
+              text: text.substring(clipStart, clipEnd),
+              startTime: range.part.startTime,
+              endTime: range.part.endTime,
+              style: richTextStyle,
+              adjustedPosition: adjustedPosition,
+              isPlaying: isPlaying,
+              isHighlighted: isHighlighted,
+              richSyncThreshold: richSyncThreshold,
+            ),
+          ),
+        );
+      }
+    }
+
+    final sorted = [...annotations]..sort((a, b) => a.start.compareTo(b.start));
+    var cursor = 0;
+    for (final annotation in sorted) {
+      final start = annotation.start.clamp(0, text.length);
+      final end = annotation.end.clamp(0, text.length);
+      if (end <= start) continue;
+      addRichRange(cursor, start);
+      // The annotated run may span several word level parts; they are merged
+      // into one rich part (keeping its style and progress wipe) instead of
+      // being flattened to plain text, and the reading is stacked above it.
+      final covered = [
+        for (final range in ranges)
+          if (range.start < end && range.end > start) range,
+      ];
+      final richBase = _RichPart(
+        text: text.substring(start, end),
+        startTime: covered.isEmpty
+            ? Duration.zero
+            : covered.first.part.startTime,
+        endTime: covered.isEmpty ? Duration.zero : covered.last.part.endTime,
+        style: richTextStyle,
+        adjustedPosition: adjustedPosition,
+        isPlaying: isPlaying,
+        isHighlighted: isHighlighted,
+        richSyncThreshold: richSyncThreshold,
+      );
+
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: RubyText(
+            reading: Text(
+              annotation.reading,
+              style: annotationStyle,
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+            ),
+            base: richBase,
+          ),
+        ),
+      );
+      cursor = end;
+    }
+    addRichRange(cursor, text.length);
+
+    return Text.rich(
+      TextSpan(children: spans),
+      textAlign: TextAlign.left,
+      style: baseStyle,
+    );
+  }
+
+  /// Renders the line as ruby text: each annotated run shows its reading above
+  /// the original characters. Flutter has no ruby support, so every run becomes
+  /// a [WidgetSpan] holding a two line column.
+  Widget _buildAnnotatedText(
+    BuildContext context,
+    List<FuriganaAnnotation> annotations,
+  ) {
+    final baseStyle = DefaultTextStyle.of(context).style;
+    final annotationStyle = baseStyle.copyWith(
+      fontSize: (baseStyle.fontSize ?? 36) * 0.42,
+      height: 1.0,
+      fontWeight: FontWeight.w600,
+      color: Colors.white60,
+    );
+
+    final text = lyric.text;
+    final spans = <InlineSpan>[];
+    var index = 0;
+    for (final annotation in annotations) {
+      if (annotation.start > index) {
+        spans.add(TextSpan(text: text.substring(index, annotation.start)));
+      }
+      if (annotation.end > annotation.start) {
+        spans.add(
+          WidgetSpan(
+            // `RubyText` reports the base text's baseline, so the kanji stays
+            // exactly on the line's baseline with the reading above it.
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: RubyText(
+              reading: Text(
+                annotation.reading,
+                style: annotationStyle,
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+              ),
+              base: Text(text.substring(annotation.start, annotation.end)),
+            ),
+          ),
+        );
+      }
+      index = annotation.end;
+    }
+    if (index < text.length) {
+      spans.add(TextSpan(text: text.substring(index)));
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
+      textAlign: TextAlign.left,
+      style: baseStyle,
+    );
+  }
+
   Widget _buildText(BuildContext context) {
     final lyric = this.lyric;
     final shouldBeRichLine = isHighlighted || isPrerendered;
     final text = lyric.text;
+
+    final annotations = lyric.annotations;
+    if (annotations != null && annotations.isNotEmpty) {
+      // Rich (word level) lines keep their per-word widgets and animations as
+      // the base of the ruby, so annotating a line does not drop rich sync.
+      final parts = lyric.inlineParts;
+      if (shouldBeRichLine && parts != null && parts.length > 1) {
+        return _buildRichAnnotatedText(context, annotations, parts);
+      }
+      return _buildAnnotatedText(context, annotations);
+    }
     if (!shouldBeRichLine ||
         lyric.inlineParts == null ||
         lyric.inlineParts!.isEmpty) {
@@ -232,6 +431,7 @@ class LyricLine extends StatelessWidget {
         style: DefaultTextStyle.of(context).style,
       );
     }
+
     final richTextStyle = DefaultTextStyle.of(context).style.copyWith(
       color: Colors.white,
       fontSize: experimentalRichInlineFontSizeGlitching

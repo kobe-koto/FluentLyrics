@@ -75,4 +75,73 @@ class LyricsReadingHelper {
   static List<Lyric> _parseLrc(String content) => LrcParser.parse(
     content,
   ).lyrics.where((l) => l.text.trim().isNotEmpty).toList();
+
+  /// Pairs [lyrics] with the provider's [readingLines].
+  ///
+  /// Timestamps are the primary signal, but providers rarely agree exactly:
+  /// QQ serves the reading track from the word level (QRC) payload while the
+  /// lyrics can come from the line level one, which shifts line starts by tens
+  /// to hundreds of milliseconds. So: exact timestamp, then nearest within
+  /// [tolerance], then positional when both tracks have the same line count.
+  /// Returns null for lines that stay unpaired.
+  static List<String?> pairReadings(
+    List<Lyric> lyrics,
+    List<Lyric> readingLines, {
+    int toleranceMs = 500,
+  }) {
+    if (lyrics.isEmpty || readingLines.isEmpty) {
+      return List<String?>.filled(lyrics.length, null);
+    }
+
+    final byTime = <int, String>{
+      for (final line in readingLines)
+        line.startTime.inMilliseconds: line.text.trim(),
+    };
+    final sortedTimes = byTime.keys.toList()..sort();
+    final positional = lyrics.length == readingLines.length;
+
+    return [
+      for (var i = 0; i < lyrics.length; i++)
+        _readingsFor(
+          lyrics[i],
+          byTime,
+          sortedTimes,
+          toleranceMs,
+          positional ? readingLines[i].text.trim() : null,
+        ),
+    ];
+  }
+
+  static String? _readingsFor(
+    Lyric lyric,
+    Map<int, String> byTime,
+    List<int> sortedTimes,
+    int toleranceMs,
+    String? positional,
+  ) {
+    final ms = lyric.startTime.inMilliseconds;
+    final exact = byTime[ms];
+    if (exact != null && exact.isNotEmpty) return exact;
+
+    final nearest = _nearestTime(sortedTimes, ms, toleranceMs);
+    if (nearest != null) {
+      final value = byTime[nearest];
+      if (value != null && value.isNotEmpty) return value;
+    }
+
+    return (positional != null && positional.isNotEmpty) ? positional : null;
+  }
+
+  static int? _nearestTime(List<int> times, int ms, int toleranceMs) {
+    int? best;
+    var bestDelta = toleranceMs + 1;
+    for (final time in times) {
+      final delta = (time - ms).abs();
+      if (delta < bestDelta) {
+        bestDelta = delta;
+        best = time;
+      }
+    }
+    return bestDelta <= toleranceMs ? best : null;
+  }
 }

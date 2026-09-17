@@ -10,7 +10,11 @@ import '../services/lyrics_service.dart';
 import '../services/settings_service.dart';
 import '../services/providers/lyrics_cache_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/furigana_helper.dart';
 import '../utils/lyrics_candidate_helper.dart';
+import '../utils/lyrics_reading_helper.dart';
+import '../utils/romaji_helper.dart';
+import '../utils/lyrics_reading_candidate_helper.dart';
 import '../utils/lyrics_display_helper.dart';
 import '../services/opencc/zh_conversion.dart';
 import '../services/opencc/zh_conversion_service.dart';
@@ -27,6 +31,8 @@ class LyricsProvider with ChangeNotifier {
   Timer? _permissionTimer;
   LyricsResult _lyricsResult = LyricsResult.empty();
   LyricsResult? _translationResult;
+  LyricsReading? _readingResult;
+  List<LyricsReading> _readingCandidates = [];
   Duration _currentPosition = Duration.zero;
   final ValueNotifier<Duration> currentPositionNotifier = ValueNotifier(
     Duration.zero,
@@ -51,6 +57,13 @@ class LyricsProvider with ChangeNotifier {
   Setting<int> get _richSyncThresholdMs => _settings.richSyncThresholdMs;
   set _richSyncThresholdMs(Setting<int> value) =>
       _settings.richSyncThresholdMs = value;
+
+  Setting<bool> get _annotationEnabled => _settings.annotationEnabled;
+  set _annotationEnabled(Setting<bool> value) =>
+      _settings.annotationEnabled = value;
+
+  Setting<int> get _annotationBias => _settings.annotationBias;
+  set _annotationBias(Setting<int> value) => _settings.annotationBias = value;
 
   Setting<String> get _zhConversionTarget => _settings.zhConversionTarget;
   set _zhConversionTarget(Setting<String> value) =>
@@ -260,7 +273,101 @@ class LyricsProvider with ChangeNotifier {
   /// The lyrics as rendered: rich-sync stripping, translation alignment and
   /// the optional Simplified/Traditional conversion, all memoized so repeated
   /// reads (position ticks, rebuilds) stay cheap.
-  List<Lyric> get lyrics => _applyZhConversion(_buildDisplayedLyrics());
+  List<Lyric> get lyrics =>
+      _applyReadingAnnotations(_applyZhConversion(_buildDisplayedLyrics()));
+
+  List<Lyric>? _annotatedLyrics;
+  List<Lyric>? _annotatedLyricsSource;
+  LyricsReading? _annotatedLyricsReading;
+  int? _annotatedLyricsBias;
+
+  /// Pairs the reading track with the displayed lines (by timestamp) and
+  /// attaches kanji readings, so [LyricLine] can render ruby text. Memoized:
+  /// the alignment only runs when the lines or the reading track change.
+  List<Lyric> _applyReadingAnnotations(List<Lyric> lyrics) {
+    if (!_annotationEnabled.current) return lyrics;
+    final reading = _readingResult;
+    if (reading == null || reading.lines.isEmpty || lyrics.isEmpty) {
+      return lyrics;
+    }
+    final bias = _annotationBias.current;
+    if (identical(_annotatedLyricsSource, lyrics) &&
+        identical(_annotatedLyricsReading, reading) &&
+        _annotatedLyricsBias == bias) {
+      return _annotatedLyrics!;
+    }
+
+    // Providers rarely line their reading track up with the lyrics exactly
+    // (QQ serves it from the word level payload), so pair by time with a
+    // tolerance and fall back to positional pairing.
+    final readings = LyricsReadingHelper.pairReadings(
+      lyrics,
+      reading.lines,
+      toleranceMs: bias,
+    );
+    var changed = false;
+    final annotated = <Lyric>[
+      for (var i = 0; i < lyrics.length; i++)
+        _annotateLyric(
+          lyrics[i],
+          readings[i],
+          reading.lineType,
+          changed: () => changed = true,
+        ),
+    ];
+    _annotatedLyricsSource = lyrics;
+    _annotatedLyricsReading = reading;
+    _annotatedLyricsBias = bias;
+    _annotatedLyrics = changed ? annotated : lyrics;
+    return _annotatedLyrics!;
+  }
+
+  Lyric _annotateLyric(
+    Lyric lyric,
+    String? reading,
+    LyricsReadingType? lineType, {
+    required void Function() changed,
+  }) {
+    if (lyric.text.isEmpty || lyric.annotations != null) return lyric;
+    if (reading == null || reading.isEmpty) return lyric;
+
+    final isKana = lineType == LyricsReadingType.kana;
+    final annotations = FuriganaHelper.align(
+      text: lyric.text,
+      reading: reading,
+      readingIsRomaji: !isKana,
+    );
+    if (annotations.isEmpty) return lyric;
+
+    // Providers mostly ship a romanized track, but the annotation should be
+    // kana: the alignment already resolved which reading belongs to which
+    // kanji, so converting is a lookup. A unit we do not know drops the line
+    // rather than mixing scripts.
+    final readings = <FuriganaAnnotation>[];
+    for (final annotation in annotations) {
+      final text = isKana
+          ? annotation.reading
+          : RomajiHelper.toKana(annotation.reading);
+      if (text == null || text.isEmpty) return lyric;
+      readings.add(
+        FuriganaAnnotation(
+          start: annotation.start,
+          end: annotation.end,
+          reading: text,
+        ),
+      );
+    }
+
+    changed();
+    return Lyric(
+      startTime: lyric.startTime,
+      endTime: lyric.endTime,
+      text: lyric.text,
+      inlineParts: lyric.inlineParts,
+      translation: lyric.translation,
+      annotations: readings,
+    );
+  }
 
   List<Lyric> _buildDisplayedLyrics() {
     final curRichSync = _richSyncEnabled.current;
@@ -337,6 +444,8 @@ class LyricsProvider with ChangeNotifier {
   Setting<int> get linesBefore => _linesBefore;
   Setting<int> get landscapeLeadingSpace => _landscapeLeadingSpace;
   Setting<int> get richSyncThresholdMs => _richSyncThresholdMs;
+  Setting<bool> get annotationEnabled => _annotationEnabled;
+  Setting<int> get annotationBias => _annotationBias;
   Setting<String> get zhConversionTarget => _zhConversionTarget;
   Setting<List<String>> get zhConversionIgnoredLanguages =>
       _zhConversionIgnoredLanguages;
@@ -387,6 +496,11 @@ class LyricsProvider with ChangeNotifier {
   bool get isPausedForCandidates => _isPausedForCandidates;
   List<LyricsResult> get translationCandidates => _translationCandidates;
 
+  /// Reading track (kana/romaji) of the current lyrics, when the provider
+  /// shipped one. Used to annotate kanji.
+  LyricsReading? get readingResult => _readingResult;
+  List<LyricsReading> get readingCandidates => _readingCandidates;
+
   final Duration _interludeOffset = Duration(
     milliseconds: 500, // auto scroll takes 500ms
   );
@@ -409,6 +523,11 @@ class LyricsProvider with ChangeNotifier {
   double get interludeProgress {
     if (!isInterlude || lyrics.isEmpty) return 0.0;
     return interludeProgressForPosition(_currentPosition);
+  }
+
+  void _clearReadingState() {
+    _readingResult = null;
+    _readingCandidates = [];
   }
 
   void _clearTranslationState({bool clearCandidates = true}) {
@@ -712,6 +831,24 @@ class LyricsProvider with ChangeNotifier {
       value: ms,
       assign: (value) => _richSyncThresholdMs = value,
       persist: _settingsService.setRichSyncThresholdMs,
+    );
+  }
+
+  void setAnnotationEnabled(bool enabled) {
+    _setSettingValue(
+      currentSetting: _annotationEnabled,
+      value: enabled,
+      assign: (value) => _annotationEnabled = value,
+      persist: _settingsService.setAnnotationEnabled,
+    );
+  }
+
+  void setAnnotationBias(int ms) {
+    _setSettingValue(
+      currentSetting: _annotationBias,
+      value: ms,
+      assign: (value) => _annotationBias = value,
+      persist: _settingsService.setAnnotationBias,
     );
   }
 
@@ -1149,6 +1286,7 @@ class LyricsProvider with ChangeNotifier {
       _isPausedForCandidates = false;
       _candidateSheetOpenedEarly = false;
       _candidates = [];
+      _clearReadingState();
       _invalidateTranslationRequests();
 
       if (_currentMetadata != null) {
@@ -1216,6 +1354,72 @@ class LyricsProvider with ChangeNotifier {
           ),
         ),
       ),
+    );
+  }
+
+  void _applyReadingFromResult(LyricsResult result) {
+    final reading = result.reading;
+    if (reading == null || reading.isEmpty) return;
+
+    _readingResult = reading;
+    _readingCandidates = appendReadingCandidateIfNeeded(
+      _readingCandidates,
+      reading,
+    );
+
+    if (!_cacheEnabled.current) return;
+    final metadata = _currentMetadata;
+    if (metadata == null) return;
+    final cacheId = _cacheService.generateCacheId(
+      metadata.title,
+      metadata.artist,
+      metadata.album,
+      metadata.duration.inSeconds,
+      isRichSync: result.isRichSync,
+    );
+    unawaited(
+      _cacheService.cacheReading(
+        cacheId,
+        reading,
+        source: result.source,
+        sourceProvider: result.sourceProvider?.name,
+      ),
+    );
+    for (final candidate in _readingCandidates) {
+      unawaited(
+        _cacheService.cacheReadingCandidate(
+          cacheId,
+          candidate,
+          source: result.source,
+          sourceProvider: result.sourceProvider?.name,
+        ),
+      );
+    }
+  }
+
+  /// Switches the reading track used for kanji annotation and persists the
+  /// choice, mirroring [selectTranslationCandidate].
+  Future<void> selectReadingCandidate(LyricsReading reading) async {
+    final metadata = _currentMetadata;
+    if (metadata == null) return;
+    if (identical(_readingResult, reading)) return;
+
+    _readingResult = reading;
+    notifyListeners();
+
+    if (!_cacheEnabled.current) return;
+    final cacheId = _cacheService.generateCacheId(
+      metadata.title,
+      metadata.artist,
+      metadata.album,
+      metadata.duration.inSeconds,
+      isRichSync: _lyricsResult.isRichSync,
+    );
+    await _cacheService.cacheReading(
+      cacheId,
+      reading,
+      source: _lyricsResult.source,
+      sourceProvider: _lyricsResult.sourceProvider?.name,
     );
   }
 
@@ -1428,6 +1632,7 @@ class LyricsProvider with ChangeNotifier {
         result = _prepareLyricsResultForDisplay(result);
 
         _lyricsResult = result;
+        _applyReadingFromResult(result);
         if (!_translationMatchesCurrentLyricsProvider(_translationResult)) {
           _clearTranslationState();
         }
