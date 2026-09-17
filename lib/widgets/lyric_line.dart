@@ -239,8 +239,11 @@ class LyricLine extends StatelessWidget {
       if (annotation.end > annotation.start) {
         spans.add(
           WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
+            // `baseline` would report the _first_ child's baseline (the reading)
+            // and push the kanji below the line's baseline; aligning the bottom
+            // of the column keeps the kanji on the baseline with the reading
+            // stacked above it.
+            alignment: PlaceholderAlignment.bottom,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

@@ -2,6 +2,7 @@ import 'package:fluent_lyrics/models/lyric_model.dart';
 import 'package:fluent_lyrics/utils/furigana_helper.dart';
 import 'package:fluent_lyrics/widgets/lyric_line.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _buildHarness({
@@ -151,6 +152,37 @@ void main() {
     final readingRect = tester.getRect(find.text('しず'));
     final kanjiRect = tester.getRect(find.text('沈'));
     expect(readingRect.bottom, lessThanOrEqualTo(kanjiRect.top));
+  });
+
+  testWidgets('keeps the annotated kanji on the text baseline', (tester) async {
+    await tester.pumpWidget(
+      _buildAnnotatedHarness(
+        annotations: const [
+          FuriganaAnnotation(start: 0, end: 1, reading: 'しず'),
+        ],
+      ),
+    );
+    await tester.pump();
+
+    // The ruby column must not push the base text below the line: its bottom
+    // has to match the kana that follows it, with the reading stacked above.
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.byType(RichText).first,
+    );
+    final rubyBox = paragraph
+        .getBoxesForSelection(
+          const TextSelection(baseOffset: 0, extentOffset: 1),
+        )
+        .first;
+    final kanaBox = paragraph
+        .getBoxesForSelection(
+          const TextSelection(baseOffset: 1, extentOffset: 2),
+        )
+        .first;
+    expect((rubyBox.bottom - kanaBox.bottom).abs(), lessThan(2.0));
+
+    final reading = tester.getRect(find.text('しず'));
+    expect(reading.center.dy, lessThan((rubyBox.top + rubyBox.bottom) / 2));
   });
 
   testWidgets('renders plain text when there are no annotations', (
