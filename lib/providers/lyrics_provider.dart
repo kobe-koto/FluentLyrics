@@ -12,6 +12,7 @@ import '../services/providers/lyrics_cache_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/furigana_helper.dart';
 import '../utils/lyrics_candidate_helper.dart';
+import '../utils/lyrics_reading_helper.dart';
 import '../utils/romaji_helper.dart';
 import '../utils/lyrics_reading_candidate_helper.dart';
 import '../utils/lyrics_display_helper.dart';
@@ -290,16 +291,16 @@ class LyricsProvider with ChangeNotifier {
       return _annotatedLyrics!;
     }
 
-    final byTime = <int, String>{
-      for (final line in reading.lines)
-        line.startTime.inMilliseconds: line.text.trim(),
-    };
+    // Providers rarely line their reading track up with the lyrics exactly
+    // (QQ serves it from the word level payload), so pair by time with a
+    // tolerance and fall back to positional pairing.
+    final readings = LyricsReadingHelper.pairReadings(lyrics, reading.lines);
     var changed = false;
     final annotated = <Lyric>[
-      for (final lyric in lyrics)
+      for (var i = 0; i < lyrics.length; i++)
         _annotateLyric(
-          lyric,
-          byTime,
+          lyrics[i],
+          readings[i],
           reading.lineType,
           changed: () => changed = true,
         ),
@@ -312,12 +313,11 @@ class LyricsProvider with ChangeNotifier {
 
   Lyric _annotateLyric(
     Lyric lyric,
-    Map<int, String> readingByTime,
+    String? reading,
     LyricsReadingType? lineType, {
     required void Function() changed,
   }) {
     if (lyric.text.isEmpty || lyric.annotations != null) return lyric;
-    final reading = readingByTime[lyric.startTime.inMilliseconds];
     if (reading == null || reading.isEmpty) return lyric;
 
     final isKana = lineType == LyricsReadingType.kana;
