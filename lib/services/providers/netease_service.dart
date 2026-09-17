@@ -6,6 +6,7 @@ import 'package:encrypt/encrypt.dart' as encrypt_pkg;
 import '../../models/lyric_model.dart';
 import '../../models/general_translation_request_data.dart';
 import '../../utils/lrc_parser.dart';
+import '../../utils/lyrics_reading_helper.dart';
 import '../../utils/translation_helper.dart';
 import '../../utils/song_result_helper.dart';
 import '../../utils/app_logger.dart';
@@ -336,6 +337,7 @@ class NeteaseService {
         return LyricsResult(
           lyrics: richLyrics.isNotEmpty ? richLyrics : lyrics,
           source: 'Netease Music',
+          reading: LyricsReadingHelper.fromNeteasePayload(lyricData),
           isPureMusic: isPureMusic,
           contributor: lyricContributor,
           metadata: trimmedMetadata,
