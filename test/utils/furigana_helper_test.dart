@@ -89,6 +89,21 @@ void main() {
     });
   });
 
+  group('punctuation in the reading track', () {
+    test('ignores quote tokens the provider kept in', () {
+      final annotations = FuriganaHelper.align(
+        text: '「誰かを好きになることなんて」',
+        reading: '「da re ka wo su ki ni na ru ko to na n te」',
+        readingIsRomaji: true,
+      );
+
+      expect(
+        _annotated('「誰かを好きになることなんて」', annotations),
+        '「[da re]かを[su]きになることなんて」',
+      );
+    });
+  });
+
   group('bail outs', () {
     test('returns nothing when the reading does not match the line', () {
       expect(

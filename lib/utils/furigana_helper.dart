@@ -51,12 +51,19 @@ class FuriganaHelper {
 
     // Providers separate mora with spaces, ん from a following vowel with an
     // apostrophe (`ma n'i n de n`), and punctuation is its own unit.
-    final units = readingIsRomaji
-        ? reading
-              .split(RegExp(r"[\s'!?,;:()\[\]{}]+"))
-              .where((unit) => unit.isNotEmpty)
-              .toList()
-        : _kanaUnits(reading);
+    final units =
+        (readingIsRomaji
+                ? reading
+                      // Everything that is not a letter, digit or hyphen
+                      // separates units: providers keep quotes and brackets in
+                      // the track, and a hyphen stands for ー.
+                      .split(RegExp(r'[^\p{L}\p{N}\-]+', unicode: true))
+                      .where((unit) => unit.isNotEmpty)
+                : _kanaUnits(reading).where((unit) => unit.isNotEmpty))
+            // Providers sometimes keep the punctuation of the line (quotes,
+            // brackets) in the reading track; it carries no sound.
+            .where((unit) => _isNoise(unit) == false)
+            .toList();
     if (units.isEmpty) return const [];
 
     final annotations = <FuriganaAnnotation>[];
@@ -382,6 +389,12 @@ class FuriganaHelper {
     final next = index + _charLength(text, index);
     return next < text.length ? text[next] : null;
   }
+
+  /// Reading units that carry no sound: punctuation, quotes and symbols the
+  /// provider kept in the romanized track.
+  static final RegExp _noiseUnit = RegExp(r'^[\p{P}\p{S}]+$', unicode: true);
+
+  static bool _isNoise(String unit) => _noiseUnit.hasMatch(unit);
 
   static bool _isKanji(String char) {
     // 々/〻 iterate the kanji before them and are read with it.
