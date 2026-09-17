@@ -64,6 +64,44 @@ class LyricInlinePart {
       );
 }
 
+/// How a provider wrote its reading track.
+enum LyricsReadingType { kana, romaji }
+
+/// A reading track returned by a provider next to the lyrics, used to annotate
+/// kanji with furigana/ruby (`君` -> `きみ`).
+///
+/// [lines] holds the line level reading with the provider's timestamps, so it
+/// can be paired with [LyricsResult.lyrics] by time. [kanaRaw] carries a
+/// word level kana payload that needs its own parser (QQ returns one in a
+/// `[kana:...]` metadata line).
+class LyricsReading {
+  final LyricsReadingType? lineType;
+  final List<Lyric> lines;
+  final String? kanaRaw;
+
+  const LyricsReading({this.lineType, this.lines = const [], this.kanaRaw});
+
+  bool get isEmpty => lines.isEmpty && (kanaRaw?.trim().isEmpty ?? true);
+
+  Map<String, dynamic> toJson() => {
+    if (lineType != null) 'lineType': lineType!.name,
+    if (lines.isNotEmpty) 'lines': lines.map((l) => l.toJson()).toList(),
+    if (kanaRaw != null) 'kanaRaw': kanaRaw,
+  };
+
+  factory LyricsReading.fromJson(Map<String, dynamic> json) => LyricsReading(
+    lineType: switch (json['lineType']) {
+      'kana' => LyricsReadingType.kana,
+      'romaji' => LyricsReadingType.romaji,
+      _ => null,
+    },
+    lines: (json['lines'] as List? ?? [])
+        .map((l) => Lyric.fromJson(l as Map<String, dynamic>))
+        .toList(),
+    kanaRaw: json['kanaRaw'] as String?,
+  );
+}
+
 class LyricsResult {
   final List<Lyric> lyrics;
   final String source;
@@ -77,6 +115,9 @@ class LyricsResult {
   final Map<String, String>? metadata;
   final List<Map<String, String>>? rawTranslation;
   final List<String>? artworkUrls;
+
+  /// Kanji/kana reading track (furigana source), when the provider has one.
+  final LyricsReading? reading;
 
   // Translation fields
   final String? language;
@@ -103,6 +144,7 @@ class LyricsResult {
     this.translationContributor,
     this.rawTranslation,
     this.artworkUrls,
+    this.reading,
     this.sourceProvider,
     this.translationInvalidatable = false,
   }) : isSynced = isSynced ?? _checkIfSynced(lyrics),
@@ -171,6 +213,7 @@ class LyricsResult {
     String? translationContributor,
     List<Map<String, String>>? rawTranslation,
     List<String>? artworkUrls,
+    LyricsReading? reading,
     LyricProviderType? sourceProvider,
     bool? translationInvalidatable,
   }) {
@@ -192,6 +235,7 @@ class LyricsResult {
           translationContributor ?? this.translationContributor,
       rawTranslation: rawTranslation ?? this.rawTranslation,
       artworkUrls: artworkUrls ?? this.artworkUrls,
+      reading: reading ?? this.reading,
       sourceProvider: sourceProvider ?? this.sourceProvider,
       translationInvalidatable:
           translationInvalidatable ?? this.translationInvalidatable,
@@ -238,6 +282,7 @@ class LyricsResult {
       'translationContributor': translationContributor,
     if (rawTranslation != null) 'rawTranslation': rawTranslation,
     if (artworkUrls != null) 'artworkUrls': artworkUrls,
+    if (reading != null) 'reading': reading!.toJson(),
     if (sourceProvider != null) 'sourceProvider': sourceProvider!.name,
     'translationInvalidatable': translationInvalidatable,
   };
@@ -268,6 +313,11 @@ class LyricsResult {
         : null,
     artworkUrls: json['artworkUrls'] != null
         ? List<String>.from(json['artworkUrls'])
+        : null,
+    reading: json['reading'] != null
+        ? LyricsReading.fromJson(
+            Map<String, dynamic>.from(json['reading'] as Map),
+          )
         : null,
     sourceProvider: lyricProviderTypeFromName(
       json['sourceProvider'] as String?,
