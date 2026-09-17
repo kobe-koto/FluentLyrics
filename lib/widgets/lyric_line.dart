@@ -215,8 +215,11 @@ class LyricLine extends StatelessWidget {
   }
 
   /// Ruby for rich (word level) lines: each inline part stays the widget it
-  /// was — including its progress wipe — and only parts that carry an annotated
-  /// run get the reading stacked above them.
+  /// was — including its progress wipe — and only the *first* part that carries
+  /// an annotated run gets the reading above it.
+  ///
+  /// A kanji run often spans several parts (`最低` + `界隈` for さいていかいわい),
+  /// so repeating the reading above every part would render it once per kanji.
   Widget _buildRichAnnotatedText(
     BuildContext context,
     List<FuriganaAnnotation> annotations,
@@ -237,18 +240,40 @@ class LyricLine extends StatelessWidget {
       height: 1.2,
     );
 
+    final text = lyric.text;
     final spans = <InlineSpan>[];
+    final shown = <FuriganaAnnotation>{};
     var offset = 0;
     for (final part in parts) {
-      final start = offset;
-      final end = offset + part.text.length;
+      var start = offset;
+      var end = start + part.text.length;
+
+      // Richify can merge parts from another provider, whose word boundaries do
+      // not line up with this line's text: re-anchor the part in the line
+      // instead of trusting the running offset.
+      if (start > text.length ||
+          (part.text.isNotEmpty &&
+              text.substring(start, end > text.length ? text.length : end) !=
+                  part.text)) {
+        final found = text.indexOf(
+          part.text,
+          offset > text.length ? 0 : offset,
+        );
+        if (found >= 0) {
+          start = found;
+          end = found + part.text.length;
+        }
+      }
       offset = end;
 
       final readings = [
         for (final annotation in annotations)
-          if (annotation.start < end && annotation.end > start)
+          if (annotation.start < end &&
+              annotation.end > start &&
+              shown.add(annotation))
             annotation.reading,
       ];
+
       final richPart = _RichPart(
         text: part.text,
         startTime: part.startTime,
@@ -278,7 +303,7 @@ class LyricLine extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                readings.join(),
+                readings.join(' '),
                 style: annotationStyle,
                 maxLines: 1,
                 overflow: TextOverflow.clip,

@@ -128,6 +128,48 @@ Widget _buildRichAnnotatedHarness() {
   );
 }
 
+Widget _buildMultiPartAnnotatedHarness() {
+  // 最低 / 界隈 are separate rich parts but one kanji run (さいていかいわい).
+  return MaterialApp(
+    home: Scaffold(
+      body: LyricLine(
+        lyric: Lyric(
+          startTime: Duration.zero,
+          text: '最低界隈です',
+          inlineParts: [
+            LyricInlinePart(
+              startTime: Duration.zero,
+              endTime: const Duration(seconds: 2),
+              text: '最低',
+            ),
+            LyricInlinePart(
+              startTime: const Duration(seconds: 2),
+              endTime: const Duration(seconds: 4),
+              text: '界隈',
+            ),
+            LyricInlinePart(
+              startTime: const Duration(seconds: 4),
+              endTime: const Duration(seconds: 6),
+              text: 'です',
+            ),
+          ],
+          annotations: const [
+            FuriganaAnnotation(start: 0, end: 4, reading: 'さいていかいわい'),
+          ],
+        ),
+        isHighlighted: true,
+        isPrerendered: false,
+        fontSize: 36,
+        inactiveScale: 0.85,
+        translationHighlightOnly: true,
+        experimentalRichInlineFontSizeGlitching: false,
+        adjustedPosition: const Duration(seconds: 1),
+        isPlaying: false,
+      ),
+    ),
+  );
+}
+
 void main() {
   testWidgets('translation animates out instead of being removed immediately', (
     tester,
@@ -240,5 +282,15 @@ void main() {
     expect(find.text('むじゅん'), findsOneWidget);
     // ...and the word keeps its rich sync progress wipe.
     expect(find.byType(ShaderMask), findsWidgets);
+  });
+
+  testWidgets('does not repeat a reading across the parts it spans', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_buildMultiPartAnnotatedHarness());
+    await tester.pump();
+
+    // The run spans 最低 and 界隈, but its reading belongs above the run once.
+    expect(find.text('さいていかいわい'), findsOneWidget);
   });
 }
