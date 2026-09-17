@@ -90,6 +90,44 @@ Widget _buildAnnotatedHarness({required List<FuriganaAnnotation> annotations}) {
   );
 }
 
+Widget _buildRichAnnotatedHarness() {
+  // Two word level parts; the first one is long enough to show the progress
+  // wipe that marks a rich sync line.
+  return MaterialApp(
+    home: Scaffold(
+      body: LyricLine(
+        lyric: Lyric(
+          startTime: Duration.zero,
+          text: '矛盾に不純',
+          inlineParts: [
+            LyricInlinePart(
+              startTime: Duration.zero,
+              endTime: const Duration(seconds: 3),
+              text: '矛盾に',
+            ),
+            LyricInlinePart(
+              startTime: const Duration(seconds: 3),
+              endTime: const Duration(seconds: 6),
+              text: '不純',
+            ),
+          ],
+          annotations: const [
+            FuriganaAnnotation(start: 0, end: 2, reading: 'むじゅん'),
+          ],
+        ),
+        isHighlighted: true,
+        isPrerendered: false,
+        fontSize: 36,
+        inactiveScale: 0.85,
+        translationHighlightOnly: true,
+        experimentalRichInlineFontSizeGlitching: false,
+        adjustedPosition: const Duration(seconds: 1),
+        isPlaying: false,
+      ),
+    ),
+  );
+}
+
 void main() {
   testWidgets('translation animates out instead of being removed immediately', (
     tester,
@@ -192,5 +230,15 @@ void main() {
     await tester.pump();
 
     expect(find.text('沈むように溶けて'), findsOneWidget);
+  });
+
+  testWidgets('keeps rich sync while annotating a word', (tester) async {
+    await tester.pumpWidget(_buildRichAnnotatedHarness());
+    await tester.pump();
+
+    // The reading is stacked above its word...
+    expect(find.text('むじゅん'), findsOneWidget);
+    // ...and the word keeps its rich sync progress wipe.
+    expect(find.byType(ShaderMask), findsWidgets);
   });
 }

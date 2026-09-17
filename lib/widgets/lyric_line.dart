@@ -214,6 +214,89 @@ class LyricLine extends StatelessWidget {
     );
   }
 
+  /// Ruby for rich (word level) lines: each inline part stays the widget it
+  /// was — including its progress wipe — and only parts that carry an annotated
+  /// run get the reading stacked above them.
+  Widget _buildRichAnnotatedText(
+    BuildContext context,
+    List<FuriganaAnnotation> annotations,
+    List<LyricInlinePart> parts,
+  ) {
+    final baseStyle = DefaultTextStyle.of(context).style;
+    final annotationStyle = baseStyle.copyWith(
+      fontSize: (baseStyle.fontSize ?? 36) * 0.42,
+      height: 1.0,
+      fontWeight: FontWeight.w600,
+      color: Colors.white60,
+    );
+    final richTextStyle = baseStyle.copyWith(
+      color: Colors.white,
+      fontSize: experimentalRichInlineFontSizeGlitching
+          ? (baseStyle.fontSize ?? 36) / 0.9
+          : baseStyle.fontSize,
+      height: 1.2,
+    );
+
+    final spans = <InlineSpan>[];
+    var offset = 0;
+    for (final part in parts) {
+      final start = offset;
+      final end = offset + part.text.length;
+      offset = end;
+
+      final readings = [
+        for (final annotation in annotations)
+          if (annotation.start < end && annotation.end > start)
+            annotation.reading,
+      ];
+      final richPart = _RichPart(
+        text: part.text,
+        startTime: part.startTime,
+        endTime: part.endTime,
+        style: richTextStyle,
+        adjustedPosition: adjustedPosition,
+        isPlaying: isPlaying,
+        isHighlighted: isHighlighted,
+        richSyncThreshold: richSyncThreshold,
+      );
+
+      if (readings.isEmpty || part.text.trim().isEmpty) {
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: richPart,
+          ),
+        );
+        continue;
+      }
+
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.bottom,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                readings.join(),
+                style: annotationStyle,
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+              ),
+              richPart,
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
+      textAlign: TextAlign.left,
+      style: baseStyle,
+    );
+  }
+
   /// Renders the line as ruby text: each annotated run shows its reading above
   /// the original characters. Flutter has no ruby support, so every run becomes
   /// a [WidgetSpan] holding a two line column.
@@ -279,6 +362,12 @@ class LyricLine extends StatelessWidget {
 
     final annotations = lyric.annotations;
     if (annotations != null && annotations.isNotEmpty) {
+      // Rich (word level) lines keep their per-word widgets and animations as
+      // the base of the ruby, so annotating a line does not drop rich sync.
+      final parts = lyric.inlineParts;
+      if (shouldBeRichLine && parts != null && parts.length > 1) {
+        return _buildRichAnnotatedText(context, annotations, parts);
+      }
       return _buildAnnotatedText(context, annotations);
     }
     if (!shouldBeRichLine ||
