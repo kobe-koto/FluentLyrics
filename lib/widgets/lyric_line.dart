@@ -301,6 +301,26 @@ class LyricLine extends StatelessWidget {
       final end = annotation.end.clamp(0, text.length);
       if (end <= start) continue;
       addRichRange(cursor, start);
+      // The annotated run may span several word level parts; they are merged
+      // into one rich part (keeping its style and progress wipe) instead of
+      // being flattened to plain text, and the reading is stacked above it.
+      final covered = [
+        for (final range in ranges)
+          if (range.start < end && range.end > start) range,
+      ];
+      final richBase = _RichPart(
+        text: text.substring(start, end),
+        startTime: covered.isEmpty
+            ? Duration.zero
+            : covered.first.part.startTime,
+        endTime: covered.isEmpty ? Duration.zero : covered.last.part.endTime,
+        style: richTextStyle,
+        adjustedPosition: adjustedPosition,
+        isPlaying: isPlaying,
+        isHighlighted: isHighlighted,
+        richSyncThreshold: richSyncThreshold,
+      );
+
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.baseline,
@@ -312,7 +332,7 @@ class LyricLine extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.clip,
             ),
-            base: Text(text.substring(start, end)),
+            base: richBase,
           ),
         ),
       );

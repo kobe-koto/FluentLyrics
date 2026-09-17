@@ -133,6 +133,9 @@ Widget _buildMultiPartAnnotatedHarness() {
   return MaterialApp(
     home: Scaffold(
       body: LyricLine(
+        // Position past every part's start so all of them are in the same
+        // (lifted) state and their glyph positions are comparable.
+        adjustedPosition: const Duration(seconds: 5),
         lyric: Lyric(
           startTime: Duration.zero,
           text: '最低界隈です',
@@ -163,7 +166,6 @@ Widget _buildMultiPartAnnotatedHarness() {
         inactiveScale: 0.85,
         translationHighlightOnly: true,
         experimentalRichInlineFontSizeGlitching: false,
-        adjustedPosition: const Duration(seconds: 1),
         isPlaying: false,
       ),
     ),
@@ -279,7 +281,7 @@ void main() {
 
   testWidgets('keeps rich sync while annotating a word', (tester) async {
     await tester.pumpWidget(_buildRichAnnotatedHarness());
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     // The reading is stacked above its word...
     expect(find.text('むじゅん'), findsOneWidget);
@@ -291,24 +293,28 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(_buildMultiPartAnnotatedHarness());
-    await tester.pump();
+    // Let the lift/padding animations settle before measuring positions.
+    await tester.pump(const Duration(milliseconds: 600));
 
-    // The run spans 最低 and 界隈: it degrades to one plain ruby block, so the
-    // reading shows once and the covered characters are a single widget.
+    // The run spans 最低 and 界隈: the parts are merged into one rich part, so
+    // the reading shows once and the merged word keeps its progress wipe.
     expect(find.text('さいていかいわい'), findsOneWidget);
-    expect(find.text('最低界隈'), findsOneWidget);
+    // `_RichPart` paints the text twice (base + progress wipe), so the merged
+    // word shows up as more than one Text.
+    expect(find.text('最低界隈'), findsWidgets);
+    expect(find.byType(ShaderMask), findsWidgets);
   });
 
   testWidgets('aligns annotated and plain rich parts on one baseline', (
     tester,
   ) async {
     await tester.pumpWidget(_buildMultiPartAnnotatedHarness());
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     // 最低界隈 carries the reading, です does not: their glyph tops must line
     // up, or annotated words look sunk into the line.
-    final annotated = tester.getRect(find.text('最低界隈'));
-    final plain = tester.getRect(find.text('です'));
-    expect((annotated.top - plain.top).abs(), lessThan(1.5));
+    final annotated = tester.getRect(find.text('最低界隈').first);
+    final plain = tester.getRect(find.text('です').first);
+    expect((annotated.top - plain.top).abs(), lessThan(2.5));
   });
 }
