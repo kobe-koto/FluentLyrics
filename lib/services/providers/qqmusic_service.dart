@@ -7,6 +7,7 @@ import '../../models/general_translation_request_data.dart';
 import '../../models/lyric_model.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/lrc_parser.dart';
+import '../../utils/lyrics_reading_helper.dart';
 import '../../utils/qqmusic_lyric_decoder.dart';
 import '../../utils/rich_lrc_parser.dart';
 import '../../utils/song_result_helper.dart';
@@ -131,6 +132,10 @@ class QQMusicService {
         return LyricsResult(
           lyrics: parseResult.lyrics,
           source: 'QQ Music',
+          reading: LyricsReadingHelper.fromQqPayload(
+            lyric: lyricsResponse.lyric,
+            roma: lyricsResponse.roma,
+          ),
           writtenBy:
               parseResult.trimmedMetadata['词'] ??
               parseResult.trimmedMetadata['作词'] ??
