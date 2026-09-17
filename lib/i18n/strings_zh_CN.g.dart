@@ -308,7 +308,7 @@ class Translations$settings$lyricConfig$zh_CN extends Translations$settings$lyri
 	@override String get richSyncThresholdSubtitle => '短于该时长的词片段会整体高亮，而不播放进度擦除动画。设为 0 则每个片段都播放动画。';
 	@override String get richSyncThresholdReset => '重置为 800ms';
 	@override String get annotation => '汉字假名注音';
-	@override String get annotationSubtitle => '在汉字上方显示读音（当歌词源提供读音轨时）。罗马音轨按原样显示；日文不会被转换。';
+	@override String get annotationSubtitle => '在汉字上方以假名显示读音（当歌词源提供读音轨时；罗马音轨会转成假名）。';
 	@override String get zhConversion => '中文简繁转换';
 	@override String get zhConversionSubtitle => '将歌词与译文转换为你选择的中文形态。日文文本不会被转换。';
 	@override String get zhConversionOff => '关闭';

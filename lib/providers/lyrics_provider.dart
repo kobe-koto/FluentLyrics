@@ -12,6 +12,7 @@ import '../services/providers/lyrics_cache_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/furigana_helper.dart';
 import '../utils/lyrics_candidate_helper.dart';
+import '../utils/romaji_helper.dart';
 import '../utils/lyrics_reading_candidate_helper.dart';
 import '../utils/lyrics_display_helper.dart';
 import '../services/opencc/zh_conversion.dart';
@@ -319,12 +320,32 @@ class LyricsProvider with ChangeNotifier {
     final reading = readingByTime[lyric.startTime.inMilliseconds];
     if (reading == null || reading.isEmpty) return lyric;
 
+    final isKana = lineType == LyricsReadingType.kana;
     final annotations = FuriganaHelper.align(
       text: lyric.text,
       reading: reading,
-      readingIsRomaji: lineType != LyricsReadingType.kana,
+      readingIsRomaji: !isKana,
     );
     if (annotations.isEmpty) return lyric;
+
+    // Providers mostly ship a romanized track, but the annotation should be
+    // kana: the alignment already resolved which reading belongs to which
+    // kanji, so converting is a lookup. A unit we do not know drops the line
+    // rather than mixing scripts.
+    final readings = <FuriganaAnnotation>[];
+    for (final annotation in annotations) {
+      final text = isKana
+          ? annotation.reading
+          : RomajiHelper.toKana(annotation.reading);
+      if (text == null || text.isEmpty) return lyric;
+      readings.add(
+        FuriganaAnnotation(
+          start: annotation.start,
+          end: annotation.end,
+          reading: text,
+        ),
+      );
+    }
 
     changed();
     return Lyric(
@@ -333,7 +354,7 @@ class LyricsProvider with ChangeNotifier {
       text: lyric.text,
       inlineParts: lyric.inlineParts,
       translation: lyric.translation,
-      annotations: annotations,
+      annotations: readings,
     );
   }
 

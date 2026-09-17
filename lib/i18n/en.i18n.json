@@ -116,7 +116,7 @@
       "richSyncThresholdSubtitle": "Word segments shorter than this are highlighted as a whole instead of animating a progress wipe. 0 animates every segment.",
       "richSyncThresholdReset": "Reset to 800ms",
       "annotation": "Kanji/Kana Annotation",
-      "annotationSubtitle": "Show the reading of kanji above the line, when the provider ships one (romanized lyrics are shown as they are provided; Japanese is never converted).",
+      "annotationSubtitle": "Show the reading of kanji above the line as kana, when the provider ships a reading track (romanized tracks are converted to kana).",
       "zhConversion": "Chinese Script Conversion",
       "zhConversionSubtitle": "Convert lyric and translation text to the selected Chinese script. Japanese text is left untouched.",
       "zhConversionOff": "Off",

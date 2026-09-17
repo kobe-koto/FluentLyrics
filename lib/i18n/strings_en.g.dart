@@ -594,8 +594,8 @@ class Translations$settings$lyricConfig$en {
 	/// en: 'Kanji/Kana Annotation'
 	String get annotation => 'Kanji/Kana Annotation';
 
-	/// en: 'Show the reading of kanji above the line, when the provider ships one (romanized lyrics are shown as they are provided; Japanese is never converted).'
-	String get annotationSubtitle => 'Show the reading of kanji above the line, when the provider ships one (romanized lyrics are shown as they are provided; Japanese is never converted).';
+	/// en: 'Show the reading of kanji above the line as kana, when the provider ships a reading track (romanized tracks are converted to kana).'
+	String get annotationSubtitle => 'Show the reading of kanji above the line as kana, when the provider ships a reading track (romanized tracks are converted to kana).';
 
 	/// en: 'Chinese Script Conversion'
 	String get zhConversion => 'Chinese Script Conversion';

@@ -116,7 +116,7 @@
       "richSyncThresholdSubtitle": "短于该时长的词片段会整体高亮，而不播放进度擦除动画。设为 0 则每个片段都播放动画。",
       "richSyncThresholdReset": "重置为 800ms",
       "annotation": "汉字假名注音",
-      "annotationSubtitle": "在汉字上方显示读音（当歌词源提供读音轨时）。罗马音轨按原样显示；日文不会被转换。",
+      "annotationSubtitle": "在汉字上方以假名显示读音（当歌词源提供读音轨时；罗马音轨会转成假名）。",
       "zhConversion": "中文简繁转换",
       "zhConversionSubtitle": "将歌词与译文转换为你选择的中文形态。日文文本不会被转换。",
       "zhConversionOff": "关闭",

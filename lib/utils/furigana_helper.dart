@@ -153,7 +153,9 @@ class FuriganaHelper {
     if (char == 'っ' || char == 'ッ') return true;
     final next = _nextChar(text, index);
     if (next == null || !_isSmallKana(next)) return false;
-    return _table.containsKey('${_toHiragana(char)}${_toHiragana(next)}');
+    return kanaRomajiTable.containsKey(
+      '${_toHiragana(char)}${_toHiragana(next)}',
+    );
   }
 
   /// Accepted readings for the kana at [index], including the っ merge with the
@@ -165,24 +167,25 @@ class FuriganaHelper {
     if (char == 'っ' || char == 'ッ') {
       final next = _nextKana(text, index);
       if (next == null) return const ['tsu', 'tu'];
-      final merged = _table[_toHiragana(next)];
+      final merged = kanaRomajiTable[_toHiragana(next)];
       if (merged == null || merged.isEmpty) return const ['tsu', 'tu'];
       return merged.map((unit) => unit[0] + unit).toList();
     }
     if (char == 'ー') {
       final previous = _previousKana(text, index);
       if (previous == null) return const ['-'];
-      final forms = _table[_toHiragana(previous)];
+      final forms = kanaRomajiTable[_toHiragana(previous)];
       if (forms == null || forms.isEmpty) return const ['-'];
       return [...forms.map((form) => form[form.length - 1]), '-'];
     }
 
     final next = _nextChar(text, index);
     if (next != null && _isSmallKana(next)) {
-      final combined = _table['${_toHiragana(char)}${_toHiragana(next)}'];
+      final combined =
+          kanaRomajiTable['${_toHiragana(char)}${_toHiragana(next)}'];
       if (combined != null && combined.isNotEmpty) return combined;
     }
-    return _table[_toHiragana(char)] ?? const [];
+    return kanaRomajiTable[_toHiragana(char)] ?? const [];
   }
 
   static String? _nextKana(String text, int index) {
@@ -248,7 +251,7 @@ class FuriganaHelper {
         (code >= 0xF900 && code <= 0xFAFF);
   }
 
-  static const Map<String, List<String>> _table = {
+  static const Map<String, List<String>> kanaRomajiTable = {
     'あ': ['a'],
     'い': ['i'],
     'う': ['u'],
