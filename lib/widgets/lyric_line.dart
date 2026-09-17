@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_defaults.dart';
 import '../models/lyric_model.dart';
 import '../utils/furigana_helper.dart';
+import 'ruby_text.dart';
 
 class LyricLine extends StatelessWidget {
   static const Duration _translationAnimationDuration = Duration(
@@ -276,9 +277,8 @@ class LyricLine extends StatelessWidget {
         if (clipEnd <= clipStart) continue;
         spans.add(
           WidgetSpan(
-            // Same alignment as the ruby blocks below: mixing `baseline` and
-            // `bottom` in one line sinks the annotated parts a pixel or two.
-            alignment: PlaceholderAlignment.bottom,
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
             child: _RichPart(
               text: text.substring(clipStart, clipEnd),
               startTime: range.part.startTime,
@@ -303,18 +303,16 @@ class LyricLine extends StatelessWidget {
       addRichRange(cursor, start);
       spans.add(
         WidgetSpan(
-          alignment: PlaceholderAlignment.bottom,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                annotation.reading,
-                style: annotationStyle,
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-              ),
-              Text(text.substring(start, end)),
-            ],
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: RubyText(
+            reading: Text(
+              annotation.reading,
+              style: annotationStyle,
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+            ),
+            base: Text(text.substring(start, end)),
           ),
         ),
       );
@@ -354,22 +352,18 @@ class LyricLine extends StatelessWidget {
       if (annotation.end > annotation.start) {
         spans.add(
           WidgetSpan(
-            // `baseline` would report the _first_ child's baseline (the reading)
-            // and push the kanji below the line's baseline; aligning the bottom
-            // of the column keeps the kanji on the baseline with the reading
-            // stacked above it.
-            alignment: PlaceholderAlignment.bottom,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  annotation.reading,
-                  style: annotationStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.clip,
-                ),
-                Text(text.substring(annotation.start, annotation.end)),
-              ],
+            // `RubyText` reports the base text's baseline, so the kanji stays
+            // exactly on the line's baseline with the reading above it.
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: RubyText(
+              reading: Text(
+                annotation.reading,
+                style: annotationStyle,
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+              ),
+              base: Text(text.substring(annotation.start, annotation.end)),
             ),
           ),
         );

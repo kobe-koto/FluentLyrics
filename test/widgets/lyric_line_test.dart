@@ -244,8 +244,8 @@ void main() {
     );
     await tester.pump();
 
-    // The ruby column must not push the base text below the line: its bottom
-    // has to match the kana that follows it, with the reading stacked above.
+    // The ruby placeholder must not push the base below the line: its bottom
+    // has to match the kana that follows, with the reading stacked above.
     final paragraph = tester.renderObject<RenderParagraph>(
       find.byType(RichText).first,
     );
@@ -262,7 +262,10 @@ void main() {
     expect((rubyBox.bottom - kanaBox.bottom).abs(), lessThan(2.0));
 
     final reading = tester.getRect(find.text('しず'));
-    expect(reading.center.dy, lessThan((rubyBox.top + rubyBox.bottom) / 2));
+    expect(
+      reading.bottom,
+      lessThanOrEqualTo(tester.getRect(find.text('沈')).top),
+    );
   });
 
   testWidgets('renders plain text when there are no annotations', (
