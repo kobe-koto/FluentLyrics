@@ -180,6 +180,28 @@ void main() {
       expect(paired, ['A', 'B']);
     });
 
+    test('honours a custom tolerance (annotation bias)', () {
+      List<Lyric> lines(List<(int, String)> entries) => [
+        for (final (ms, text) in entries)
+          Lyric(
+            startTime: Duration(milliseconds: ms),
+            text: text,
+          ),
+      ];
+      // Line counts differ so the positional fallback stays out of the way.
+      final lyrics = lines([(0, 'a'), (10000, 'b')]);
+      final reading = lines([(300, 'A')]);
+
+      expect(
+        LyricsReadingHelper.pairReadings(lyrics, reading, toleranceMs: 100),
+        [null, null],
+      );
+      expect(
+        LyricsReadingHelper.pairReadings(lyrics, reading, toleranceMs: 500),
+        ['A', null],
+      );
+    });
+
     test('leaves lines without a plausible reading unpaired', () {
       final paired = LyricsReadingHelper.pairReadings(
         lines([(0, 'a'), (10000, 'b')]),

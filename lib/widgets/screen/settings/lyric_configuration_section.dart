@@ -67,6 +67,24 @@ class LyricConfigurationSection extends StatelessWidget {
               onChanged: (value) => provider.setAnnotationEnabled(value),
             ),
             const SizedBox(height: 24),
+            SettingsSliderCard(
+              title: i18n.annotationBias,
+              subtitle: i18n.annotationBiasSubtitle,
+              value: provider.annotationBias.current.toDouble(),
+              min: 0,
+              max: 1000,
+              divisions: 20,
+              label: '${provider.annotationBias.current}ms',
+              valueText: '${provider.annotationBias.current}ms',
+              onChanged: (value) => provider.setAnnotationBias(value.toInt()),
+              onReset: provider.annotationBias.changed
+                  ? () => provider.setAnnotationBias(
+                      provider.annotationBias.defaultValue,
+                    )
+                  : null,
+              resetTooltip: i18n.annotationBiasReset,
+            ),
+            const SizedBox(height: 24),
             SettingsDropdownCard<String>(
               title: i18n.zhConversion,
               subtitle: i18n.zhConversionSubtitle,

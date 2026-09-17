@@ -309,6 +309,9 @@ class Translations$settings$lyricConfig$zh_TW extends Translations$settings$lyri
 	@override String get richSyncThresholdReset => '重設為 800ms';
 	@override String get annotation => '漢字假名注音';
 	@override String get annotationSubtitle => '在漢字上方以假名顯示讀音（當歌詞源提供讀音軌時；羅馬音軌會轉成假名）。';
+	@override String get annotationBias => '注音配對偏移';
+	@override String get annotationBiasSubtitle => '讀音行與歌詞行相差多少毫秒以內仍視為同一行。歌詞源的讀音軌對齊通常不精確，容差大一些會有更多行獲得注音。';
+	@override String get annotationBiasReset => '重設為 500ms';
 	@override String get zhConversion => '中文簡繁轉換';
 	@override String get zhConversionSubtitle => '將歌詞與譯文轉換為你選擇的中文形態。日文文本不會被轉換。';
 	@override String get zhConversionOff => '關閉';

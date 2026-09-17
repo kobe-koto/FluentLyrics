@@ -17,6 +17,7 @@ class SettingsService {
   static const String _landscapeLeadingSpaceKey = 'landscape_leading_space';
   static const String _richSyncThresholdMsKey = 'rich_sync_threshold_ms';
   static const String _annotationEnabledKey = 'annotation_enabled';
+  static const String _annotationBiasKey = 'annotation_bias';
   static const String _zhConversionTargetKey = 'zh_conversion_target';
   static const String _zhConversionIgnoredLanguagesKey =
       'zh_conversion_ignored_languages';
@@ -213,6 +214,22 @@ class SettingsService {
   Future<void> setAnnotationEnabled(bool enabled) async {
     final prefs = await _prefs;
     await prefs.setBool(_annotationEnabledKey, enabled);
+  }
+
+  Future<Setting<int>> getAnnotationBias() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getInt(_annotationBiasKey) ?? AppDefaults.annotationBias;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.annotationBias,
+      changed: current != AppDefaults.annotationBias,
+    );
+  }
+
+  Future<void> setAnnotationBias(int ms) async {
+    final prefs = await _prefs;
+    await prefs.setInt(_annotationBiasKey, ms);
   }
 
   Future<Setting<String>> getZhConversionTarget() async {

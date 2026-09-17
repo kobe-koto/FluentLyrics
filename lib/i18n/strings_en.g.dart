@@ -597,6 +597,15 @@ class Translations$settings$lyricConfig$en {
 	/// en: 'Show the reading of kanji above the line as kana, when the provider ships a reading track (romanized tracks are converted to kana).'
 	String get annotationSubtitle => 'Show the reading of kanji above the line as kana, when the provider ships a reading track (romanized tracks are converted to kana).';
 
+	/// en: 'Annotation Pairing Bias'
+	String get annotationBias => 'Annotation Pairing Bias';
+
+	/// en: 'How far a reading line may be from a lyric line and still be paired with it (ms). Providers line their reading track up loosely, so a generous tolerance annotates more lines.'
+	String get annotationBiasSubtitle => 'How far a reading line may be from a lyric line and still be paired with it (ms). Providers line their reading track up loosely, so a generous tolerance annotates more lines.';
+
+	/// en: 'Reset to 500ms'
+	String get annotationBiasReset => 'Reset to 500ms';
+
 	/// en: 'Chinese Script Conversion'
 	String get zhConversion => 'Chinese Script Conversion';
 

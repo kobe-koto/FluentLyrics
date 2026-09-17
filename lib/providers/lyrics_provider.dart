@@ -62,6 +62,9 @@ class LyricsProvider with ChangeNotifier {
   set _annotationEnabled(Setting<bool> value) =>
       _settings.annotationEnabled = value;
 
+  Setting<int> get _annotationBias => _settings.annotationBias;
+  set _annotationBias(Setting<int> value) => _settings.annotationBias = value;
+
   Setting<String> get _zhConversionTarget => _settings.zhConversionTarget;
   set _zhConversionTarget(Setting<String> value) =>
       _settings.zhConversionTarget = value;
@@ -276,6 +279,7 @@ class LyricsProvider with ChangeNotifier {
   List<Lyric>? _annotatedLyrics;
   List<Lyric>? _annotatedLyricsSource;
   LyricsReading? _annotatedLyricsReading;
+  int? _annotatedLyricsBias;
 
   /// Pairs the reading track with the displayed lines (by timestamp) and
   /// attaches kanji readings, so [LyricLine] can render ruby text. Memoized:
@@ -286,15 +290,21 @@ class LyricsProvider with ChangeNotifier {
     if (reading == null || reading.lines.isEmpty || lyrics.isEmpty) {
       return lyrics;
     }
+    final bias = _annotationBias.current;
     if (identical(_annotatedLyricsSource, lyrics) &&
-        identical(_annotatedLyricsReading, reading)) {
+        identical(_annotatedLyricsReading, reading) &&
+        _annotatedLyricsBias == bias) {
       return _annotatedLyrics!;
     }
 
     // Providers rarely line their reading track up with the lyrics exactly
     // (QQ serves it from the word level payload), so pair by time with a
     // tolerance and fall back to positional pairing.
-    final readings = LyricsReadingHelper.pairReadings(lyrics, reading.lines);
+    final readings = LyricsReadingHelper.pairReadings(
+      lyrics,
+      reading.lines,
+      toleranceMs: bias,
+    );
     var changed = false;
     final annotated = <Lyric>[
       for (var i = 0; i < lyrics.length; i++)
@@ -307,6 +317,7 @@ class LyricsProvider with ChangeNotifier {
     ];
     _annotatedLyricsSource = lyrics;
     _annotatedLyricsReading = reading;
+    _annotatedLyricsBias = bias;
     _annotatedLyrics = changed ? annotated : lyrics;
     return _annotatedLyrics!;
   }
@@ -434,6 +445,7 @@ class LyricsProvider with ChangeNotifier {
   Setting<int> get landscapeLeadingSpace => _landscapeLeadingSpace;
   Setting<int> get richSyncThresholdMs => _richSyncThresholdMs;
   Setting<bool> get annotationEnabled => _annotationEnabled;
+  Setting<int> get annotationBias => _annotationBias;
   Setting<String> get zhConversionTarget => _zhConversionTarget;
   Setting<List<String>> get zhConversionIgnoredLanguages =>
       _zhConversionIgnoredLanguages;
@@ -828,6 +840,15 @@ class LyricsProvider with ChangeNotifier {
       value: enabled,
       assign: (value) => _annotationEnabled = value,
       persist: _settingsService.setAnnotationEnabled,
+    );
+  }
+
+  void setAnnotationBias(int ms) {
+    _setSettingValue(
+      currentSetting: _annotationBias,
+      value: ms,
+      assign: (value) => _annotationBias = value,
+      persist: _settingsService.setAnnotationBias,
     );
   }
 
