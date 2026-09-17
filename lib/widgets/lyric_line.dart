@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants/app_defaults.dart';
 import '../models/lyric_model.dart';
+import '../utils/furigana_helper.dart';
 
 class LyricLine extends StatelessWidget {
   static const Duration _translationAnimationDuration = Duration(
@@ -213,10 +214,70 @@ class LyricLine extends StatelessWidget {
     );
   }
 
+  /// Renders the line as ruby text: each annotated run shows its reading above
+  /// the original characters. Flutter has no ruby support, so every run becomes
+  /// a [WidgetSpan] holding a two line column.
+  Widget _buildAnnotatedText(
+    BuildContext context,
+    List<FuriganaAnnotation> annotations,
+  ) {
+    final baseStyle = DefaultTextStyle.of(context).style;
+    final annotationStyle = baseStyle.copyWith(
+      fontSize: (baseStyle.fontSize ?? 36) * 0.42,
+      height: 1.0,
+      fontWeight: FontWeight.w600,
+      color: Colors.white60,
+    );
+
+    final text = lyric.text;
+    final spans = <InlineSpan>[];
+    var index = 0;
+    for (final annotation in annotations) {
+      if (annotation.start > index) {
+        spans.add(TextSpan(text: text.substring(index, annotation.start)));
+      }
+      if (annotation.end > annotation.start) {
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  annotation.reading,
+                  style: annotationStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                ),
+                Text(text.substring(annotation.start, annotation.end)),
+              ],
+            ),
+          ),
+        );
+      }
+      index = annotation.end;
+    }
+    if (index < text.length) {
+      spans.add(TextSpan(text: text.substring(index)));
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
+      textAlign: TextAlign.left,
+      style: baseStyle,
+    );
+  }
+
   Widget _buildText(BuildContext context) {
     final lyric = this.lyric;
     final shouldBeRichLine = isHighlighted || isPrerendered;
     final text = lyric.text;
+
+    final annotations = lyric.annotations;
+    if (annotations != null && annotations.isNotEmpty) {
+      return _buildAnnotatedText(context, annotations);
+    }
     if (!shouldBeRichLine ||
         lyric.inlineParts == null ||
         lyric.inlineParts!.isEmpty) {
@@ -232,6 +293,7 @@ class LyricLine extends StatelessWidget {
         style: DefaultTextStyle.of(context).style,
       );
     }
+
     final richTextStyle = DefaultTextStyle.of(context).style.copyWith(
       color: Colors.white,
       fontSize: experimentalRichInlineFontSizeGlitching

@@ -1,4 +1,5 @@
 import 'package:fluent_lyrics/models/lyric_model.dart';
+import 'package:fluent_lyrics/utils/furigana_helper.dart';
 import 'package:fluent_lyrics/widgets/lyric_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -66,6 +67,28 @@ Widget _buildRichHarness({
   );
 }
 
+Widget _buildAnnotatedHarness({required List<FuriganaAnnotation> annotations}) {
+  return MaterialApp(
+    home: Scaffold(
+      body: LyricLine(
+        lyric: Lyric(
+          startTime: Duration.zero,
+          text: '沈むように溶けて',
+          annotations: annotations,
+        ),
+        isHighlighted: true,
+        isPrerendered: false,
+        fontSize: 36,
+        inactiveScale: 0.85,
+        translationHighlightOnly: true,
+        experimentalRichInlineFontSizeGlitching: false,
+        adjustedPosition: Duration.zero,
+        isPlaying: false,
+      ),
+    ),
+  );
+}
+
 void main() {
   testWidgets('translation animates out instead of being removed immediately', (
     tester,
@@ -106,5 +129,36 @@ void main() {
     );
     await tester.pump();
     expect(find.byType(ShaderMask), findsNothing);
+  });
+
+  testWidgets('renders kanji readings as ruby text', (tester) async {
+    await tester.pumpWidget(
+      _buildAnnotatedHarness(
+        annotations: const [
+          FuriganaAnnotation(start: 0, end: 1, reading: 'しず'),
+          FuriganaAnnotation(start: 5, end: 6, reading: 'と'),
+        ],
+      ),
+    );
+    await tester.pump();
+
+    // The reading sits above the annotated run, the run itself stays in place.
+    expect(find.text('しず'), findsOneWidget);
+    expect(find.text('と'), findsOneWidget);
+    expect(find.text('沈'), findsOneWidget);
+    expect(find.text('溶'), findsOneWidget);
+
+    final readingRect = tester.getRect(find.text('しず'));
+    final kanjiRect = tester.getRect(find.text('沈'));
+    expect(readingRect.bottom, lessThanOrEqualTo(kanjiRect.top));
+  });
+
+  testWidgets('renders plain text when there are no annotations', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_buildAnnotatedHarness(annotations: const []));
+    await tester.pump();
+
+    expect(find.text('沈むように溶けて'), findsOneWidget);
   });
 }

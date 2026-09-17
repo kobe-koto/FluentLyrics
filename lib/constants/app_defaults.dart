@@ -4,6 +4,7 @@ class AppDefaults {
   static const int linesBefore = 1;
   static const int landscapeLeadingSpace = 30;
   static const int richSyncThresholdMs = 800;
+  static const bool annotationEnabled = false;
   static const String zhConversionTarget = 'off';
   static const List<String> zhConversionIgnoredLanguages = ['ja'];
   static const int globalOffsetMs = 0;

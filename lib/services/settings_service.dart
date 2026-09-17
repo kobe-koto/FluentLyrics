@@ -16,6 +16,7 @@ class SettingsService {
   static const String _linesBeforeKey = 'lines_before';
   static const String _landscapeLeadingSpaceKey = 'landscape_leading_space';
   static const String _richSyncThresholdMsKey = 'rich_sync_threshold_ms';
+  static const String _annotationEnabledKey = 'annotation_enabled';
   static const String _zhConversionTargetKey = 'zh_conversion_target';
   static const String _zhConversionIgnoredLanguagesKey =
       'zh_conversion_ignored_languages';
@@ -196,6 +197,22 @@ class SettingsService {
   Future<void> setRichSyncThresholdMs(int ms) async {
     final prefs = await _prefs;
     await prefs.setInt(_richSyncThresholdMsKey, ms);
+  }
+
+  Future<Setting<bool>> getAnnotationEnabled() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getBool(_annotationEnabledKey) ?? AppDefaults.annotationEnabled;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.annotationEnabled,
+      changed: current != AppDefaults.annotationEnabled,
+    );
+  }
+
+  Future<void> setAnnotationEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_annotationEnabledKey, enabled);
   }
 
   Future<Setting<String>> getZhConversionTarget() async {

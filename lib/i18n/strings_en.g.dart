@@ -591,6 +591,12 @@ class Translations$settings$lyricConfig$en {
 	/// en: 'Reset to 800ms'
 	String get richSyncThresholdReset => 'Reset to 800ms';
 
+	/// en: 'Kanji/Kana Annotation'
+	String get annotation => 'Kanji/Kana Annotation';
+
+	/// en: 'Show the reading of kanji above the line, when the provider ships one (romanized lyrics are shown as they are provided; Japanese is never converted).'
+	String get annotationSubtitle => 'Show the reading of kanji above the line, when the provider ships one (romanized lyrics are shown as they are provided; Japanese is never converted).';
+
 	/// en: 'Chinese Script Conversion'
 	String get zhConversion => 'Chinese Script Conversion';
 

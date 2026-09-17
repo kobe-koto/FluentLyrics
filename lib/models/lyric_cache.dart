@@ -197,3 +197,114 @@ class TranslationItem {
   int? endTimeMs;
   late String text;
 }
+
+/// Persisted kanji/kana reading track (furigana source) for a track.
+@Collection()
+class ReadingCache {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true, replace: true)
+  late String cacheId;
+
+  String? source;
+  String? sourceProvider;
+  String? lineType;
+  String? kanaRaw;
+  late List<ReadingItem> lines;
+
+  LyricsReading toReading() =>
+      _readingFrom(lineType: lineType, kanaRaw: kanaRaw, lines: lines);
+
+  static ReadingCache fromReading(
+    String cacheId,
+    LyricsReading reading, {
+    String? source,
+    String? sourceProvider,
+  }) {
+    return ReadingCache()
+      ..cacheId = cacheId
+      ..source = source
+      ..sourceProvider = sourceProvider
+      ..lineType = reading.lineType?.name
+      ..kanaRaw = reading.kanaRaw
+      ..lines = reading.lines
+          .map(
+            (l) => ReadingItem()
+              ..startTimeMs = l.startTime.inMilliseconds
+              ..endTimeMs = l.endTime?.inMilliseconds
+              ..text = l.text,
+          )
+          .toList();
+  }
+}
+
+/// Candidate reading tracks (e.g. the romanized track of another provider)
+/// for the same track, kept apart from the selected one.
+@Collection()
+class ReadingCandidateCache {
+  Id id = Isar.autoIncrement;
+
+  @Index()
+  late String cacheId;
+
+  String? source;
+  String? sourceProvider;
+  String? lineType;
+  String? kanaRaw;
+  late List<ReadingItem> lines;
+
+  LyricsReading toReading() =>
+      _readingFrom(lineType: lineType, kanaRaw: kanaRaw, lines: lines);
+
+  static ReadingCandidateCache fromReading(
+    String cacheId,
+    LyricsReading reading, {
+    String? source,
+    String? sourceProvider,
+  }) {
+    final base = ReadingCache.fromReading(
+      cacheId,
+      reading,
+      source: source,
+      sourceProvider: sourceProvider,
+    );
+    return ReadingCandidateCache()
+      ..cacheId = base.cacheId
+      ..source = base.source
+      ..sourceProvider = base.sourceProvider
+      ..lineType = base.lineType
+      ..kanaRaw = base.kanaRaw
+      ..lines = base.lines;
+  }
+}
+
+@embedded
+class ReadingItem {
+  late int startTimeMs;
+  int? endTimeMs;
+  late String text;
+}
+
+LyricsReading _readingFrom({
+  String? lineType,
+  String? kanaRaw,
+  required List<ReadingItem> lines,
+}) => LyricsReading(
+  lineType: switch (lineType) {
+    'kana' => LyricsReadingType.kana,
+    'romaji' => LyricsReadingType.romaji,
+    _ => null,
+  },
+  lines: lines
+      .map(
+        (l) => Lyric(
+          startTime: Duration(milliseconds: l.startTimeMs),
+          endTime: l.endTimeMs != null
+              ? Duration(milliseconds: l.endTimeMs!)
+              : null,
+          text: l.text,
+        ),
+      )
+      .toList(),
+  kanaRaw: kanaRaw,
+);

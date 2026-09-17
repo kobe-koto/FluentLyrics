@@ -307,6 +307,8 @@ class Translations$settings$lyricConfig$zh_TW extends Translations$settings$lyri
 	@override String get richSyncThreshold => 'Rich Sync 片段閾值';
 	@override String get richSyncThresholdSubtitle => '短於該時長的詞片段會整體高亮，而不播放進度擦除動畫。設為 0 則每個片段都播放動畫。';
 	@override String get richSyncThresholdReset => '重設為 800ms';
+	@override String get annotation => '漢字假名注音';
+	@override String get annotationSubtitle => '在漢字上方顯示讀音（當歌詞源提供讀音軌時）。羅馬音軌按原樣顯示；日文不會被轉換。';
 	@override String get zhConversion => '中文簡繁轉換';
 	@override String get zhConversionSubtitle => '將歌詞與譯文轉換為你選擇的中文形態。日文文本不會被轉換。';
 	@override String get zhConversionOff => '關閉';

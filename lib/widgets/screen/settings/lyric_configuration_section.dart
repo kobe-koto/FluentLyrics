@@ -60,6 +60,13 @@ class LyricConfigurationSection extends StatelessWidget {
               resetTooltip: i18n.richSyncThresholdReset,
             ),
             const SizedBox(height: 24),
+            SettingsToggleCard(
+              title: i18n.annotation,
+              subtitle: i18n.annotationSubtitle,
+              value: provider.annotationEnabled.current,
+              onChanged: (value) => provider.setAnnotationEnabled(value),
+            ),
+            const SizedBox(height: 24),
             SettingsDropdownCard<String>(
               title: i18n.zhConversion,
               subtitle: i18n.zhConversionSubtitle,

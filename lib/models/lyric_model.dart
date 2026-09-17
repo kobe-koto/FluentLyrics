@@ -1,4 +1,5 @@
 import 'package:fluent_lyrics/models/lyric_provider_type.dart';
+import 'package:fluent_lyrics/utils/furigana_helper.dart';
 
 class Lyric {
   final Duration startTime;
@@ -7,12 +8,16 @@ class Lyric {
   final List<LyricInlinePart>? inlineParts;
   final String? translation;
 
+  /// Kanji readings for this line (furigana). Display only: never persisted.
+  final List<FuriganaAnnotation>? annotations;
+
   Lyric({
     required this.startTime,
     required this.text,
     this.endTime,
     this.inlineParts,
     this.translation,
+    this.annotations,
   });
 
   Map<String, dynamic> toJson() => {
