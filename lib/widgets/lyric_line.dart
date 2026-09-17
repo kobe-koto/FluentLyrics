@@ -276,8 +276,9 @@ class LyricLine extends StatelessWidget {
         if (clipEnd <= clipStart) continue;
         spans.add(
           WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
+            // Same alignment as the ruby blocks below: mixing `baseline` and
+            // `bottom` in one line sinks the annotated parts a pixel or two.
+            alignment: PlaceholderAlignment.bottom,
             child: _RichPart(
               text: text.substring(clipStart, clipEnd),
               startTime: range.part.startTime,

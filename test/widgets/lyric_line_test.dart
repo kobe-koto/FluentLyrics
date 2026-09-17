@@ -295,4 +295,17 @@ void main() {
     expect(find.text('さいていかいわい'), findsOneWidget);
     expect(find.text('最低界隈'), findsOneWidget);
   });
+
+  testWidgets('aligns annotated and plain rich parts on one baseline', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_buildMultiPartAnnotatedHarness());
+    await tester.pump();
+
+    // 最低界隈 carries the reading, です does not: their glyph tops must line
+    // up, or annotated words look sunk into the line.
+    final annotated = tester.getRect(find.text('最低界隈'));
+    final plain = tester.getRect(find.text('です'));
+    expect((annotated.top - plain.top).abs(), lessThan(1.5));
+  });
 }
