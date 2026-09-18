@@ -444,12 +444,12 @@ class MusixmatchService {
                 queryParameters: Map.from(url.queryParameters)
                   ..['usertoken'] = newToken,
               );
-              return _performGet(newUrl, newToken, maxTrial: maxTrial - 1);
+              return await _performGet(newUrl, newToken, maxTrial: maxTrial - 1);
             }
           } else if (body.contains('"hint":"captcha"')) {
             // Wait and retry
             await Future.delayed(const Duration(seconds: 1));
-            return _performGet(url, token, maxTrial: maxTrial - 1);
+            return await _performGet(url, token, maxTrial: maxTrial - 1);
           }
         }
         return body;
