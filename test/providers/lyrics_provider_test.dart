@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:fluent_lyrics/models/lyric_model.dart';
 import 'package:fluent_lyrics/models/lyric_provider_type.dart';
@@ -8,7 +9,9 @@ import 'package:fluent_lyrics/services/lyrics_service.dart';
 import 'package:fluent_lyrics/services/media_service.dart';
 import 'package:fluent_lyrics/services/providers/lyrics_cache_service.dart';
 import 'package:fluent_lyrics/services/settings_service.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeMediaController implements MediaController {
   @override
@@ -244,6 +247,53 @@ class _FakeSettingsService extends SettingsService {
   @override
   Future<Setting<String>> getTranslationStreamPath() async {
     return const Setting(current: '', defaultValue: '', changed: false);
+  }
+
+  @override
+  Future<Setting<int>> getLandscapeLeadingSpace() async {
+    return const Setting(current: 30, defaultValue: 30, changed: false);
+  }
+
+  @override
+  Future<Setting<int>> getRichSyncThresholdMs() async {
+    return const Setting(current: 800, defaultValue: 800, changed: false);
+  }
+
+  @override
+  Future<Setting<bool>> getAnnotationEnabled() async {
+    return const Setting(current: false, defaultValue: false, changed: false);
+  }
+
+  @override
+  Future<Setting<int>> getAnnotationBias() async {
+    return const Setting(current: 500, defaultValue: 500, changed: false);
+  }
+
+  @override
+  Future<Setting<String>> getZhConversionTarget() async {
+    return const Setting(current: 'off', defaultValue: 'off', changed: false);
+  }
+
+  @override
+  Future<Setting<List<String>>> getZhConversionIgnoredLanguages() async {
+    return const Setting(current: ['ja'], defaultValue: ['ja'], changed: false);
+  }
+
+  @override
+  Future<Setting<int>> getArtworkMinSize() async {
+    return const Setting(current: 300, defaultValue: 300, changed: false);
+  }
+
+  @override
+  Future<String?> getLocale() async => 'en';
+
+  @override
+  Future<Setting<String?>> getMusixmatchToken() async {
+    return const Setting<String?>(
+      current: null,
+      defaultValue: null,
+      changed: false,
+    );
   }
 }
 
@@ -508,6 +558,22 @@ Lyric lyric(String text, int seconds) {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
+  final supportDirectory = Directory.systemTemp.createTempSync(
+    'fluent_lyrics_test',
+  );
+  tearDownAll(() {
+    if (supportDirectory.existsSync()) {
+      supportDirectory.deleteSync(recursive: true);
+    }
+  });
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (call) async => supportDirectory.path,
+      );
+
   test(
     'selectCandidate prevents stale lyrics fetch from overwriting it',
     () async {
