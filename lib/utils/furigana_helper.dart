@@ -396,6 +396,9 @@ class FuriganaHelper {
 
   static bool _isNoise(String unit) => _noiseUnit.hasMatch(unit);
 
+  /// Whether [char] is a kanji (々/〻 included: they read as the kanji before).
+  static bool isKanji(String char) => _isKanji(char);
+
   static bool _isKanji(String char) {
     // 々/〻 iterate the kanji before them and are read with it.
     if (char == '々' || char == '〻') return true;

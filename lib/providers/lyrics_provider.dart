@@ -13,6 +13,7 @@ import '../utils/app_logger.dart';
 import '../utils/furigana_helper.dart';
 import '../utils/lyrics_candidate_helper.dart';
 import '../utils/lyrics_reading_helper.dart';
+import '../utils/qq_kana_helper.dart';
 import '../utils/romaji_helper.dart';
 import '../utils/lyrics_reading_candidate_helper.dart';
 import '../utils/lyrics_display_helper.dart';
@@ -297,9 +298,61 @@ class LyricsProvider with ChangeNotifier {
       return _annotatedLyrics!;
     }
 
+    // QQ's kana payload is finer grained than any romanized track: it gives the
+    // reading of every word (and therefore of adjacent kanji), in kana already.
+    final kanaRaw = reading.kanaRaw;
+    if (kanaRaw != null && kanaRaw.trim().isNotEmpty) {
+      final perLine = QqKanaHelper.annotateLines(
+        lines: [
+          for (final lyric in lyrics)
+            QqKanaLine(
+              lyric.text,
+              startMs: lyric.startTime.inMilliseconds,
+              endMs: lyric.endTime?.inMilliseconds,
+            ),
+        ],
+        runs: QqKanaHelper.parseRuns(kanaRaw),
+      );
+      final annotatedLines = perLine.where((a) => a.isNotEmpty).length;
+      if (annotatedLines > 0) {
+        AppLogger.debug(
+          '[Annotations] QQ kana path: $annotatedLines/${lyrics.length} lines',
+        );
+        var changed = false;
+        final annotated = <Lyric>[];
+        for (var i = 0; i < lyrics.length; i++) {
+          final annotations = perLine[i];
+          if (annotations.isEmpty) {
+            annotated.add(lyrics[i]);
+            continue;
+          }
+          changed = true;
+          annotated.add(
+            Lyric(
+              startTime: lyrics[i].startTime,
+              endTime: lyrics[i].endTime,
+              text: lyrics[i].text,
+              inlineParts: lyrics[i].inlineParts,
+              translation: lyrics[i].translation,
+              annotations: annotations,
+            ),
+          );
+        }
+        _annotatedLyricsSource = lyrics;
+        _annotatedLyricsReading = reading;
+        _annotatedLyricsBias = bias;
+        _annotatedLyrics = changed ? annotated : lyrics;
+        return _annotatedLyrics!;
+      }
+    }
+
     // Providers rarely line their reading track up with the lyrics exactly
     // (QQ serves it from the word level payload), so pair by time with a
     // tolerance and fall back to positional pairing.
+    AppLogger.debug(
+      '[Annotations] romanized path (kana payload: '
+      '${reading.kanaRaw == null ? 'absent' : 'unusable'})',
+    );
     final readings = LyricsReadingHelper.pairReadings(
       lyrics,
       reading.lines,
