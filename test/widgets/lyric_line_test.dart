@@ -23,6 +23,7 @@ Widget _buildHarness({
         inactiveScale: 0.85,
         translationHighlightOnly: translationHighlightOnly,
         experimentalRichInlineFontSizeGlitching: false,
+        experimentalAnnotationFontSizeGlitching: false,
         adjustedPosition: Duration.zero,
         isPlaying: false,
       ),
@@ -60,6 +61,7 @@ Widget _buildRichHarness({
         inactiveScale: 0.85,
         translationHighlightOnly: true,
         experimentalRichInlineFontSizeGlitching: false,
+        experimentalAnnotationFontSizeGlitching: false,
         adjustedPosition: partDuration,
         isPlaying: false,
         richSyncThreshold: richSyncThreshold,
@@ -69,6 +71,16 @@ Widget _buildRichHarness({
 }
 
 Widget _buildAnnotatedHarness({required List<FuriganaAnnotation> annotations}) {
+  return _buildAnnotatedHarnessWith(
+    annotations: annotations,
+    experimentalAnnotationFontSizeGlitching: false,
+  );
+}
+
+Widget _buildAnnotatedHarnessWith({
+  required List<FuriganaAnnotation> annotations,
+  required bool experimentalAnnotationFontSizeGlitching,
+}) {
   return MaterialApp(
     home: Scaffold(
       body: LyricLine(
@@ -83,6 +95,8 @@ Widget _buildAnnotatedHarness({required List<FuriganaAnnotation> annotations}) {
         inactiveScale: 0.85,
         translationHighlightOnly: true,
         experimentalRichInlineFontSizeGlitching: false,
+        experimentalAnnotationFontSizeGlitching:
+            experimentalAnnotationFontSizeGlitching,
         adjustedPosition: Duration.zero,
         isPlaying: false,
       ),
@@ -121,6 +135,7 @@ Widget _buildRichAnnotatedHarness() {
         inactiveScale: 0.85,
         translationHighlightOnly: true,
         experimentalRichInlineFontSizeGlitching: false,
+        experimentalAnnotationFontSizeGlitching: false,
         adjustedPosition: const Duration(seconds: 1),
         isPlaying: false,
       ),
@@ -166,6 +181,7 @@ Widget _buildMultiPartAnnotatedHarness() {
         inactiveScale: 0.85,
         translationHighlightOnly: true,
         experimentalRichInlineFontSizeGlitching: false,
+        experimentalAnnotationFontSizeGlitching: false,
         isPlaying: false,
       ),
     ),
@@ -234,6 +250,33 @@ void main() {
     final readingRect = tester.getRect(find.text('しず'));
     final kanjiRect = tester.getRect(find.text('沈'));
     expect(readingRect.bottom, lessThanOrEqualTo(kanjiRect.top));
+  });
+
+  testWidgets('annotation font fix scales only the ruby base', (tester) async {
+    const annotations = [FuriganaAnnotation(start: 0, end: 1, reading: 'しず')];
+
+    await tester.pumpWidget(_buildAnnotatedHarness(annotations: annotations));
+    await tester.pump();
+    expect(tester.widget<Text>(find.text('沈')).style?.fontSize, isNull);
+
+    await tester.pumpWidget(
+      _buildAnnotatedHarnessWith(
+        annotations: annotations,
+        experimentalAnnotationFontSizeGlitching: true,
+      ),
+    );
+    await tester.pump();
+
+    // The kanji is grown by 1/0.9 to match the surrounding kana after the
+    // platform shrinks it, while the reading above keeps its own size.
+    expect(
+      tester.widget<Text>(find.text('沈')).style?.fontSize,
+      closeTo(36 / 0.9, 0.001),
+    );
+    expect(
+      tester.widget<Text>(find.text('しず')).style?.fontSize,
+      closeTo(36 * 0.42, 0.001),
+    );
   });
 
   testWidgets('keeps the annotated kanji on the text baseline', (tester) async {

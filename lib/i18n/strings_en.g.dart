@@ -737,6 +737,12 @@ class Translations$settings$experimental$en {
 
 	/// en: 'Enable the font size adjustment (divide by 0.9) for rich inline lyrics. This fixes alignment issues with certain fonts, or on some devices.'
 	String get richInlineFixSubtitle => 'Enable the font size adjustment (divide by 0.9) for rich inline lyrics. This fixes alignment issues with certain fonts, or on some devices.';
+
+	/// en: 'Annotated Kanji Font Size Glitching Fix'
+	String get annotationFix => 'Annotated Kanji Font Size Glitching Fix';
+
+	/// en: 'Enable the font size adjustment (divide by 0.9) for the annotated kanji in plain lines. Use this when the ruby base prints smaller than the surrounding kana.'
+	String get annotationFixSubtitle => 'Enable the font size adjustment (divide by 0.9) for the annotated kanji in plain lines. Use this when the ruby base prints smaller than the surrounding kana.';
 }
 
 // Path: settings.priority

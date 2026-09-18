@@ -41,6 +41,7 @@ class LyricLine extends StatelessWidget {
   final double inactiveScale;
   final bool translationHighlightOnly;
   final bool experimentalRichInlineFontSizeGlitching;
+  final bool experimentalAnnotationFontSizeGlitching;
 
   /// Rich-sync word segments shorter than this are rendered as a whole instead
   /// of animating a per-word progress wipe. See `_RichPartState`.
@@ -57,6 +58,7 @@ class LyricLine extends StatelessWidget {
     required this.inactiveScale,
     required this.translationHighlightOnly,
     required this.experimentalRichInlineFontSizeGlitching,
+    required this.experimentalAnnotationFontSizeGlitching,
     this.richSyncThreshold = const Duration(
       milliseconds: AppDefaults.richSyncThresholdMs,
     ),
@@ -355,6 +357,12 @@ class LyricLine extends StatelessWidget {
     List<FuriganaAnnotation> annotations,
   ) {
     final baseStyle = DefaultTextStyle.of(context).style;
+    // On the platforms that shrink the text inside a widget span, the ruby base
+    // has to grow the same way the rich parts do, otherwise the annotated kanji
+    // print smaller than the kana around them.
+    final annotationBaseStyle = experimentalAnnotationFontSizeGlitching
+        ? baseStyle.copyWith(fontSize: (baseStyle.fontSize ?? 36) / 0.9)
+        : null;
     final annotationStyle = baseStyle.copyWith(
       fontSize: (baseStyle.fontSize ?? 36) * 0.42,
       height: 1.0,
@@ -383,7 +391,10 @@ class LyricLine extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.clip,
               ),
-              base: Text(text.substring(annotation.start, annotation.end)),
+              base: Text(
+                text.substring(annotation.start, annotation.end),
+                style: annotationBaseStyle,
+              ),
             ),
           ),
         );

@@ -42,6 +42,7 @@ class AppDefaults {
   static const bool keepScreenOn = true;
   static const bool backgroundMotionEnabled = true;
   static const bool experimentalRichInlineFontSizeGlitching = false;
+  static const bool experimentalAnnotationFontSizeGlitching = false;
   static const bool trayEnabled = false;
   static const bool hideToTrayOnClose = false;
   static const String lyricsStreamPath = '';

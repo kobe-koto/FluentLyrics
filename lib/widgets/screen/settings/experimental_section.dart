@@ -24,6 +24,14 @@ class ExperimentalSection extends StatelessWidget {
               onChanged: (value) =>
                   provider.setExperimentalRichInlineFontSizeGlitching(value),
             ),
+            const SizedBox(height: 24),
+            SettingsToggleCard(
+              title: i18n.annotationFix,
+              subtitle: i18n.annotationFixSubtitle,
+              value: provider.experimentalAnnotationFontSizeGlitching.current,
+              onChanged: (value) =>
+                  provider.setExperimentalAnnotationFontSizeGlitching(value),
+            ),
           ],
         );
       },

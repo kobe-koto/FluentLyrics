@@ -368,6 +368,8 @@ class Translations$settings$experimental$zh_TW extends Translations$settings$exp
 	@override String get sectionDescription => '試用新功能，部分可能不穩定。';
 	@override String get richInlineFix => 'Rich 字型大小錯位修正';
 	@override String get richInlineFixSubtitle => '為 rich inline 歌詞啟用字型大小調整 (除以 0.9)。可修復某些字型或裝置上的對齊問題。';
+	@override String get annotationFix => '注音漢字字型大小錯位修正';
+	@override String get annotationFixSubtitle => '對有注音（ruby）標註的普通歌詞行中的漢字啟用字型大小調整（除以 0.9）。當注音基字比周圍假名更小時使用。';
 }
 
 // Path: settings.priority

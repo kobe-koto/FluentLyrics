@@ -34,6 +34,7 @@ class LyricsProviderSettings {
     required this.keepScreenOn,
     required this.backgroundMotionEnabled,
     required this.experimentalRichInlineFontSizeGlitching,
+    required this.experimentalAnnotationFontSizeGlitching,
     required this.trayEnabled,
     required this.hideToTrayOnClose,
     required this.lyricsStreamPath,
@@ -188,6 +189,11 @@ class LyricsProviderSettings {
         defaultValue: AppDefaults.experimentalRichInlineFontSizeGlitching,
         changed: false,
       ),
+      experimentalAnnotationFontSizeGlitching: const Setting(
+        current: AppDefaults.experimentalAnnotationFontSizeGlitching,
+        defaultValue: AppDefaults.experimentalAnnotationFontSizeGlitching,
+        changed: false,
+      ),
       trayEnabled: const Setting(
         current: AppDefaults.trayEnabled,
         defaultValue: AppDefaults.trayEnabled,
@@ -257,6 +263,8 @@ class LyricsProviderSettings {
           .getBackgroundMotionEnabled(),
       experimentalRichInlineFontSizeGlitching: await settingsService
           .getExperimentalRichInlineFontSizeGlitching(),
+      experimentalAnnotationFontSizeGlitching: await settingsService
+          .getExperimentalAnnotationFontSizeGlitching(),
       trayEnabled: await settingsService.getTrayEnabled(),
       hideToTrayOnClose: await settingsService.getHideToTrayOnClose(),
       lyricsStreamPath: await settingsService.getLyricsStreamPath(),
@@ -294,6 +302,7 @@ class LyricsProviderSettings {
   Setting<bool> keepScreenOn;
   Setting<bool> backgroundMotionEnabled;
   Setting<bool> experimentalRichInlineFontSizeGlitching;
+  Setting<bool> experimentalAnnotationFontSizeGlitching;
   Setting<bool> trayEnabled;
   Setting<bool> hideToTrayOnClose;
   Setting<String> lyricsStreamPath;

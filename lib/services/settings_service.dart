@@ -37,6 +37,8 @@ class SettingsService {
   static const String _backgroundMotionEnabledKey = 'background_motion_enabled';
   static const String _experimentalRichInlineFontSizeGlitchingKey =
       'experimental_rich_inline_font_size_glitching';
+  static const String _experimentalAnnotationFontSizeGlitchingKey =
+      'experimental_annotation_font_size_glitching';
   static const String _trayEnabledKey = 'tray_enabled';
   static const String _hideToTrayOnCloseKey = 'hide_to_tray_on_close';
   static const String _lyricsStreamPathKey = 'lyrics_stream_path';
@@ -652,6 +654,23 @@ class SettingsService {
   Future<void> setExperimentalRichInlineFontSizeGlitching(bool enabled) async {
     final prefs = await _prefs;
     await prefs.setBool(_experimentalRichInlineFontSizeGlitchingKey, enabled);
+  }
+
+  Future<Setting<bool>> getExperimentalAnnotationFontSizeGlitching() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getBool(_experimentalAnnotationFontSizeGlitchingKey) ??
+        AppDefaults.experimentalAnnotationFontSizeGlitching;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.experimentalAnnotationFontSizeGlitching,
+      changed: current != AppDefaults.experimentalAnnotationFontSizeGlitching,
+    );
+  }
+
+  Future<void> setExperimentalAnnotationFontSizeGlitching(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_experimentalAnnotationFontSizeGlitchingKey, enabled);
   }
 
   Future<Setting<bool>> getTrayEnabled() async {

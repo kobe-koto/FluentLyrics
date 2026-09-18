@@ -161,7 +161,9 @@
       "sectionTitle": "实验性",
       "sectionDescription": "试用新功能,部分可能不稳定。",
       "richInlineFix": "Rich 字体大小错位修复",
-      "richInlineFixSubtitle": "为 rich inline 歌词启用字体大小调整 (除以 0.9)。可修复某些字体或设备上的对齐问题。"
+      "richInlineFixSubtitle": "为 rich inline 歌词启用字体大小调整 (除以 0.9)。可修复某些字体或设备上的对齐问题。",
+      "annotationFix": "注音汉字字号错位修复",
+      "annotationFixSubtitle": "对有注音（ruby）标注的普通歌词行中的汉字启用字号调整（除以 0.9）。当注音基字比周围假名更小时使用。"
     },
     "priority": {
       "sectionTitle": "源优先级",

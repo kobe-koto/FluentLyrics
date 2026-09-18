@@ -196,6 +196,11 @@ class _FakeSettingsService extends SettingsService {
   }
 
   @override
+  Future<Setting<bool>> getExperimentalAnnotationFontSizeGlitching() async {
+    return const Setting(current: false, defaultValue: false, changed: false);
+  }
+
+  @override
   Future<Setting<bool>> getTrayEnabled() async {
     return const Setting(current: false, defaultValue: false, changed: false);
   }

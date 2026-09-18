@@ -354,6 +354,8 @@ class _LyricsListState extends State<LyricsList> {
       translationHighlightOnly: provider.translationHighlightOnly.current,
       experimentalRichInlineFontSizeGlitching:
           provider.experimentalRichInlineFontSizeGlitching.current,
+      experimentalAnnotationFontSizeGlitching:
+          provider.experimentalAnnotationFontSizeGlitching.current,
       richSyncThreshold: Duration(
         milliseconds: provider.richSyncThresholdMs.current,
       ),

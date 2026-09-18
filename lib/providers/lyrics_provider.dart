@@ -159,6 +159,11 @@ class LyricsProvider with ChangeNotifier {
   set _experimentalRichInlineFontSizeGlitching(Setting<bool> value) =>
       _settings.experimentalRichInlineFontSizeGlitching = value;
 
+  Setting<bool> get _experimentalAnnotationFontSizeGlitching =>
+      _settings.experimentalAnnotationFontSizeGlitching;
+  set _experimentalAnnotationFontSizeGlitching(Setting<bool> value) =>
+      _settings.experimentalAnnotationFontSizeGlitching = value;
+
   Setting<bool> get _trayEnabled => _settings.trayEnabled;
   set _trayEnabled(Setting<bool> value) => _settings.trayEnabled = value;
 
@@ -530,6 +535,8 @@ class LyricsProvider with ChangeNotifier {
   Setting<bool> get backgroundMotionEnabled => _backgroundMotionEnabled;
   Setting<bool> get experimentalRichInlineFontSizeGlitching =>
       _experimentalRichInlineFontSizeGlitching;
+  Setting<bool> get experimentalAnnotationFontSizeGlitching =>
+      _experimentalAnnotationFontSizeGlitching;
   Setting<bool> get trayEnabled => _trayEnabled;
   Setting<bool> get hideToTrayOnClose => _hideToTrayOnClose;
   Setting<String> get lyricsStreamPath => _lyricsStreamPath;
@@ -1145,6 +1152,15 @@ class LyricsProvider with ChangeNotifier {
       value: enabled,
       assign: (value) => _experimentalRichInlineFontSizeGlitching = value,
       persist: _settingsService.setExperimentalRichInlineFontSizeGlitching,
+    );
+  }
+
+  void setExperimentalAnnotationFontSizeGlitching(bool enabled) {
+    _setSettingValue(
+      currentSetting: _experimentalAnnotationFontSizeGlitching,
+      value: enabled,
+      assign: (value) => _experimentalAnnotationFontSizeGlitching = value,
+      persist: _settingsService.setExperimentalAnnotationFontSizeGlitching,
     );
   }
 

@@ -151,6 +151,7 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
       'LLM API key configured: $apiKeyConfigured',
       'Musixmatch token configured: $musixmatchTokenConfigured',
       'Experimental rich inline font fix: ${settings.experimentalRichInlineFontSizeGlitching.current}',
+      'Experimental annotation font fix: ${settings.experimentalAnnotationFontSizeGlitching.current}',
       'System tray enabled: ${settings.trayEnabled.current}',
       'Hide to tray on close: ${settings.hideToTrayOnClose.current}',
       'Lyrics stream configured: ${settings.lyricsStreamPath.current.isNotEmpty}',
