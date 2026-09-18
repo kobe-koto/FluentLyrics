@@ -85,9 +85,10 @@ class LyricsCacheService {
     );
     final richCached = await getCachedLyrics(richCacheId);
     if (richCached != null && richCached.lyrics.isNotEmpty) {
-      return (await _withCachedReading(richCached, richCacheId)).copyWith(
-        source: '${richCached.source} (cached)',
-      );
+      return (await _withCachedReading(
+        richCached,
+        richCacheId,
+      )).copyWith(source: '${richCached.source} (cached)');
     }
 
     // Fallback to standard sync
@@ -101,9 +102,10 @@ class LyricsCacheService {
     final stdCached = await getCachedLyrics(stdCacheId);
     if (stdCached != null &&
         (stdCached.lyrics.isNotEmpty || stdCached.isPureMusic)) {
-      return (await _withCachedReading(stdCached, stdCacheId)).copyWith(
-        source: '${stdCached.source} (cached)',
-      );
+      return (await _withCachedReading(
+        stdCached,
+        stdCacheId,
+      )).copyWith(source: '${stdCached.source} (cached)');
     }
 
     return LyricsResult.empty();
@@ -182,10 +184,7 @@ class LyricsCacheService {
           .cacheIdEqualTo(stdId)
           .deleteAll();
       for (final cacheId in [richId, stdId]) {
-        await isar.readingCaches
-            .filter()
-            .cacheIdEqualTo(cacheId)
-            .deleteAll();
+        await isar.readingCaches.filter().cacheIdEqualTo(cacheId).deleteAll();
         await isar.readingCandidateCaches
             .filter()
             .cacheIdEqualTo(cacheId)
@@ -304,9 +303,7 @@ class LyricsCacheService {
     });
   }
 
-  Future<List<LyricsReading>> getCachedReadingCandidates(
-    String cacheId,
-  ) async {
+  Future<List<LyricsReading>> getCachedReadingCandidates(String cacheId) async {
     final isar = await _db;
     final cached = await isar.readingCandidateCaches
         .filter()

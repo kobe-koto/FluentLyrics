@@ -654,12 +654,10 @@ class LinuxMediaService extends MediaService implements MediaController {
     );
     _holdSeekPosition(playerBusName, position);
     try {
-      await object.callMethod(
-        'org.mpris.MediaPlayer2.Player',
-        'SetPosition',
-        [DBusObjectPath(_currentTrackId!), DBusInt64(position.inMicroseconds)],
-        replySignature: DBusSignature(''),
-      );
+      await object.callMethod('org.mpris.MediaPlayer2.Player', 'SetPosition', [
+        DBusObjectPath(_currentTrackId!),
+        DBusInt64(position.inMicroseconds),
+      ], replySignature: DBusSignature(''));
     } catch (_) {
       _clearPendingSeek();
       if (_isPolling) {

@@ -243,10 +243,7 @@ void main() {
 
   group('annotateLines', () {
     test('annotates one kanji per run when the counts line up', () {
-      final lines = [
-        const QqKanaLine('米津玄師'),
-        const QqKanaLine('本当'),
-      ];
+      final lines = [const QqKanaLine('米津玄師'), const QqKanaLine('本当')];
       final annotations = QqKanaHelper.annotateLines(
         lines: lines,
         runs: QqKanaHelper.parseRuns('1よね1づ1けん1し1ほん1とう'),
@@ -257,10 +254,7 @@ void main() {
     });
 
     test('skips the kana of the lyrics, which the payload omits', () {
-      final lines = [
-        const QqKanaLine('無敵の笑顔'),
-        const QqKanaLine('アイドル'),
-      ];
+      final lines = [const QqKanaLine('無敵の笑顔'), const QqKanaLine('アイドル')];
       final annotations = QqKanaHelper.annotateLines(
         lines: lines,
         runs: QqKanaHelper.parseRuns('1む1てき1え1がお'),
@@ -324,14 +318,8 @@ void main() {
       expect(runs.map((r) => r.reading), ['し', 'きょく']);
 
       final lines = [const QqKanaLine('詞：5u5h1 曲：5u5h1')];
-      final annotations = QqKanaHelper.annotateLines(
-        lines: lines,
-        runs: runs,
-      );
-      expect(
-        _render(lines[0].text, annotations[0]),
-        '[し]：5u5h1 [きょく]：5u5h1',
-      );
+      final annotations = QqKanaHelper.annotateLines(lines: lines, runs: runs);
+      expect(_render(lines[0].text, annotations[0]), '[し]：5u5h1 [きょく]：5u5h1');
     });
   });
 
@@ -350,22 +338,16 @@ void main() {
     });
 
     test('annotates the lyrics per kanji, after the credit lines', () {
-      final annotations = QqKanaHelper.annotateLines(
-        lines: lines,
-        runs: runs,
-      );
+      final annotations = QqKanaHelper.annotateLines(lines: lines, runs: runs);
 
       // The credit lines are covered by the payload's head, so the lyrics
       // start at offset 4 and every line lines up.
-      expect(_render(lines[4].text, annotations[4]), '[む][てき]の[え][がお]で[あ]らすメディア');
       expect(
-        _render(lines[9].text, annotations[9]),
-        '[きょう][なに][た]べた?',
+        _render(lines[4].text, annotations[4]),
+        '[む][てき]の[え][がお]で[あ]らすメディア',
       );
-      expect(
-        _render(lines[24].text, annotations[24]),
-        '[わたし][わ]からなくてさ」',
-      );
+      expect(_render(lines[9].text, annotations[9]), '[きょう][なに][た]べた?');
+      expect(_render(lines[24].text, annotations[24]), '[わたし][わ]からなくてさ」');
     });
   });
 
@@ -396,12 +378,7 @@ void main() {
     test('parses the single digit counts and skips the padding', () {
       expect(runs.length, 151);
       expect(runs.fold<int>(0, (sum, r) => sum + r.kanjiCount), 152);
-      expect(runs.take(4).map((r) => r.reading), [
-        'し',
-        'きょく',
-        'へん',
-        'きょく',
-      ]);
+      expect(runs.take(4).map((r) => r.reading), ['し', 'きょく', 'へん', 'きょく']);
       expect(runs[125].kanjiCount, 2);
       expect(runs[125].reading, 'だそく');
     });
@@ -419,10 +396,7 @@ void main() {
         _render(displayed[43].text, annotations[43]),
         'くだらない[だそく]は[み]たくもないと',
       );
-      expect(
-        _render(displayed.last.text, annotations.last),
-        'できるはずもないよ',
-      );
+      expect(_render(displayed.last.text, annotations.last), 'できるはずもないよ');
     });
   });
 }
