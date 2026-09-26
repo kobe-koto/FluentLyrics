@@ -299,7 +299,7 @@ class NeteaseService {
         Map<String, String> trimmedMetadata = {};
 
         if (richSyncedYRC != null && richSyncedYRC.isNotEmpty) {
-          richLyrics = _NeteaseYrcParser.parse(richSyncedYRC);
+          richLyrics = NeteaseYrcParser.parse(richSyncedYRC);
           if (trimMetadata) {
             final trimResult = LrcParser.trimMetadataLines(
               richLyrics,
@@ -369,7 +369,7 @@ class NeteaseService {
   }
 }
 
-class _NeteaseYrcParser {
+class NeteaseYrcParser {
   static List<Lyric> parse(String yrcContent) {
     final List<Lyric> lyrics = [];
     // Pattern for line: [lineStartTime,lineDuration](wordStartTime,wordDuration,0)Word...

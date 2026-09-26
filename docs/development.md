@@ -72,7 +72,7 @@ Locales are `en` (base, fallback), `zh_CN`, and `zh_TW`. Keys are camelCase. Int
 
 ## Tests
 
-There are widget, provider, service, and util tests under `test/`. CI does not run them. Run them locally before handing off.
+There are widget, provider, service, and util tests under `test/`. CI runs `flutter test` on push, pull request, and before a release build. OpenCC native tests skip in CI because it does not build `libopencc`. Run the focused file locally before handing off, and `./tool/build_opencc.sh` when the change touches conversion.
 
 Patterns already in the tree:
 
@@ -118,11 +118,12 @@ Tray and lyric file streaming are desktop-only. Do not start them on Android.
 
 Pushing a `v*` tag runs `.github/workflows/release.yml`. Manual dispatch can build without publishing, or publish an unstable prerelease. The workflow:
 
-1. Derives `version_name` and `version_code` from the tag (`v0.0.46+46`).
-2. Rewrites `pubspec.yaml` `version:` in the build job only.
-3. Syncs OpenCC assets.
-4. Builds Linux x64 and arm64, Android, and macOS.
-5. Publishes GitHub Release notes from `tool/generate-release-notes.sh` and `tool/downloads-template.md`.
+1. Runs `flutter test` via `.github/workflows/test.yml`. Platform builds wait for it.
+2. Derives `version_name` and `version_code` from the tag (`v0.0.46+46`).
+3. Rewrites `pubspec.yaml` `version:` in the build job only.
+4. Syncs OpenCC assets.
+5. Builds Linux x64 and arm64, Android, and macOS.
+6. Publishes GitHub Release notes from `tool/generate-release-notes.sh` and `tool/downloads-template.md`.
 
 Do not bump `pubspec.yaml` version on a normal feature commit. Tag releases as `v<name>+<code>`, matching `version:`.
 

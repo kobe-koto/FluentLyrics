@@ -57,13 +57,10 @@ void main() {
   });
 
   test('a cancelled request is empty rather than a failure', () async {
-    final scope = LyricsRequestScope();
-    final service = LrclibService(
-      httpGet: (_) async {
-        scope.cancel();
-        throw http.ClientException('Connection closed');
-      },
-    );
+    late final LyricsRequestScope scope;
+    final client = _CancelThenThrowClient(() => scope.cancel());
+    scope = LyricsRequestScope(client: client);
+    final service = LrclibService();
 
     final result = await service.fetchLyrics(
       title: 'Song',
@@ -76,4 +73,16 @@ void main() {
     expect(result.isFailure, isFalse);
     expect(result.lyrics, isEmpty);
   });
+}
+
+class _CancelThenThrowClient extends http.BaseClient {
+  _CancelThenThrowClient(this.onSend);
+
+  final void Function() onSend;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    onSend();
+    throw http.ClientException('Connection closed', request.url);
+  }
 }

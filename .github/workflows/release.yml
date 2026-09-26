@@ -89,8 +89,11 @@ jobs:
             echo "prerelease=$prerelease"
           } >> "$GITHUB_OUTPUT"
 
+  test:
+    uses: ./.github/workflows/test.yml
+
   build-linux:
-    needs: prepare-version
+    needs: [prepare-version, test]
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' || inputs.build_linux }}
     strategy:
       fail-fast: false
@@ -168,7 +171,7 @@ jobs:
           if-no-files-found: error
 
   build-android:
-    needs: prepare-version
+    needs: [prepare-version, test]
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' || inputs.build_android }}
     runs-on: ubuntu-26.04
     steps:
@@ -241,7 +244,7 @@ jobs:
           if-no-files-found: error
 
   build-macos:
-    needs: prepare-version
+    needs: [prepare-version, test]
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'Release Unstable' || inputs.build_macos }}
     runs-on: macos-latest
     steps:

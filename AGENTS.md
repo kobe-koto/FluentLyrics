@@ -49,7 +49,7 @@ git submodule update --init --depth 1
 flutter pub get
 ./tool/sync_opencc_assets.sh          # required before build or OpenCC tests
 flutter run -d <device>
-flutter test                          # not run by CI
+flutter test                          # also run by CI
 dart run slang                        # after editing lib/i18n/*.i18n.json
 dart run build_runner build --delete-conflicting-outputs  # after Isar schema edits
 ./tool/build_opencc.sh                # host libopencc for flutter test
@@ -58,7 +58,7 @@ dart run build_runner build --delete-conflicting-outputs  # after Isar schema ed
 
 Analyzer config is `analysis_options.yaml` (`package:flutter_lints` plus `prefer_single_quotes`). `experimental_member_use` is ignored because Isar needs it. Format changed Dart with `dart format` on the files you touched. Do not reformat unrelated files.
 
-Known-good local SDK is Flutter 3.47.4 / Dart 3.13 (constraint in `pubspec.yaml` is `sdk: ^3.10.4`). CI installs Flutter stable and does not run tests. There is no committed FVM pin.
+Known-good local SDK is Flutter 3.47.4 / Dart 3.13 (constraint in `pubspec.yaml` is `sdk: ^3.10.4`). CI installs Flutter stable and runs `flutter test` on push, pull request, and before release builds. There is no committed FVM pin.
 
 ## Conventions
 
@@ -92,7 +92,7 @@ Commit the slang and Isar outputs after regenerating them. Do not commit `assets
 
 Never commit `android/key.properties`, `*.jks`, keystore passwords, or LLM API keys. Signing uses env vars in CI (`ANDROID_KEYSTORE_*`) or a local `android/key.properties`. An example file is `android/key.properties.example`.
 
-`pubspec.yaml` `version:` is `name+code` (currently `0.0.46+46`). Release tags look like `v0.0.46+46`. CI rewrites `version:` from the tag. Do not bump the version unless the user is cutting a release. `.github/workflows/release.yml` builds on `v*` tags and on manual dispatch; it does not run `flutter test`.
+`pubspec.yaml` `version:` is `name+code` (currently `0.0.46+46`). Release tags look like `v0.0.46+46`. CI rewrites `version:` from the tag. Do not bump the version unless the user is cutting a release. `.github/workflows/test.yml` runs `flutter test` on push and pull request. Release builds call that workflow and do not start until it passes. OpenCC native tests still skip in CI unless `libopencc` is built.
 
 ## Checks before finishing
 
@@ -100,4 +100,4 @@ Never commit `android/key.properties`, `*.jks`, keystore passwords, or LLM API k
 - If you touched Isar collections, regenerate `lyric_cache.g.dart` and make sure the schema still round-trips through `LyricsCacheService`.
 - If you touched user-facing strings, regenerate slang and keep `en`, `zh_CN`, and `zh_TW` in parity.
 - If you touched OpenCC bindings or CMake flags, update both `hook/build.dart` and `tool/build_opencc.sh`, then run `./tool/build_opencc.sh` so the native tests are not skipped.
-- Do not claim CI will verify the change. It only builds release artifacts.
+- CI runs `flutter test`. It does not build `libopencc`, so OpenCC native tests skip there. Do not claim CI verified conversion, signing, or a platform build.
