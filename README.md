@@ -124,6 +124,12 @@ git clone --recurse-submodules <repo-url>
 git submodule update --init --depth 1
 ```
 
+Documentation for contributors and coding agents:
+
+- [AGENTS.md](AGENTS.md) — conventions, generated files, and what not to change
+- [docs/architecture.md](docs/architecture.md) — now-playing, fetch, cache, and UI flow
+- [docs/development.md](docs/development.md) — setup, codegen, tests, and release
+
 Common commands:
 
 ```bash

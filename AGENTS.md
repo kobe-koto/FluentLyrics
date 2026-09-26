@@ -1,0 +1,100 @@
+# FluentLyrics
+
+Flutter lyrics viewer (`fluent_lyrics`). It watches the platform now-playing source, fetches synced lyrics from several providers, and renders them. License is AGPL-3.0-only.
+
+Read this file before editing. Use [docs/architecture.md](docs/architecture.md) for data flow and [docs/development.md](docs/development.md) for setup, codegen, and release. [README.md](README.md) is the user-facing install page; do not move contributor rules into it.
+
+## Scope
+
+Supported targets are Linux (MPRIS), Android 7.0+ / API 24 (notification listener; tested on Android 15+), and macOS (limited; now-playing comes from the vendored MediaRemote adapter).
+
+Do not add Windows, iOS, or other Flutter targets unless the user explicitly asks and the change includes a real now-playing source plus a way to test it. iOS cannot read now-playing metadata without a jailbreak. Windows is intentionally unsupported.
+
+Do not widen a task into unrelated cleanup. The tree is large and some files (`lib/providers/lyrics_provider.dart`, `lib/screens/lyrics_screen.dart`) are already dense.
+
+## Layout
+
+| Path | Role |
+| --- | --- |
+| `lib/main.dart` | Bootstrap: HTTP user agent, locale, desktop tray, lyrics stream writer |
+| `lib/providers/lyrics_provider.dart` | App state. Media changes, fetch, cache, display transforms |
+| `lib/providers/lyrics_provider_settings.dart` | In-memory settings snapshot used by the provider |
+| `lib/services/lyrics_service.dart` | Provider priority walk, winner selection, translation fetch |
+| `lib/services/lyrics_source_registry.dart` | `LyricsSource` contract and per-provider adapters |
+| `lib/services/providers/` | Network and cache implementations |
+| `lib/services/media_service.dart` | `MediaService` plus platform `part` files |
+| `lib/services/media_service_platforms/` | Linux D-Bus, Android channels, macOS channels |
+| `lib/services/opencc/` | Chinese-script conversion over bundled libopencc |
+| `lib/models/` | `Lyric` / `LyricsResult`, Isar collections, `Setting<T>` |
+| `lib/constants/app_defaults.dart` | Default values for every persisted setting |
+| `lib/screens/` | Route-level pages. Settings routes are thin scaffolds |
+| `lib/widgets/screen/` | Actual lyrics and settings UI sections |
+| `lib/utils/` | Parsers, alignment, ruby/reading, display helpers |
+| `lib/i18n/*.i18n.json` | Translation source. Locales: `en`, `zh_CN`, `zh_TW` |
+| `hook/build.dart` | Native-assets build of libopencc for app builds |
+| `tool/` | OpenCC, MediaRemote, and release-artifact scripts |
+| `android/app/src/main/kotlin/` | Notification-listener service and method channels |
+| `third_party/opencc` | Sparse git submodule. Do not edit upstream sources here |
+| `third_party/mediaremote-adapter` | macOS adapter. Framework binaries are local, not all tracked |
+
+`lib/` uses relative imports. Tests use `package:fluent_lyrics/...`.
+
+## Commands
+
+```bash
+git submodule update --init --depth 1
+flutter pub get
+./tool/sync_opencc_assets.sh          # required before build or OpenCC tests
+flutter run -d <device>
+flutter test                          # not run by CI
+dart run slang                        # after editing lib/i18n/*.i18n.json
+dart run build_runner build --delete-conflicting-outputs  # after Isar schema edits
+./tool/build_opencc.sh                # host libopencc for flutter test
+./tool/macos_prepare_mediaremote_adapter.sh   # macOS only, before macos build
+```
+
+Analyzer config is `analysis_options.yaml` (`package:flutter_lints` plus `prefer_single_quotes`). `experimental_member_use` is ignored because Isar needs it. Format changed Dart with `dart format` on the files you touched. Do not reformat unrelated files.
+
+Known-good local SDK is Flutter 3.47.4 / Dart 3.13 (constraint in `pubspec.yaml` is `sdk: ^3.10.4`). CI installs Flutter stable and does not run tests. There is no committed FVM pin.
+
+## Conventions
+
+- User-visible copy goes through slang. Edit all three JSON files, then run `dart run slang`, and commit both the JSON and `lib/i18n/strings*.g.dart`. Read strings with the generated `t` variable (`import '../i18n/strings.g.dart'`). Brand names may stay untranslated. Do not hardcode new UI English in widgets.
+- Logs go through `AppLogger.debug`. It prints only in debug mode. Do not add `print`.
+- Persisted settings are a triple: a default in `AppDefaults`, a `SharedPreferences` key plus getter/setter on `SettingsService`, and a field on `LyricsProviderSettings` that `LyricsProvider` loads. UI reads the provider's `Setting<T>` (`current`, `defaultValue`, `changed`), not prefs directly.
+- New settings UI belongs in `lib/widgets/screen/settings/`. `lib/screens/settings/` only wraps a section in `SettingsScaffold`. Keep both in sync when a destination already has a route.
+- A new lyrics provider needs all of: `LyricProviderType`, a service under `lib/services/providers/`, a `LyricsSource` in the registry factory, localized name/description keys, and a priority default only if it should be enabled out of the box. `llm` is a translation source, not a normal lyrics catalog.
+- Fetch orchestration stays in `LyricsService`. Ranking stays in `lib/services/winner_selector.dart`. Display transforms (Chinese conversion, reading annotations, rich-sync repair) stay on `LyricsProvider` or the matching `lib/utils/` helper. Do not fetch from widgets.
+- Platform now-playing code is a `part` of `lib/services/media_service.dart`. Do not turn those files into separate libraries. Android and macOS share channel names `cc.koto.fluent_lyrics/media` and `cc.koto.fluent_lyrics/media_events`. Change both sides together.
+- Tests mirror `lib/` under `test/`. Inject fakes through constructors (`LyricsProvider`, `LyricsService`, `SettingsService` overrides). Widget tests must call `SharedPreferences.setMockInitialValues({})` and `LocaleSettings.setLocaleSync` before pumping `MyApp`.
+- Keep CMake flags in `hook/build.dart` and `tool/build_opencc.sh` aligned. OpenCC dictionaries are text (`OPENCC_DICT_FORMAT=text`), not `.ocd2`.
+- Package ids differ on purpose: Android/Linux `cc.koto.fluent_lyrics`, macOS `cc.koto.fluentLyrics`. Android debug/profile append `.debug` / `.profile`. Do not "normalize" these.
+- Single quotes. Match surrounding style. No copyright headers. No drive-by renames.
+
+## Generated and vendored files
+
+Do not hand-edit:
+
+- `lib/i18n/strings.g.dart`, `strings_en.g.dart`, `strings_zh_CN.g.dart`, `strings_zh_TW.g.dart`
+- `lib/models/lyric_cache.g.dart`
+- `assets/opencc/` (gitignored; `./tool/sync_opencc_assets.sh` regenerates it, including `version.txt`)
+- `third_party/opencc` sources. Bump the pin with `./tool/prepare_opencc.sh <tag>` (default `ver.1.4.2`) and then sync assets.
+- `build/`, `.dart_tool/`, `tmp/`, `release.md`, `dist/`
+
+Commit the slang and Isar outputs after regenerating them. Do not commit `assets/opencc/`. CI runs `./tool/sync_opencc_assets.sh` before each platform build. `hook/build.dart` fails if `assets/opencc/version.txt` is missing.
+
+`third_party/mediaremote-adapter` tracks the license, README, `VERSION`, and `bin/mediaremote-adapter.pl`. The framework is produced on macOS by `./tool/macos_prepare_mediaremote_adapter.sh` (default `v0.7.6`) and copied in by `macos/scripts/bundle_mediaremote_adapter.sh`. Do not commit built framework binaries.
+
+## Secrets and release
+
+Never commit `android/key.properties`, `*.jks`, keystore passwords, or LLM API keys. Signing uses env vars in CI (`ANDROID_KEYSTORE_*`) or a local `android/key.properties`. An example file is `android/key.properties.example`.
+
+`pubspec.yaml` `version:` is `name+code` (currently `0.0.46+46`). Release tags look like `v0.0.46+46`. CI rewrites `version:` from the tag. Do not bump the version unless the user is cutting a release. `.github/workflows/release.yml` builds on `v*` tags and on manual dispatch; it does not run `flutter test`.
+
+## Checks before finishing
+
+- Run the narrowest `flutter test` that covers the change, then a broader `flutter test` if the change is on the fetch or provider path.
+- If you touched Isar collections, regenerate `lyric_cache.g.dart` and make sure the schema still round-trips through `LyricsCacheService`.
+- If you touched user-facing strings, regenerate slang and keep `en`, `zh_CN`, and `zh_TW` in parity.
+- If you touched OpenCC bindings or CMake flags, update both `hook/build.dart` and `tool/build_opencc.sh`, then run `./tool/build_opencc.sh` so the native tests are not skipped.
+- Do not claim CI will verify the change. It only builds release artifacts.
