@@ -155,7 +155,11 @@
       "artworkClearDialogTitle": "Clear Artwork Cache",
       "artworkClearDialogContent": "Are you sure you want to clear all cached artwork?",
       "artworkCleared": "Artwork cache cleared",
-      "clearArtworkCacheButton": "Clear All Artwork Cache"
+      "clearArtworkCacheButton": "Clear All Artwork Cache",
+      "openFailedTitle": "Lyrics cache could not be opened",
+      "openFailedBody": "{{error}}\n\nThe existing cache was left untouched. Rebuild it only if you want to discard the saved lyrics.",
+      "rebuild": "Rebuild cache",
+      "continueWithout": "Continue without cache"
     },
     "experimental": {
       "sectionTitle": "Experimental",

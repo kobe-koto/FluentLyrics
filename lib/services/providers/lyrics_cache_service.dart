@@ -1,10 +1,20 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/lyric_model.dart';
 import '../../models/lyric_cache.dart';
 import '../../utils/app_logger.dart';
+
+class CacheDatabaseOpenException implements Exception {
+  CacheDatabaseOpenException(this.cause);
+
+  final Object cause;
+
+  @override
+  String toString() => cause.toString();
+}
 
 class LyricsCacheService {
   static const manualTranslationSkipLanguage = '__manual_translation_skip__';
@@ -13,14 +23,79 @@ class LyricsCacheService {
 
   static Isar? _isar;
   static Future<Isar>? _openFuture;
+  static Object? openError;
+  static bool unavailable = false;
+  static bool rebuildDeclined = false;
+  static bool promptPending = false;
+  static final List<void Function()> _listeners = [];
+
+  static void addListener(void Function() listener) {
+    _listeners.add(listener);
+  }
+
+  static void removeListener(void Function() listener) {
+    _listeners.remove(listener);
+  }
+
+  static void _notify() {
+    for (final listener in List<void Function()>.of(_listeners)) {
+      listener();
+    }
+  }
+
+  static void declineRebuild() {
+    rebuildDeclined = true;
+    promptPending = false;
+    _notify();
+  }
+
+  static Future<void> rebuild() async {
+    rebuildDeclined = false;
+    unavailable = false;
+    promptPending = false;
+    openError = null;
+    _openFuture = null;
+    final instance = _isar ?? Isar.getInstance('lyrics_cache');
+    _isar = null;
+    if (instance != null) {
+      await instance.close(deleteFromDisk: true);
+    }
+    final dir = await getApplicationSupportDirectory();
+    for (final name in ['lyrics_cache.isar', 'lyrics_cache.isar.lock']) {
+      final file = File('${dir.path}/$name');
+      if (await file.exists()) await file.delete();
+    }
+    try {
+      await LyricsCacheService()._db;
+    } on CacheDatabaseOpenException {
+      // Open already recorded the error and asked the user again.
+    }
+  }
 
   Future<Isar> get _db async {
     if (_isar != null) return _isar!;
-
+    if (unavailable) {
+      throw CacheDatabaseOpenException(
+        openError ?? 'cache database unavailable',
+      );
+    }
     if (_openFuture != null) return _openFuture!;
-
     _openFuture = _initDb();
-    return _openFuture!;
+    try {
+      return await _openFuture!;
+    } catch (e) {
+      _openFuture = null;
+      rethrow;
+    }
+  }
+
+  Future<Isar?> _openedDb() async {
+    if (unavailable) return null;
+    try {
+      return await _db;
+    } on CacheDatabaseOpenException {
+      return null;
+    }
   }
 
   static const List<CollectionSchema<dynamic>> _schemas = [
@@ -41,17 +116,17 @@ class LyricsCacheService {
         directory: dir.path,
         name: 'lyrics_cache',
       );
+      unavailable = false;
+      openError = null;
+      promptPending = false;
     } catch (e) {
-      // The database is a disposable cache: when its schema no longer matches
-      // (a release added or changed collections) drop it and start over
-      // instead of failing to launch.
-      AppLogger.debug('[LyricsCacheService] Recreating cache database: $e');
-      await Isar.getInstance('lyrics_cache')?.close(deleteFromDisk: true);
-      _isar = await Isar.open(
-        _schemas,
-        directory: dir.path,
-        name: 'lyrics_cache',
-      );
+      _isar = null;
+      unavailable = true;
+      openError = e;
+      promptPending = !rebuildDeclined;
+      AppLogger.debug('[LyricsCacheService] Cache database failed to open: $e');
+      _notify();
+      throw CacheDatabaseOpenException(e);
     }
     return _isar!;
   }
@@ -112,7 +187,8 @@ class LyricsCacheService {
   }
 
   Future<LyricsResult?> getCachedLyrics(String cacheId) async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return null;
     final cached = await isar.lyricCaches
         .filter()
         .cacheIdEqualTo(cacheId)
@@ -141,7 +217,9 @@ class LyricsCacheService {
       durationSeconds,
       isRichSync: result.isRichSync,
     );
-    final isar = await _db;
+    if (result.isFailure) return;
+    final isar = await _openedDb();
+    if (isar == null) return;
     final cache = LyricCache.fromLyricsResult(cacheId, result);
     await isar.writeTxn(() async {
       await isar.lyricCaches.put(cache);
@@ -149,7 +227,8 @@ class LyricsCacheService {
   }
 
   Future<void> clearCache(String cacheId) async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return;
     await isar.writeTxn(() async {
       await isar.lyricCaches.filter().cacheIdEqualTo(cacheId).deleteAll();
     });
@@ -175,7 +254,8 @@ class LyricsCacheService {
       durationSeconds,
       isRichSync: false,
     );
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return;
     await isar.writeTxn(() async {
       await isar.lyricCaches
           .filter()
@@ -194,7 +274,8 @@ class LyricsCacheService {
   }
 
   Future<void> clearAllCache() async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return;
     await isar.writeTxn(() async {
       await isar.lyricCaches.clear();
       await isar.translationCaches.clear();
@@ -204,7 +285,10 @@ class LyricsCacheService {
   }
 
   Future<Map<String, dynamic>> getCacheStats() async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) {
+      return {'count': 0, 'readingCount': 0, 'size': 0};
+    }
     final count = await isar.lyricCaches.count();
     final readingCount =
         await isar.readingCaches.count() +
@@ -215,7 +299,8 @@ class LyricsCacheService {
 
   // Translation Caching
   Future<LyricsResult?> getCachedTranslation(String cacheId) async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return null;
     final cached = await isar.translationCaches
         .filter()
         .cacheIdEqualTo(cacheId)
@@ -237,7 +322,9 @@ class LyricsCacheService {
   }
 
   Future<void> cacheTranslation(String cacheId, LyricsResult result) async {
-    final isar = await _db;
+    if (result.isFailure) return;
+    final isar = await _openedDb();
+    if (isar == null) return;
     final cache = TranslationCache.fromLyricsResult(cacheId, result);
     await isar.writeTxn(() async {
       await isar.translationCaches.put(cache);
@@ -245,7 +332,8 @@ class LyricsCacheService {
   }
 
   Future<void> clearTranslationCache(String cacheId) async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return;
     await isar.writeTxn(() async {
       await isar.translationCaches.filter().cacheIdEqualTo(cacheId).deleteAll();
     });
@@ -266,7 +354,8 @@ class LyricsCacheService {
   // the candidate readings are separate collections so a candidate can never
   // overwrite the selection.
   Future<LyricsReading?> getCachedReading(String cacheId) async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return null;
     final cached = await isar.readingCaches
         .filter()
         .cacheIdEqualTo(cacheId)
@@ -291,7 +380,8 @@ class LyricsCacheService {
     String? source,
     String? sourceProvider,
   }) async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return;
     final cache = ReadingCache.fromReading(
       cacheId,
       reading,
@@ -304,7 +394,8 @@ class LyricsCacheService {
   }
 
   Future<List<LyricsReading>> getCachedReadingCandidates(String cacheId) async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return const [];
     final cached = await isar.readingCandidateCaches
         .filter()
         .cacheIdEqualTo(cacheId)
@@ -318,7 +409,8 @@ class LyricsCacheService {
     String? source,
     String? sourceProvider,
   }) async {
-    final isar = await _db;
+    final isar = await _openedDb();
+    if (isar == null) return;
     final cache = ReadingCandidateCache.fromReading(
       cacheId,
       reading,

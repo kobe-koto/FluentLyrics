@@ -357,6 +357,10 @@ class Translations$settings$cache$zh_CN extends Translations$settings$cache$en {
 	@override String get artworkClearDialogContent => '确定要清除所有已缓存的封面吗？';
 	@override String get artworkCleared => '封面缓存已清除';
 	@override String get clearArtworkCacheButton => '清除所有封面缓存';
+	@override String get openFailedTitle => '歌词缓存无法打开';
+	@override String openFailedBody({required Object error}) => '${error}\n\n现有缓存没有被改动。只有在你确定要丢弃已保存的歌词时才重建。';
+	@override String get rebuild => '重建缓存';
+	@override String get continueWithout => '不使用缓存并继续';
 }
 
 // Path: settings.experimental

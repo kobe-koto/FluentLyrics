@@ -722,6 +722,18 @@ class Translations$settings$cache$en {
 
 	/// en: 'Clear All Artwork Cache'
 	String get clearArtworkCacheButton => 'Clear All Artwork Cache';
+
+	/// en: 'Lyrics cache could not be opened'
+	String get openFailedTitle => 'Lyrics cache could not be opened';
+
+	/// en: '{{error}} The existing cache was left untouched. Rebuild it only if you want to discard the saved lyrics.'
+	String openFailedBody({required Object error}) => '${error}\n\nThe existing cache was left untouched. Rebuild it only if you want to discard the saved lyrics.';
+
+	/// en: 'Rebuild cache'
+	String get rebuild => 'Rebuild cache';
+
+	/// en: 'Continue without cache'
+	String get continueWithout => 'Continue without cache';
 }
 
 // Path: settings.experimental

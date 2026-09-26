@@ -357,6 +357,10 @@ class Translations$settings$cache$zh_TW extends Translations$settings$cache$en {
 	@override String get artworkClearDialogContent => '確定要清除所有已快取的封面嗎？';
 	@override String get artworkCleared => '封面快取已清除';
 	@override String get clearArtworkCacheButton => '清除所有封面快取';
+	@override String get openFailedTitle => '歌詞快取無法開啟';
+	@override String openFailedBody({required Object error}) => '${error}\n\n既有快取沒有被改動。只有在你確定要捨棄已儲存的歌詞時才重建。';
+	@override String get rebuild => '重建快取';
+	@override String get continueWithout => '不使用快取並繼續';
 }
 
 // Path: settings.experimental

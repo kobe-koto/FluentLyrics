@@ -217,6 +217,7 @@ class LyricsProvider with ChangeNotifier {
        _lyricsService = lyricsService ?? LyricsService(),
        _settingsService = settingsService ?? SettingsService(),
        _cacheService = cacheService ?? LyricsCacheService() {
+    LyricsCacheService.addListener(_onCacheDatabaseChanged);
     _loadSettings();
     this.mediaService.addListener(_onMediaChanged);
     this.mediaService.startPolling();
@@ -1963,9 +1964,26 @@ class LyricsProvider with ChangeNotifier {
 
   bool _disposed = false;
 
+  bool get cacheDatabasePromptPending =>
+      LyricsCacheService.promptPending && !LyricsCacheService.rebuildDeclined;
+
+  String? get cacheDatabaseError => LyricsCacheService.openError?.toString();
+
+  Future<void> rebuildCacheDatabase() => LyricsCacheService.rebuild();
+
+  void dismissCacheDatabasePrompt() {
+    LyricsCacheService.declineRebuild();
+  }
+
+  void _onCacheDatabaseChanged() {
+    if (_disposed) return;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    LyricsCacheService.removeListener(_onCacheDatabaseChanged);
     _permissionTimer?.cancel();
     mediaService.removeListener(_onMediaChanged);
     mediaService.stopPolling();

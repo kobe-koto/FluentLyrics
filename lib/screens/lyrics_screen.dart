@@ -8,6 +8,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:palette_generator_plus/palette_generator_plus.dart';
 import '../models/lyric_model.dart';
+import '../i18n/strings.g.dart';
 import '../providers/lyrics_provider.dart';
 import '../services/media_service.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -66,6 +67,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
   bool? _lastKeepScreenOn;
   List<Lyric>? _lastLyricsRef;
   bool? _lastLayoutIsLandscape;
+  bool _cacheRebuildDialogVisible = false;
 
   @override
   void didChangeDependencies() {
@@ -359,9 +361,48 @@ class _LyricsScreenState extends State<LyricsScreen> {
     await provider.clearCurrentTrackCache();
   }
 
+  void _maybePromptCacheRebuild(LyricsProvider provider) {
+    if (!provider.cacheDatabasePromptPending || _cacheRebuildDialogVisible) {
+      return;
+    }
+    _cacheRebuildDialogVisible = true;
+    final error = provider.cacheDatabaseError ?? '';
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        _cacheRebuildDialogVisible = false;
+        return;
+      }
+      final rebuild = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t.settings.cache.openFailedTitle),
+          content: Text(t.settings.cache.openFailedBody(error: error)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(t.settings.cache.continueWithout),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(t.settings.cache.rebuild),
+            ),
+          ],
+        ),
+      );
+      _cacheRebuildDialogVisible = false;
+      if (!mounted) return;
+      if (rebuild == true) {
+        await provider.rebuildCacheDatabase();
+      } else {
+        provider.dismissCacheDatabasePrompt();
+      }
+    });
+  }
+
   void _handleProviderChanged() {
     final provider = _scrollSyncProvider;
     if (provider == null) return;
+    _maybePromptCacheRebuild(provider);
 
     // Keep the art providers in sync with whatever the provider reports.
     // Doing this here (rather than during build) means the surrounding

@@ -155,7 +155,11 @@
       "artworkClearDialogTitle": "清除封面快取",
       "artworkClearDialogContent": "確定要清除所有已快取的封面嗎？",
       "artworkCleared": "封面快取已清除",
-      "clearArtworkCacheButton": "清除所有封面快取"
+      "clearArtworkCacheButton": "清除所有封面快取",
+      "openFailedTitle": "歌詞快取無法開啟",
+      "openFailedBody": "{{error}}\n\n既有快取沒有被改動。只有在你確定要捨棄已儲存的歌詞時才重建。",
+      "rebuild": "重建快取",
+      "continueWithout": "不使用快取並繼續"
     },
     "experimental": {
       "sectionTitle": "實驗性",

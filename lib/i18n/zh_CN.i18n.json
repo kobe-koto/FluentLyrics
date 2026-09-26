@@ -155,7 +155,11 @@
       "artworkClearDialogTitle": "清除封面缓存",
       "artworkClearDialogContent": "确定要清除所有已缓存的封面吗？",
       "artworkCleared": "封面缓存已清除",
-      "clearArtworkCacheButton": "清除所有封面缓存"
+      "clearArtworkCacheButton": "清除所有封面缓存",
+      "openFailedTitle": "歌词缓存无法打开",
+      "openFailedBody": "{{error}}\n\n现有缓存没有被改动。只有在你确定要丢弃已保存的歌词时才重建。",
+      "rebuild": "重建缓存",
+      "continueWithout": "不使用缓存并继续"
     },
     "experimental": {
       "sectionTitle": "实验性",
