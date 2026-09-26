@@ -1,328 +1,192 @@
-import '../constants/app_defaults.dart';
 import '../models/lyric_provider_type.dart';
 import '../models/setting.dart';
+import '../services/pref_setting.dart';
 import '../services/settings_service.dart';
 
 class LyricsProviderSettings {
-  LyricsProviderSettings({
-    required this.cacheEnabled,
-    required this.linesBefore,
-    required this.landscapeLeadingSpace,
-    required this.richSyncThresholdMs,
-    required this.annotationEnabled,
-    required this.annotationBias,
-    required this.zhConversionTarget,
-    required this.zhConversionIgnoredLanguages,
-    required this.globalOffsetMs,
-    required this.scrollAutoResumeDelay,
-    required this.blurEnabled,
-    required this.richSyncEnabled,
-    required this.trimMetadataProviders,
-    required this.fontSize,
-    required this.inactiveScale,
-    required this.translationHighlightOnly,
-    required this.translationEnabled,
-    required this.translationTargetLanguages,
-    required this.translationIgnoredLanguages,
-    required this.translationBias,
-    required this.translationAlignmentThreshold,
-    required this.translationCoverageThreshold,
-    required this.llmApiEndpoint,
-    required this.llmApiKey,
-    required this.llmModel,
-    required this.llmReasoningEffort,
-    required this.llmTimeToFirstTokenSeconds,
-    required this.llmMinTokensPerSecond,
-    required this.keepScreenOn,
-    required this.backgroundMotionEnabled,
-    required this.experimentalRichInlineFontSizeGlitching,
-    required this.experimentalAnnotationFontSizeGlitching,
-    required this.trayEnabled,
-    required this.hideToTrayOnClose,
-    required this.lyricsStreamPath,
-    required this.translationStreamPath,
-    required this.artworkMinSize,
-  });
+  LyricsProviderSettings._(this._values);
+
+  final Map<PrefSetting<dynamic>, Setting<dynamic>> _values;
 
   factory LyricsProviderSettings.defaults() {
-    return LyricsProviderSettings(
-      cacheEnabled: const Setting(
-        current: AppDefaults.cacheEnabled,
-        defaultValue: AppDefaults.cacheEnabled,
-        changed: false,
-      ),
-      linesBefore: const Setting(
-        current: AppDefaults.linesBefore,
-        defaultValue: AppDefaults.linesBefore,
-        changed: false,
-      ),
-      landscapeLeadingSpace: const Setting(
-        current: AppDefaults.landscapeLeadingSpace,
-        defaultValue: AppDefaults.landscapeLeadingSpace,
-        changed: false,
-      ),
-      richSyncThresholdMs: const Setting(
-        current: AppDefaults.richSyncThresholdMs,
-        defaultValue: AppDefaults.richSyncThresholdMs,
-        changed: false,
-      ),
-      annotationEnabled: const Setting(
-        current: AppDefaults.annotationEnabled,
-        defaultValue: AppDefaults.annotationEnabled,
-        changed: false,
-      ),
-      annotationBias: const Setting(
-        current: AppDefaults.annotationBias,
-        defaultValue: AppDefaults.annotationBias,
-        changed: false,
-      ),
-      zhConversionTarget: const Setting(
-        current: AppDefaults.zhConversionTarget,
-        defaultValue: AppDefaults.zhConversionTarget,
-        changed: false,
-      ),
-      zhConversionIgnoredLanguages: const Setting(
-        current: AppDefaults.zhConversionIgnoredLanguages,
-        defaultValue: AppDefaults.zhConversionIgnoredLanguages,
-        changed: false,
-      ),
-      globalOffsetMs: const Setting(
-        current: AppDefaults.globalOffsetMs,
-        defaultValue: AppDefaults.globalOffsetMs,
-        changed: false,
-      ),
-      scrollAutoResumeDelay: const Setting(
-        current: AppDefaults.scrollAutoResumeDelay,
-        defaultValue: AppDefaults.scrollAutoResumeDelay,
-        changed: false,
-      ),
-      blurEnabled: const Setting(
-        current: AppDefaults.blurEnabled,
-        defaultValue: AppDefaults.blurEnabled,
-        changed: false,
-      ),
-      richSyncEnabled: const Setting(
-        current: AppDefaults.richSyncEnabled,
-        defaultValue: AppDefaults.richSyncEnabled,
-        changed: false,
-      ),
-      trimMetadataProviders: const Setting(
-        current: AppDefaults.trimMetadataProviders,
-        defaultValue: AppDefaults.trimMetadataProviders,
-        changed: false,
-      ),
-      fontSize: const Setting(
-        current: AppDefaults.fontSize,
-        defaultValue: AppDefaults.fontSize,
-        changed: false,
-      ),
-      inactiveScale: const Setting(
-        current: AppDefaults.inactiveScale,
-        defaultValue: AppDefaults.inactiveScale,
-        changed: false,
-      ),
-      translationHighlightOnly: const Setting(
-        current: AppDefaults.translationHighlightOnly,
-        defaultValue: AppDefaults.translationHighlightOnly,
-        changed: false,
-      ),
-      translationEnabled: const Setting(
-        current: AppDefaults.translationEnabled,
-        defaultValue: AppDefaults.translationEnabled,
-        changed: false,
-      ),
-      translationTargetLanguages: const Setting(
-        current: AppDefaults.translationTargetLanguages,
-        defaultValue: AppDefaults.translationTargetLanguages,
-        changed: false,
-      ),
-      translationIgnoredLanguages: const Setting(
-        current: AppDefaults.translationIgnoredLanguages,
-        defaultValue: AppDefaults.translationIgnoredLanguages,
-        changed: false,
-      ),
-      translationBias: const Setting(
-        current: AppDefaults.translationBias,
-        defaultValue: AppDefaults.translationBias,
-        changed: false,
-      ),
-      translationAlignmentThreshold: const Setting(
-        current: AppDefaults.translationAlignmentThreshold,
-        defaultValue: AppDefaults.translationAlignmentThreshold,
-        changed: false,
-      ),
-      translationCoverageThreshold: const Setting(
-        current: AppDefaults.translationCoverageThreshold,
-        defaultValue: AppDefaults.translationCoverageThreshold,
-        changed: false,
-      ),
-      llmApiEndpoint: const Setting(
-        current: AppDefaults.llmApiEndpoint,
-        defaultValue: AppDefaults.llmApiEndpoint,
-        changed: false,
-      ),
-      llmApiKey: const Setting(
-        current: AppDefaults.llmApiKey,
-        defaultValue: AppDefaults.llmApiKey,
-        changed: false,
-      ),
-      llmModel: const Setting(
-        current: AppDefaults.llmModel,
-        defaultValue: AppDefaults.llmModel,
-        changed: false,
-      ),
-      llmReasoningEffort: const Setting(
-        current: AppDefaults.llmReasoningEffort,
-        defaultValue: AppDefaults.llmReasoningEffort,
-        changed: false,
-      ),
-      llmTimeToFirstTokenSeconds: const Setting(
-        current: AppDefaults.llmTimeToFirstTokenSeconds,
-        defaultValue: AppDefaults.llmTimeToFirstTokenSeconds,
-        changed: false,
-      ),
-      llmMinTokensPerSecond: const Setting(
-        current: AppDefaults.llmMinTokensPerSecond,
-        defaultValue: AppDefaults.llmMinTokensPerSecond,
-        changed: false,
-      ),
-      keepScreenOn: const Setting(
-        current: AppDefaults.keepScreenOn,
-        defaultValue: AppDefaults.keepScreenOn,
-        changed: false,
-      ),
-      backgroundMotionEnabled: const Setting(
-        current: AppDefaults.backgroundMotionEnabled,
-        defaultValue: AppDefaults.backgroundMotionEnabled,
-        changed: false,
-      ),
-      experimentalRichInlineFontSizeGlitching: const Setting(
-        current: AppDefaults.experimentalRichInlineFontSizeGlitching,
-        defaultValue: AppDefaults.experimentalRichInlineFontSizeGlitching,
-        changed: false,
-      ),
-      experimentalAnnotationFontSizeGlitching: const Setting(
-        current: AppDefaults.experimentalAnnotationFontSizeGlitching,
-        defaultValue: AppDefaults.experimentalAnnotationFontSizeGlitching,
-        changed: false,
-      ),
-      trayEnabled: const Setting(
-        current: AppDefaults.trayEnabled,
-        defaultValue: AppDefaults.trayEnabled,
-        changed: false,
-      ),
-      hideToTrayOnClose: const Setting(
-        current: AppDefaults.hideToTrayOnClose,
-        defaultValue: AppDefaults.hideToTrayOnClose,
-        changed: false,
-      ),
-      lyricsStreamPath: const Setting(
-        current: AppDefaults.lyricsStreamPath,
-        defaultValue: AppDefaults.lyricsStreamPath,
-        changed: false,
-      ),
-      translationStreamPath: const Setting(
-        current: AppDefaults.translationStreamPath,
-        defaultValue: AppDefaults.translationStreamPath,
-        changed: false,
-      ),
-      artworkMinSize: const Setting(
-        current: AppDefaults.artworkMinSize,
-        defaultValue: AppDefaults.artworkMinSize,
-        changed: false,
-      ),
-    );
+    return LyricsProviderSettings._({
+      for (final spec in PrefSettings.mirrored) spec: spec.initial,
+    });
   }
 
   static Future<LyricsProviderSettings> load(
     SettingsService settingsService,
   ) async {
-    return LyricsProviderSettings(
-      cacheEnabled: await settingsService.getCacheEnabled(),
-      linesBefore: await settingsService.getLinesBefore(),
-      landscapeLeadingSpace: await settingsService.getLandscapeLeadingSpace(),
-      richSyncThresholdMs: await settingsService.getRichSyncThresholdMs(),
-      annotationEnabled: await settingsService.getAnnotationEnabled(),
-      annotationBias: await settingsService.getAnnotationBias(),
-      zhConversionTarget: await settingsService.getZhConversionTarget(),
-      zhConversionIgnoredLanguages: await settingsService
-          .getZhConversionIgnoredLanguages(),
-      globalOffsetMs: await settingsService.getGlobalOffset(),
-      scrollAutoResumeDelay: await settingsService.getScrollAutoResumeDelay(),
-      blurEnabled: await settingsService.getBlurEnabled(),
-      richSyncEnabled: await settingsService.getRichSyncEnabled(),
-      trimMetadataProviders: await settingsService.getTrimMetadataProviders(),
-      fontSize: await settingsService.getFontSize(),
-      inactiveScale: await settingsService.getInactiveScale(),
-      translationHighlightOnly: await settingsService
-          .getTranslationHighlightOnly(),
-      translationEnabled: await settingsService.getTranslationEnabled(),
-      translationTargetLanguages: await settingsService
-          .getTranslationTargetLanguages(),
-      translationIgnoredLanguages: await settingsService
-          .getTranslationIgnoredLanguages(),
-      translationBias: await settingsService.getTranslationBias(),
-      translationAlignmentThreshold: await settingsService
-          .getTranslationAlignmentThreshold(),
-      translationCoverageThreshold: await settingsService
-          .getTranslationCoverageThreshold(),
-      llmApiEndpoint: await settingsService.getLlmApiEndpoint(),
-      llmApiKey: await settingsService.getLlmApiKey(),
-      llmModel: await settingsService.getLlmModel(),
-      llmReasoningEffort: await settingsService.getLlmReasoningEffort(),
-      llmTimeToFirstTokenSeconds: await settingsService
-          .getLlmTimeToFirstTokenSeconds(),
-      llmMinTokensPerSecond: await settingsService.getLlmMinTokensPerSecond(),
-      keepScreenOn: await settingsService.getKeepScreenOn(),
-      backgroundMotionEnabled: await settingsService
-          .getBackgroundMotionEnabled(),
-      experimentalRichInlineFontSizeGlitching: await settingsService
-          .getExperimentalRichInlineFontSizeGlitching(),
-      experimentalAnnotationFontSizeGlitching: await settingsService
-          .getExperimentalAnnotationFontSizeGlitching(),
-      trayEnabled: await settingsService.getTrayEnabled(),
-      hideToTrayOnClose: await settingsService.getHideToTrayOnClose(),
-      lyricsStreamPath: await settingsService.getLyricsStreamPath(),
-      translationStreamPath: await settingsService.getTranslationStreamPath(),
-      artworkMinSize: await settingsService.getArtworkMinSize(),
-    );
+    final values = <PrefSetting<dynamic>, Setting<dynamic>>{};
+    for (final spec in PrefSettings.mirrored) {
+      values[spec] = await settingsService.readSetting(spec);
+    }
+    return LyricsProviderSettings._(values);
   }
 
-  Setting<bool> cacheEnabled;
-  Setting<int> linesBefore;
-  Setting<int> landscapeLeadingSpace;
-  Setting<int> richSyncThresholdMs;
-  Setting<bool> annotationEnabled;
-  Setting<int> annotationBias;
-  Setting<String> zhConversionTarget;
-  Setting<List<String>> zhConversionIgnoredLanguages;
-  Setting<int> globalOffsetMs;
-  Setting<int> scrollAutoResumeDelay;
-  Setting<bool> blurEnabled;
-  Setting<bool> richSyncEnabled;
-  Setting<List<LyricProviderType>> trimMetadataProviders;
-  Setting<double> fontSize;
-  Setting<double> inactiveScale;
-  Setting<bool> translationHighlightOnly;
-  Setting<bool> translationEnabled;
-  Setting<List<String>> translationTargetLanguages;
-  Setting<List<String>> translationIgnoredLanguages;
-  Setting<int> translationBias;
-  Setting<int> translationAlignmentThreshold;
-  Setting<int> translationCoverageThreshold;
-  Setting<String> llmApiEndpoint;
-  Setting<String> llmApiKey;
-  Setting<String> llmModel;
-  Setting<String> llmReasoningEffort;
-  Setting<int> llmTimeToFirstTokenSeconds;
-  Setting<double> llmMinTokensPerSecond;
-  Setting<bool> keepScreenOn;
-  Setting<bool> backgroundMotionEnabled;
-  Setting<bool> experimentalRichInlineFontSizeGlitching;
-  Setting<bool> experimentalAnnotationFontSizeGlitching;
-  Setting<bool> trayEnabled;
-  Setting<bool> hideToTrayOnClose;
-  Setting<String> lyricsStreamPath;
-  Setting<String> translationStreamPath;
-  Setting<int> artworkMinSize;
+  Setting<T> _get<T>(PrefSetting<T> spec) => _values[spec]! as Setting<T>;
+
+  void _set<T>(PrefSetting<T> spec, Setting<T> value) {
+    _values[spec] = value;
+  }
+
+  Setting<bool> get cacheEnabled => _get(PrefSettings.cacheEnabled);
+  set cacheEnabled(Setting<bool> value) =>
+      _set(PrefSettings.cacheEnabled, value);
+
+  Setting<int> get linesBefore => _get(PrefSettings.linesBefore);
+  set linesBefore(Setting<int> value) => _set(PrefSettings.linesBefore, value);
+
+  Setting<int> get landscapeLeadingSpace =>
+      _get(PrefSettings.landscapeLeadingSpace);
+  set landscapeLeadingSpace(Setting<int> value) =>
+      _set(PrefSettings.landscapeLeadingSpace, value);
+
+  Setting<int> get richSyncThresholdMs =>
+      _get(PrefSettings.richSyncThresholdMs);
+  set richSyncThresholdMs(Setting<int> value) =>
+      _set(PrefSettings.richSyncThresholdMs, value);
+
+  Setting<bool> get annotationEnabled => _get(PrefSettings.annotationEnabled);
+  set annotationEnabled(Setting<bool> value) =>
+      _set(PrefSettings.annotationEnabled, value);
+
+  Setting<int> get annotationBias => _get(PrefSettings.annotationBias);
+  set annotationBias(Setting<int> value) =>
+      _set(PrefSettings.annotationBias, value);
+
+  Setting<String> get zhConversionTarget =>
+      _get(PrefSettings.zhConversionTarget);
+  set zhConversionTarget(Setting<String> value) =>
+      _set(PrefSettings.zhConversionTarget, value);
+
+  Setting<List<String>> get zhConversionIgnoredLanguages =>
+      _get(PrefSettings.zhConversionIgnoredLanguages);
+  set zhConversionIgnoredLanguages(Setting<List<String>> value) =>
+      _set(PrefSettings.zhConversionIgnoredLanguages, value);
+
+  Setting<int> get globalOffsetMs => _get(PrefSettings.globalOffsetMs);
+  set globalOffsetMs(Setting<int> value) =>
+      _set(PrefSettings.globalOffsetMs, value);
+
+  Setting<int> get scrollAutoResumeDelay =>
+      _get(PrefSettings.scrollAutoResumeDelay);
+  set scrollAutoResumeDelay(Setting<int> value) =>
+      _set(PrefSettings.scrollAutoResumeDelay, value);
+
+  Setting<bool> get blurEnabled => _get(PrefSettings.blurEnabled);
+  set blurEnabled(Setting<bool> value) => _set(PrefSettings.blurEnabled, value);
+
+  Setting<bool> get richSyncEnabled => _get(PrefSettings.richSyncEnabled);
+  set richSyncEnabled(Setting<bool> value) =>
+      _set(PrefSettings.richSyncEnabled, value);
+
+  Setting<List<LyricProviderType>> get trimMetadataProviders =>
+      _get(PrefSettings.trimMetadataProviders);
+  set trimMetadataProviders(Setting<List<LyricProviderType>> value) =>
+      _set(PrefSettings.trimMetadataProviders, value);
+
+  Setting<double> get fontSize => _get(PrefSettings.fontSize);
+  set fontSize(Setting<double> value) => _set(PrefSettings.fontSize, value);
+
+  Setting<double> get inactiveScale => _get(PrefSettings.inactiveScale);
+  set inactiveScale(Setting<double> value) =>
+      _set(PrefSettings.inactiveScale, value);
+
+  Setting<bool> get translationHighlightOnly =>
+      _get(PrefSettings.translationHighlightOnly);
+  set translationHighlightOnly(Setting<bool> value) =>
+      _set(PrefSettings.translationHighlightOnly, value);
+
+  Setting<bool> get translationEnabled => _get(PrefSettings.translationEnabled);
+  set translationEnabled(Setting<bool> value) =>
+      _set(PrefSettings.translationEnabled, value);
+
+  Setting<List<String>> get translationTargetLanguages =>
+      _get(PrefSettings.translationTargetLanguages);
+  set translationTargetLanguages(Setting<List<String>> value) =>
+      _set(PrefSettings.translationTargetLanguages, value);
+
+  Setting<List<String>> get translationIgnoredLanguages =>
+      _get(PrefSettings.translationIgnoredLanguages);
+  set translationIgnoredLanguages(Setting<List<String>> value) =>
+      _set(PrefSettings.translationIgnoredLanguages, value);
+
+  Setting<int> get translationBias => _get(PrefSettings.translationBias);
+  set translationBias(Setting<int> value) =>
+      _set(PrefSettings.translationBias, value);
+
+  Setting<int> get translationAlignmentThreshold =>
+      _get(PrefSettings.translationAlignmentThreshold);
+  set translationAlignmentThreshold(Setting<int> value) =>
+      _set(PrefSettings.translationAlignmentThreshold, value);
+
+  Setting<int> get translationCoverageThreshold =>
+      _get(PrefSettings.translationCoverageThreshold);
+  set translationCoverageThreshold(Setting<int> value) =>
+      _set(PrefSettings.translationCoverageThreshold, value);
+
+  Setting<String> get llmApiEndpoint => _get(PrefSettings.llmApiEndpoint);
+  set llmApiEndpoint(Setting<String> value) =>
+      _set(PrefSettings.llmApiEndpoint, value);
+
+  Setting<String> get llmApiKey => _get(PrefSettings.llmApiKey);
+  set llmApiKey(Setting<String> value) => _set(PrefSettings.llmApiKey, value);
+
+  Setting<String> get llmModel => _get(PrefSettings.llmModel);
+  set llmModel(Setting<String> value) => _set(PrefSettings.llmModel, value);
+
+  Setting<String> get llmReasoningEffort =>
+      _get(PrefSettings.llmReasoningEffort);
+  set llmReasoningEffort(Setting<String> value) =>
+      _set(PrefSettings.llmReasoningEffort, value);
+
+  Setting<int> get llmTimeToFirstTokenSeconds =>
+      _get(PrefSettings.llmTimeToFirstTokenSeconds);
+  set llmTimeToFirstTokenSeconds(Setting<int> value) =>
+      _set(PrefSettings.llmTimeToFirstTokenSeconds, value);
+
+  Setting<double> get llmMinTokensPerSecond =>
+      _get(PrefSettings.llmMinTokensPerSecond);
+  set llmMinTokensPerSecond(Setting<double> value) =>
+      _set(PrefSettings.llmMinTokensPerSecond, value);
+
+  Setting<bool> get keepScreenOn => _get(PrefSettings.keepScreenOn);
+  set keepScreenOn(Setting<bool> value) =>
+      _set(PrefSettings.keepScreenOn, value);
+
+  Setting<bool> get backgroundMotionEnabled =>
+      _get(PrefSettings.backgroundMotionEnabled);
+  set backgroundMotionEnabled(Setting<bool> value) =>
+      _set(PrefSettings.backgroundMotionEnabled, value);
+
+  Setting<bool> get experimentalRichInlineFontSizeGlitching =>
+      _get(PrefSettings.experimentalRichInlineFontSizeGlitching);
+  set experimentalRichInlineFontSizeGlitching(Setting<bool> value) =>
+      _set(PrefSettings.experimentalRichInlineFontSizeGlitching, value);
+
+  Setting<bool> get experimentalAnnotationFontSizeGlitching =>
+      _get(PrefSettings.experimentalAnnotationFontSizeGlitching);
+  set experimentalAnnotationFontSizeGlitching(Setting<bool> value) =>
+      _set(PrefSettings.experimentalAnnotationFontSizeGlitching, value);
+
+  Setting<bool> get trayEnabled => _get(PrefSettings.trayEnabled);
+  set trayEnabled(Setting<bool> value) => _set(PrefSettings.trayEnabled, value);
+
+  Setting<bool> get hideToTrayOnClose => _get(PrefSettings.hideToTrayOnClose);
+  set hideToTrayOnClose(Setting<bool> value) =>
+      _set(PrefSettings.hideToTrayOnClose, value);
+
+  Setting<String> get lyricsStreamPath => _get(PrefSettings.lyricsStreamPath);
+  set lyricsStreamPath(Setting<String> value) =>
+      _set(PrefSettings.lyricsStreamPath, value);
+
+  Setting<String> get translationStreamPath =>
+      _get(PrefSettings.translationStreamPath);
+  set translationStreamPath(Setting<String> value) =>
+      _set(PrefSettings.translationStreamPath, value);
+
+  Setting<int> get artworkMinSize => _get(PrefSettings.artworkMinSize);
+  set artworkMinSize(Setting<int> value) =>
+      _set(PrefSettings.artworkMinSize, value);
 }

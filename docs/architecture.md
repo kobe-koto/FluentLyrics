@@ -50,7 +50,7 @@ Android needs the notification-listener permission. `LyricsProvider` polls it on
 
 ## Fetch and ranking
 
-`LyricsService.fetchLyrics` walks `SettingsService.getPriority()`. Cache is prepended when cache is enabled. Each entry is a `LyricsSource` from `LyricsSourceRegistry`. Unknown types are skipped.
+`LyricsService.fetchLyrics` walks `SettingsService.getPriority()`. Cache is prepended when cache is enabled. Each entry is a `LyricsSource` from `LyricsSourceRegistry`. Unknown types are skipped. A new track or refresh cancels the previous fetch's HTTP client; cancellation is not shown as a provider failure.
 
 `LyricsFetchRequest` carries title, artists, album, duration, metadata trimming, translation bias, and callbacks for status, artwork, and an early translation. Results with lyrics or `isPureMusic` are reported as candidates. `selectBetterCandidate` ranks them:
 
@@ -93,7 +93,7 @@ Cache id is `sha256(title|artists|album|durationSeconds)` plus `_rich` or `_std`
 
 ## Display pipeline
 
-`LyricsProvider` does not hand the raw fetch result straight to the list. Before paint it can:
+`LyricsProvider.lyrics` asks `LyricsDisplayPipeline` for the painted lines. Before paint it can:
 
 - convert Chinese script through `ZhConversionService` (`off`, `zh_CN` / `t2s`, `zh_TW` / `s2twp`, `zh_HK` / `s2hk`)
 - skip conversion for languages in `zhConversionIgnoredLanguages` (default `ja`), decided per song so a track is never half-converted
@@ -106,7 +106,7 @@ Position for highlighting comes from the media service, plus global and per-trac
 
 ## Settings
 
-`Setting<T>` records `current`, `defaultValue`, and `changed`. Defaults live only in `AppDefaults`. Persistence keys live only in `SettingsService`. The provider mirrors them in `LyricsProviderSettings` and exposes getters for the UI.
+`Setting<T>` records `current`, `defaultValue`, and `changed`. Defaults live only in `AppDefaults`. Persistence keys live in `PrefSettings`; `SettingsService` reads and writes that table. `LyricsProviderSettings` mirrors `PrefSettings.mirrored` and exposes getters for the UI. Display transforms live in `LyricsDisplayPipeline`. The fetch methods live in `lyrics_provider_fetch.dart`.
 
 Changing a setting should update prefs and notify listeners. Reset actions compare against `AppDefaults`, not a second copy of the default buried in a widget.
 

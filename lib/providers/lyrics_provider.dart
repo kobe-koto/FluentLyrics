@@ -11,17 +11,16 @@ import '../services/lyrics_service.dart';
 import '../services/settings_service.dart';
 import '../services/providers/lyrics_cache_service.dart';
 import '../utils/app_logger.dart';
-import '../utils/furigana_helper.dart';
 import '../utils/lyrics_candidate_helper.dart';
-import '../utils/lyrics_reading_helper.dart';
-import '../utils/qq_kana_helper.dart';
-import '../utils/romaji_helper.dart';
 import '../utils/lyrics_reading_candidate_helper.dart';
 import '../utils/lyrics_display_helper.dart';
-import '../services/opencc/zh_conversion.dart';
+import 'lyrics_display_pipeline.dart';
+
 import '../services/opencc/zh_conversion_service.dart';
 import '../utils/richify_helper.dart';
 import '../utils/translation_helper.dart';
+
+part 'lyrics_provider_fetch.dart';
 
 class LyricsProvider with ChangeNotifier {
   final MediaService mediaService;
@@ -45,152 +44,6 @@ class LyricsProvider with ChangeNotifier {
   static const Duration _positionResyncThreshold = Duration(milliseconds: 400);
 
   LyricsProviderSettings _settings = LyricsProviderSettings.defaults();
-
-  Setting<bool> get _cacheEnabled => _settings.cacheEnabled;
-  set _cacheEnabled(Setting<bool> value) => _settings.cacheEnabled = value;
-
-  Setting<int> get _linesBefore => _settings.linesBefore;
-  set _linesBefore(Setting<int> value) => _settings.linesBefore = value;
-
-  Setting<int> get _landscapeLeadingSpace => _settings.landscapeLeadingSpace;
-  set _landscapeLeadingSpace(Setting<int> value) =>
-      _settings.landscapeLeadingSpace = value;
-
-  Setting<int> get _richSyncThresholdMs => _settings.richSyncThresholdMs;
-  set _richSyncThresholdMs(Setting<int> value) =>
-      _settings.richSyncThresholdMs = value;
-
-  Setting<bool> get _annotationEnabled => _settings.annotationEnabled;
-  set _annotationEnabled(Setting<bool> value) =>
-      _settings.annotationEnabled = value;
-
-  Setting<int> get _annotationBias => _settings.annotationBias;
-  set _annotationBias(Setting<int> value) => _settings.annotationBias = value;
-
-  Setting<String> get _zhConversionTarget => _settings.zhConversionTarget;
-  set _zhConversionTarget(Setting<String> value) =>
-      _settings.zhConversionTarget = value;
-
-  Setting<List<String>> get _zhConversionIgnoredLanguages =>
-      _settings.zhConversionIgnoredLanguages;
-  set _zhConversionIgnoredLanguages(Setting<List<String>> value) =>
-      _settings.zhConversionIgnoredLanguages = value;
-
-  Setting<int> get _globalOffsetMs => _settings.globalOffsetMs;
-  set _globalOffsetMs(Setting<int> value) => _settings.globalOffsetMs = value;
-
-  Setting<int> get _scrollAutoResumeDelay => _settings.scrollAutoResumeDelay;
-  set _scrollAutoResumeDelay(Setting<int> value) =>
-      _settings.scrollAutoResumeDelay = value;
-
-  Setting<bool> get _blurEnabled => _settings.blurEnabled;
-  set _blurEnabled(Setting<bool> value) => _settings.blurEnabled = value;
-
-  Setting<bool> get _richSyncEnabled => _settings.richSyncEnabled;
-  set _richSyncEnabled(Setting<bool> value) =>
-      _settings.richSyncEnabled = value;
-
-  Setting<List<LyricProviderType>> get _trimMetadataProviders =>
-      _settings.trimMetadataProviders;
-  set _trimMetadataProviders(Setting<List<LyricProviderType>> value) =>
-      _settings.trimMetadataProviders = value;
-
-  Setting<double> get _fontSize => _settings.fontSize;
-  set _fontSize(Setting<double> value) => _settings.fontSize = value;
-
-  Setting<double> get _inactiveScale => _settings.inactiveScale;
-  set _inactiveScale(Setting<double> value) => _settings.inactiveScale = value;
-
-  Setting<bool> get _translationHighlightOnly =>
-      _settings.translationHighlightOnly;
-  set _translationHighlightOnly(Setting<bool> value) =>
-      _settings.translationHighlightOnly = value;
-
-  Setting<bool> get _translationEnabled => _settings.translationEnabled;
-  set _translationEnabled(Setting<bool> value) =>
-      _settings.translationEnabled = value;
-
-  Setting<List<String>> get _translationTargetLanguages =>
-      _settings.translationTargetLanguages;
-  set _translationTargetLanguages(Setting<List<String>> value) =>
-      _settings.translationTargetLanguages = value;
-
-  Setting<List<String>> get _translationIgnoredLanguages =>
-      _settings.translationIgnoredLanguages;
-  set _translationIgnoredLanguages(Setting<List<String>> value) =>
-      _settings.translationIgnoredLanguages = value;
-
-  Setting<int> get _translationBias => _settings.translationBias;
-  set _translationBias(Setting<int> value) => _settings.translationBias = value;
-
-  Setting<int> get _translationAlignmentThreshold =>
-      _settings.translationAlignmentThreshold;
-  set _translationAlignmentThreshold(Setting<int> value) =>
-      _settings.translationAlignmentThreshold = value;
-
-  Setting<int> get _translationCoverageThreshold =>
-      _settings.translationCoverageThreshold;
-  set _translationCoverageThreshold(Setting<int> value) =>
-      _settings.translationCoverageThreshold = value;
-
-  Setting<String> get _llmApiEndpoint => _settings.llmApiEndpoint;
-  set _llmApiEndpoint(Setting<String> value) =>
-      _settings.llmApiEndpoint = value;
-
-  Setting<String> get _llmApiKey => _settings.llmApiKey;
-  set _llmApiKey(Setting<String> value) => _settings.llmApiKey = value;
-
-  Setting<String> get _llmModel => _settings.llmModel;
-  set _llmModel(Setting<String> value) => _settings.llmModel = value;
-
-  Setting<String> get _llmReasoningEffort => _settings.llmReasoningEffort;
-  set _llmReasoningEffort(Setting<String> value) =>
-      _settings.llmReasoningEffort = value;
-
-  Setting<int> get _llmTimeToFirstTokenSeconds =>
-      _settings.llmTimeToFirstTokenSeconds;
-  set _llmTimeToFirstTokenSeconds(Setting<int> value) =>
-      _settings.llmTimeToFirstTokenSeconds = value;
-
-  Setting<double> get _llmMinTokensPerSecond => _settings.llmMinTokensPerSecond;
-  set _llmMinTokensPerSecond(Setting<double> value) =>
-      _settings.llmMinTokensPerSecond = value;
-
-  Setting<bool> get _keepScreenOn => _settings.keepScreenOn;
-  set _keepScreenOn(Setting<bool> value) => _settings.keepScreenOn = value;
-
-  Setting<bool> get _backgroundMotionEnabled =>
-      _settings.backgroundMotionEnabled;
-  set _backgroundMotionEnabled(Setting<bool> value) =>
-      _settings.backgroundMotionEnabled = value;
-
-  Setting<bool> get _experimentalRichInlineFontSizeGlitching =>
-      _settings.experimentalRichInlineFontSizeGlitching;
-  set _experimentalRichInlineFontSizeGlitching(Setting<bool> value) =>
-      _settings.experimentalRichInlineFontSizeGlitching = value;
-
-  Setting<bool> get _experimentalAnnotationFontSizeGlitching =>
-      _settings.experimentalAnnotationFontSizeGlitching;
-  set _experimentalAnnotationFontSizeGlitching(Setting<bool> value) =>
-      _settings.experimentalAnnotationFontSizeGlitching = value;
-
-  Setting<bool> get _trayEnabled => _settings.trayEnabled;
-  set _trayEnabled(Setting<bool> value) => _settings.trayEnabled = value;
-
-  Setting<bool> get _hideToTrayOnClose => _settings.hideToTrayOnClose;
-  set _hideToTrayOnClose(Setting<bool> value) =>
-      _settings.hideToTrayOnClose = value;
-
-  Setting<String> get _lyricsStreamPath => _settings.lyricsStreamPath;
-  set _lyricsStreamPath(Setting<String> value) =>
-      _settings.lyricsStreamPath = value;
-
-  Setting<String> get _translationStreamPath => _settings.translationStreamPath;
-  set _translationStreamPath(Setting<String> value) =>
-      _settings.translationStreamPath = value;
-
-  Setting<int> get _artworkMinSize => _settings.artworkMinSize;
-  set _artworkMinSize(Setting<int> value) => _settings.artworkMinSize = value;
 
   Duration _trackOffset = Duration.zero;
   int _currentIndex = -1;
@@ -248,252 +101,27 @@ class LyricsProvider with ChangeNotifier {
 
   MediaMetadata? get currentMetadata => _currentMetadata;
 
-  List<Lyric>? _cachedAlignedLyrics;
-  LyricsResult? _lastLyricsResultForAlignment;
-  LyricsResult? _lastTranslationResultForAlignment;
-  bool? _lastRichSyncEnabledForAlignment;
+  final LyricsDisplayPipeline _display = LyricsDisplayPipeline();
 
-  List<Lyric>? _cachedStrippedLyrics;
-  LyricsResult? _lastLyricsResultForStripping;
-
-  List<Lyric>? _convertedLyrics;
-  List<Lyric>? _convertedLyricsSource;
-  String? _convertedLyricsTarget;
-  List<String>? _convertedLyricsIgnoredLanguages;
-  String? _convertedLyricsLanguageHint;
-
-  List<Lyric> _applyZhConversion(List<Lyric> lyrics) {
-    final target = ZhConversionTarget.fromSetting(_zhConversionTarget.current);
-    if (target == ZhConversionTarget.off) return lyrics;
-
-    final ignoredLanguages = _zhConversionIgnoredLanguages.current;
-    final languageHint = _lyricsResult.language ?? _translationResult?.language;
-    if (identical(_convertedLyricsSource, lyrics) &&
-        _convertedLyricsTarget == target.settingValue &&
-        _convertedLyricsLanguageHint == languageHint &&
-        listEquals(_convertedLyricsIgnoredLanguages, ignoredLanguages)) {
-      return _convertedLyrics!;
-    }
-
-    final converted = ZhConversionService.instance.convertLyrics(
-      lyrics,
-      target: target,
-      ignoredLanguages: ignoredLanguages,
-      languageHint: languageHint,
-    );
-    _convertedLyricsSource = lyrics;
-    _convertedLyrics = converted;
-    _convertedLyricsTarget = target.settingValue;
-    _convertedLyricsIgnoredLanguages = ignoredLanguages;
-    _convertedLyricsLanguageHint = languageHint;
-    return converted;
-  }
-
-  /// The lyrics as rendered: rich-sync stripping, translation alignment and
-  /// the optional Simplified/Traditional conversion, all memoized so repeated
-  /// reads (position ticks, rebuilds) stay cheap.
-  List<Lyric> get lyrics =>
-      _applyReadingAnnotations(_applyZhConversion(_buildDisplayedLyrics()));
-
-  List<Lyric>? _annotatedLyrics;
-  List<Lyric>? _annotatedLyricsSource;
-  LyricsReading? _annotatedLyricsReading;
-  int? _annotatedLyricsBias;
-
-  /// Pairs the reading track with the displayed lines (by timestamp) and
-  /// attaches kanji readings, so [LyricLine] can render ruby text. Memoized:
-  /// the alignment only runs when the lines or the reading track change.
-  List<Lyric> _applyReadingAnnotations(List<Lyric> lyrics) {
-    if (!_annotationEnabled.current) return lyrics;
-    final reading = _readingResult;
-    if (reading == null || reading.lines.isEmpty || lyrics.isEmpty) {
-      return lyrics;
-    }
-    final bias = _annotationBias.current;
-    if (identical(_annotatedLyricsSource, lyrics) &&
-        identical(_annotatedLyricsReading, reading) &&
-        _annotatedLyricsBias == bias) {
-      return _annotatedLyrics!;
-    }
-
-    // QQ's kana payload is finer grained than any romanized track: it gives the
-    // reading of every word (and therefore of adjacent kanji), in kana already.
-    final kanaRaw = reading.kanaRaw;
-    if (kanaRaw != null && kanaRaw.trim().isNotEmpty) {
-      final perLine = QqKanaHelper.annotateLines(
-        lines: [
-          for (final lyric in lyrics)
-            QqKanaLine(
-              lyric.text,
-              startMs: lyric.startTime.inMilliseconds,
-              endMs: lyric.endTime?.inMilliseconds,
-            ),
-        ],
-        runs: QqKanaHelper.parseRuns(kanaRaw),
-      );
-      final annotatedLines = perLine.where((a) => a.isNotEmpty).length;
-      if (annotatedLines > 0) {
-        AppLogger.debug(
-          '[Annotations] QQ kana path: $annotatedLines/${lyrics.length} lines',
-        );
-        var changed = false;
-        final annotated = <Lyric>[];
-        for (var i = 0; i < lyrics.length; i++) {
-          final annotations = perLine[i];
-          if (annotations.isEmpty) {
-            annotated.add(lyrics[i]);
-            continue;
-          }
-          changed = true;
-          annotated.add(
-            Lyric(
-              startTime: lyrics[i].startTime,
-              endTime: lyrics[i].endTime,
-              text: lyrics[i].text,
-              inlineParts: lyrics[i].inlineParts,
-              translation: lyrics[i].translation,
-              annotations: annotations,
-            ),
-          );
-        }
-        _annotatedLyricsSource = lyrics;
-        _annotatedLyricsReading = reading;
-        _annotatedLyricsBias = bias;
-        _annotatedLyrics = changed ? annotated : lyrics;
-        return _annotatedLyrics!;
-      }
-    }
-
-    // Providers rarely line their reading track up with the lyrics exactly
-    // (QQ serves it from the word level payload), so pair by time with a
-    // tolerance and fall back to positional pairing.
-    AppLogger.debug(
-      '[Annotations] romanized path (kana payload: '
-      '${reading.kanaRaw == null ? 'absent' : 'unusable'})',
-    );
-    final readings = LyricsReadingHelper.pairReadings(
-      lyrics,
-      reading.lines,
-      toleranceMs: bias,
-    );
-    var changed = false;
-    final annotated = <Lyric>[
-      for (var i = 0; i < lyrics.length; i++)
-        _annotateLyric(
-          lyrics[i],
-          readings[i],
-          reading.lineType,
-          changed: () => changed = true,
-        ),
-    ];
-    _annotatedLyricsSource = lyrics;
-    _annotatedLyricsReading = reading;
-    _annotatedLyricsBias = bias;
-    _annotatedLyrics = changed ? annotated : lyrics;
-    return _annotatedLyrics!;
-  }
-
-  Lyric _annotateLyric(
-    Lyric lyric,
-    String? reading,
-    LyricsReadingType? lineType, {
-    required void Function() changed,
-  }) {
-    if (lyric.text.isEmpty || lyric.annotations != null) return lyric;
-    if (reading == null || reading.isEmpty) return lyric;
-
-    final isKana = lineType == LyricsReadingType.kana;
-    final annotations = FuriganaHelper.align(
-      text: lyric.text,
-      reading: reading,
-      readingIsRomaji: !isKana,
-    );
-    if (annotations.isEmpty) return lyric;
-
-    // Providers mostly ship a romanized track, but the annotation should be
-    // kana: the alignment already resolved which reading belongs to which
-    // kanji, so converting is a lookup. A unit we do not know drops the line
-    // rather than mixing scripts.
-    final readings = <FuriganaAnnotation>[];
-    for (final annotation in annotations) {
-      final text = isKana
-          ? annotation.reading
-          : RomajiHelper.toKana(annotation.reading);
-      if (text == null || text.isEmpty) return lyric;
-      readings.add(
-        FuriganaAnnotation(
-          start: annotation.start,
-          end: annotation.end,
-          reading: text,
-        ),
-      );
-    }
-
-    changed();
-    return Lyric(
-      startTime: lyric.startTime,
-      endTime: lyric.endTime,
-      text: lyric.text,
-      inlineParts: lyric.inlineParts,
-      translation: lyric.translation,
-      annotations: readings,
-    );
-  }
-
-  List<Lyric> _buildDisplayedLyrics() {
-    final curRichSync = _richSyncEnabled.current;
-
-    List<Lyric> baseLyrics;
-    if (curRichSync) {
-      baseLyrics = _lyricsResult.lyrics;
-    } else {
-      if (LyricsDisplayHelper.canReuseStrippedLyrics(
-        cachedStrippedLyrics: _cachedStrippedLyrics,
-        lastLyricsResultForStripping: _lastLyricsResultForStripping,
-        lyricsResult: _lyricsResult,
-      )) {
-        baseLyrics = _cachedStrippedLyrics!;
-      } else {
-        baseLyrics = LyricsDisplayHelper.buildDisplayedLyrics(
-          lyricsResult: _lyricsResult,
-          richSyncEnabled: false,
-        );
-        _cachedStrippedLyrics = baseLyrics;
-        _lastLyricsResultForStripping = _lyricsResult;
-      }
-    }
-
-    if (_translationEnabled.current &&
-        _translationResult?.rawTranslation != null) {
-      if (LyricsDisplayHelper.canReuseAlignedLyrics(
-        cachedAlignedLyrics: _cachedAlignedLyrics,
-        lastLyricsResultForAlignment: _lastLyricsResultForAlignment,
-        lyricsResult: _lyricsResult,
-        lastTranslationResultForAlignment: _lastTranslationResultForAlignment,
-        translationResult: _translationResult,
-        lastRichSyncEnabledForAlignment: _lastRichSyncEnabledForAlignment,
-        richSyncEnabled: curRichSync,
-      )) {
-        return _cachedAlignedLyrics!;
-      }
-      _cachedAlignedLyrics = LyricsDisplayHelper.buildDisplayedLyrics(
-        lyricsResult: _lyricsResult,
-        richSyncEnabled: curRichSync,
-        translationEnabled: true,
-        translationResult: _translationResult,
-        translationAlignmentThreshold: _translationAlignmentThreshold.current,
-      );
-      _lastLyricsResultForAlignment = _lyricsResult;
-      _lastTranslationResultForAlignment = _translationResult;
-      _lastRichSyncEnabledForAlignment = curRichSync;
-      return _cachedAlignedLyrics!;
-    }
-
-    return baseLyrics;
-  }
+  /// The lyrics as rendered: rich-sync stripping, translation alignment,
+  /// Simplified/Traditional conversion, and kanji annotation.
+  List<Lyric> get lyrics => _display.build(
+    lyricsResult: _lyricsResult,
+    translationResult: _translationResult,
+    reading: _readingResult,
+    richSyncEnabled: _settings.richSyncEnabled.current,
+    translationEnabled: _settings.translationEnabled.current,
+    annotationEnabled: _settings.annotationEnabled.current,
+    annotationBias: _settings.annotationBias.current,
+    zhConversionTarget: _settings.zhConversionTarget.current,
+    zhConversionIgnoredLanguages:
+        _settings.zhConversionIgnoredLanguages.current,
+    translationAlignmentThreshold:
+        _settings.translationAlignmentThreshold.current,
+  );
 
   LyricsResult get lyricsResult {
-    if (!_richSyncEnabled.current && _lyricsResult.isRichSync) {
+    if (!_settings.richSyncEnabled.current && _lyricsResult.isRichSync) {
       return _lyricsResult.copyWith(
         isRichSync: false,
         lyrics: lyrics, // Uses the getter above which strips inline parts
@@ -503,60 +131,64 @@ class LyricsProvider with ChangeNotifier {
   }
 
   LyricsResult? get translationResult =>
-      _translationEnabled.current ? _translationResult : null;
+      _settings.translationEnabled.current ? _translationResult : null;
 
   Duration get currentPosition => _currentPosition;
-  Duration get globalOffset => Duration(milliseconds: _globalOffsetMs.current);
+  Duration get globalOffset =>
+      Duration(milliseconds: _settings.globalOffsetMs.current);
   Duration get trackOffset => _trackOffset;
   int get currentIndex => _currentIndex;
 
   // Setting getters
-  Setting<bool> get cacheEnabled => _cacheEnabled;
-  Setting<int> get linesBefore => _linesBefore;
-  Setting<int> get landscapeLeadingSpace => _landscapeLeadingSpace;
-  Setting<int> get richSyncThresholdMs => _richSyncThresholdMs;
-  Setting<bool> get annotationEnabled => _annotationEnabled;
-  Setting<int> get annotationBias => _annotationBias;
-  Setting<String> get zhConversionTarget => _zhConversionTarget;
+  Setting<bool> get cacheEnabled => _settings.cacheEnabled;
+  Setting<int> get linesBefore => _settings.linesBefore;
+  Setting<int> get landscapeLeadingSpace => _settings.landscapeLeadingSpace;
+  Setting<int> get richSyncThresholdMs => _settings.richSyncThresholdMs;
+  Setting<bool> get annotationEnabled => _settings.annotationEnabled;
+  Setting<int> get annotationBias => _settings.annotationBias;
+  Setting<String> get zhConversionTarget => _settings.zhConversionTarget;
   Setting<List<String>> get zhConversionIgnoredLanguages =>
-      _zhConversionIgnoredLanguages;
-  Setting<int> get scrollAutoResumeDelay => _scrollAutoResumeDelay;
-  Setting<bool> get blurEnabled => _blurEnabled;
-  Setting<bool> get richSyncEnabled => _richSyncEnabled;
+      _settings.zhConversionIgnoredLanguages;
+  Setting<int> get scrollAutoResumeDelay => _settings.scrollAutoResumeDelay;
+  Setting<bool> get blurEnabled => _settings.blurEnabled;
+  Setting<bool> get richSyncEnabled => _settings.richSyncEnabled;
   Setting<List<LyricProviderType>> get trimMetadataProviders =>
-      _trimMetadataProviders;
-  Setting<double> get fontSize => _fontSize;
-  Setting<double> get inactiveScale => _inactiveScale;
-  Setting<int> get globalOffsetSetting => _globalOffsetMs;
+      _settings.trimMetadataProviders;
+  Setting<double> get fontSize => _settings.fontSize;
+  Setting<double> get inactiveScale => _settings.inactiveScale;
+  Setting<int> get globalOffsetSetting => _settings.globalOffsetMs;
 
-  Setting<bool> get translationEnabled => _translationEnabled;
-  Setting<bool> get translationHighlightOnly => _translationHighlightOnly;
+  Setting<bool> get translationEnabled => _settings.translationEnabled;
+  Setting<bool> get translationHighlightOnly =>
+      _settings.translationHighlightOnly;
   Setting<List<String>> get translationTargetLanguages =>
-      _translationTargetLanguages;
+      _settings.translationTargetLanguages;
   Setting<List<String>> get translationIgnoredLanguages =>
-      _translationIgnoredLanguages;
-  Setting<int> get translationBias => _translationBias;
+      _settings.translationIgnoredLanguages;
+  Setting<int> get translationBias => _settings.translationBias;
   Setting<int> get translationAlignmentThreshold =>
-      _translationAlignmentThreshold;
+      _settings.translationAlignmentThreshold;
   Setting<int> get translationCoverageThreshold =>
-      _translationCoverageThreshold;
-  Setting<String> get llmApiEndpoint => _llmApiEndpoint;
-  Setting<String> get llmApiKey => _llmApiKey;
-  Setting<String> get llmModel => _llmModel;
-  Setting<String> get llmReasoningEffort => _llmReasoningEffort;
-  Setting<int> get llmTimeToFirstTokenSeconds => _llmTimeToFirstTokenSeconds;
-  Setting<double> get llmMinTokensPerSecond => _llmMinTokensPerSecond;
-  Setting<bool> get keepScreenOn => _keepScreenOn;
-  Setting<bool> get backgroundMotionEnabled => _backgroundMotionEnabled;
+      _settings.translationCoverageThreshold;
+  Setting<String> get llmApiEndpoint => _settings.llmApiEndpoint;
+  Setting<String> get llmApiKey => _settings.llmApiKey;
+  Setting<String> get llmModel => _settings.llmModel;
+  Setting<String> get llmReasoningEffort => _settings.llmReasoningEffort;
+  Setting<int> get llmTimeToFirstTokenSeconds =>
+      _settings.llmTimeToFirstTokenSeconds;
+  Setting<double> get llmMinTokensPerSecond => _settings.llmMinTokensPerSecond;
+  Setting<bool> get keepScreenOn => _settings.keepScreenOn;
+  Setting<bool> get backgroundMotionEnabled =>
+      _settings.backgroundMotionEnabled;
   Setting<bool> get experimentalRichInlineFontSizeGlitching =>
-      _experimentalRichInlineFontSizeGlitching;
+      _settings.experimentalRichInlineFontSizeGlitching;
   Setting<bool> get experimentalAnnotationFontSizeGlitching =>
-      _experimentalAnnotationFontSizeGlitching;
-  Setting<bool> get trayEnabled => _trayEnabled;
-  Setting<bool> get hideToTrayOnClose => _hideToTrayOnClose;
-  Setting<String> get lyricsStreamPath => _lyricsStreamPath;
-  Setting<String> get translationStreamPath => _translationStreamPath;
-  Setting<int> get artworkMinSize => _artworkMinSize;
+      _settings.experimentalAnnotationFontSizeGlitching;
+  Setting<bool> get trayEnabled => _settings.trayEnabled;
+  Setting<bool> get hideToTrayOnClose => _settings.hideToTrayOnClose;
+  Setting<String> get lyricsStreamPath => _settings.lyricsStreamPath;
+  Setting<String> get translationStreamPath => _settings.translationStreamPath;
+  Setting<int> get artworkMinSize => _settings.artworkMinSize;
 
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
@@ -618,9 +250,7 @@ class LyricsProvider with ChangeNotifier {
 
   void _clearTranslationState({bool clearCandidates = true}) {
     _translationResult = null;
-    _cachedAlignedLyrics = null;
-    _lastTranslationResultForAlignment = null;
-    _lastRichSyncEnabledForAlignment = null;
+    _display.invalidateAlignment();
     if (clearCandidates) {
       _translationCandidates = [];
     }
@@ -659,7 +289,7 @@ class LyricsProvider with ChangeNotifier {
   }
 
   bool _canAcceptTranslationResult(MediaMetadata metadata, int requestVersion) {
-    return _translationEnabled.current &&
+    return _settings.translationEnabled.current &&
         requestVersion == _translationRequestVersion &&
         metadata.isSameTrack(_currentMetadata);
   }
@@ -703,7 +333,7 @@ class LyricsProvider with ChangeNotifier {
 
   bool _matchesTranslationTargetLanguage(String language) {
     return matchesTranslationTargetLanguage(
-      _translationTargetLanguages.current,
+      _settings.translationTargetLanguages.current,
       language,
     );
   }
@@ -735,8 +365,9 @@ class LyricsProvider with ChangeNotifier {
     return TranslationHelper.hasSufficientCoverage(
       currentLyrics: _lyricsResult.lyrics,
       rawTranslation: translation.rawTranslation,
-      coverageThreshold: _translationCoverageThreshold.current,
-      perLineSimilarityThreshold: _translationAlignmentThreshold.current,
+      coverageThreshold: _settings.translationCoverageThreshold.current,
+      perLineSimilarityThreshold:
+          _settings.translationAlignmentThreshold.current,
     );
   }
 
@@ -757,8 +388,9 @@ class LyricsProvider with ChangeNotifier {
     return !TranslationHelper.hasSufficientCoverage(
       currentLyrics: lyricsResult.lyrics,
       rawTranslation: translation.rawTranslation,
-      coverageThreshold: _translationCoverageThreshold.current,
-      perLineSimilarityThreshold: _translationAlignmentThreshold.current,
+      coverageThreshold: _settings.translationCoverageThreshold.current,
+      perLineSimilarityThreshold:
+          _settings.translationAlignmentThreshold.current,
     );
   }
 
@@ -847,7 +479,7 @@ class LyricsProvider with ChangeNotifier {
   ) {
     if (!metadata.isSameTrack(_currentMetadata)) return;
     if (requestVersion != _translationRequestVersion &&
-        _translationEnabled.current) {
+        _settings.translationEnabled.current) {
       return;
     }
     if (_setFetchingState(false)) {
@@ -894,72 +526,72 @@ class LyricsProvider with ChangeNotifier {
 
   void setCacheEnabled(bool enabled) {
     _setSettingValue(
-      currentSetting: _cacheEnabled,
+      currentSetting: _settings.cacheEnabled,
       value: enabled,
-      assign: (value) => _cacheEnabled = value,
+      assign: (value) => _settings.cacheEnabled = value,
       persist: _settingsService.setCacheEnabled,
     );
   }
 
   void setLinesBefore(int lines) {
     _setSettingValue(
-      currentSetting: _linesBefore,
+      currentSetting: _settings.linesBefore,
       value: lines,
-      assign: (value) => _linesBefore = value,
+      assign: (value) => _settings.linesBefore = value,
       persist: _settingsService.setLinesBefore,
     );
   }
 
   void setLandscapeLeadingSpace(int percent) {
     _setSettingValue(
-      currentSetting: _landscapeLeadingSpace,
+      currentSetting: _settings.landscapeLeadingSpace,
       value: percent,
-      assign: (value) => _landscapeLeadingSpace = value,
+      assign: (value) => _settings.landscapeLeadingSpace = value,
       persist: _settingsService.setLandscapeLeadingSpace,
     );
   }
 
   void setRichSyncThresholdMs(int ms) {
     _setSettingValue(
-      currentSetting: _richSyncThresholdMs,
+      currentSetting: _settings.richSyncThresholdMs,
       value: ms,
-      assign: (value) => _richSyncThresholdMs = value,
+      assign: (value) => _settings.richSyncThresholdMs = value,
       persist: _settingsService.setRichSyncThresholdMs,
     );
   }
 
   void setAnnotationEnabled(bool enabled) {
     _setSettingValue(
-      currentSetting: _annotationEnabled,
+      currentSetting: _settings.annotationEnabled,
       value: enabled,
-      assign: (value) => _annotationEnabled = value,
+      assign: (value) => _settings.annotationEnabled = value,
       persist: _settingsService.setAnnotationEnabled,
     );
   }
 
   void setAnnotationBias(int ms) {
     _setSettingValue(
-      currentSetting: _annotationBias,
+      currentSetting: _settings.annotationBias,
       value: ms,
-      assign: (value) => _annotationBias = value,
+      assign: (value) => _settings.annotationBias = value,
       persist: _settingsService.setAnnotationBias,
     );
   }
 
   void setZhConversionTarget(String target) {
     _setSettingValue(
-      currentSetting: _zhConversionTarget,
+      currentSetting: _settings.zhConversionTarget,
       value: target,
-      assign: (value) => _zhConversionTarget = value,
+      assign: (value) => _settings.zhConversionTarget = value,
       persist: _settingsService.setZhConversionTarget,
     );
   }
 
   void setZhConversionIgnoredLanguages(List<String> languages) {
     _setSettingValue(
-      currentSetting: _zhConversionIgnoredLanguages,
+      currentSetting: _settings.zhConversionIgnoredLanguages,
       value: languages,
-      assign: (value) => _zhConversionIgnoredLanguages = value,
+      assign: (value) => _settings.zhConversionIgnoredLanguages = value,
       persist: _settingsService.setZhConversionIgnoredLanguages,
       equals: listEquals,
     );
@@ -967,27 +599,27 @@ class LyricsProvider with ChangeNotifier {
 
   void setScrollAutoResumeDelay(int seconds) {
     _setSettingValue(
-      currentSetting: _scrollAutoResumeDelay,
+      currentSetting: _settings.scrollAutoResumeDelay,
       value: seconds,
-      assign: (value) => _scrollAutoResumeDelay = value,
+      assign: (value) => _settings.scrollAutoResumeDelay = value,
       persist: _settingsService.setScrollAutoResumeDelay,
     );
   }
 
   void setBlurEnabled(bool enabled) {
     _setSettingValue(
-      currentSetting: _blurEnabled,
+      currentSetting: _settings.blurEnabled,
       value: enabled,
-      assign: (value) => _blurEnabled = value,
+      assign: (value) => _settings.blurEnabled = value,
       persist: _settingsService.setBlurEnabled,
     );
   }
 
   void setRichSyncEnabled(bool enabled) {
     final changed = _setSettingValue(
-      currentSetting: _richSyncEnabled,
+      currentSetting: _settings.richSyncEnabled,
       value: enabled,
-      assign: (value) => _richSyncEnabled = value,
+      assign: (value) => _settings.richSyncEnabled = value,
       persist: _settingsService.setRichSyncEnabled,
     );
     if (!changed) return;
@@ -999,41 +631,41 @@ class LyricsProvider with ChangeNotifier {
 
   void setTrimMetadataProviders(List<LyricProviderType> providers) {
     _setSettingValue(
-      currentSetting: _trimMetadataProviders,
+      currentSetting: _settings.trimMetadataProviders,
       value: providers,
-      assign: (value) => _trimMetadataProviders = value,
+      assign: (value) => _settings.trimMetadataProviders = value,
       persist: _settingsService.setTrimMetadataProviders,
       equals: listEquals,
     );
   }
 
   bool shouldTrimMetadata(LyricProviderType provider) {
-    return _trimMetadataProviders.current.contains(provider);
+    return _settings.trimMetadataProviders.current.contains(provider);
   }
 
   void setFontSize(double size) {
     _setSettingValue(
-      currentSetting: _fontSize,
+      currentSetting: _settings.fontSize,
       value: size,
-      assign: (value) => _fontSize = value,
+      assign: (value) => _settings.fontSize = value,
       persist: _settingsService.setFontSize,
     );
   }
 
   void setInactiveScale(double scale) {
     _setSettingValue(
-      currentSetting: _inactiveScale,
+      currentSetting: _settings.inactiveScale,
       value: scale,
-      assign: (value) => _inactiveScale = value,
+      assign: (value) => _settings.inactiveScale = value,
       persist: _settingsService.setInactiveScale,
     );
   }
 
   void setTranslationTargetLanguages(List<String> languages) {
     final changed = _setSettingValue(
-      currentSetting: _translationTargetLanguages,
+      currentSetting: _settings.translationTargetLanguages,
       value: languages,
-      assign: (value) => _translationTargetLanguages = value,
+      assign: (value) => _settings.translationTargetLanguages = value,
       persist: _settingsService.setTranslationTargetLanguages,
       equals: listEquals,
     );
@@ -1047,9 +679,9 @@ class LyricsProvider with ChangeNotifier {
 
   void setTranslationIgnoredLanguages(List<String> languages) {
     final changed = _setSettingValue(
-      currentSetting: _translationIgnoredLanguages,
+      currentSetting: _settings.translationIgnoredLanguages,
       value: languages,
-      assign: (value) => _translationIgnoredLanguages = value,
+      assign: (value) => _settings.translationIgnoredLanguages = value,
       persist: _settingsService.setTranslationIgnoredLanguages,
       equals: listEquals,
     );
@@ -1063,43 +695,43 @@ class LyricsProvider with ChangeNotifier {
 
   void setTranslationBias(int bias) {
     _setSettingValue(
-      currentSetting: _translationBias,
+      currentSetting: _settings.translationBias,
       value: bias,
-      assign: (value) => _translationBias = value,
+      assign: (value) => _settings.translationBias = value,
       persist: _settingsService.setTranslationBias,
     );
   }
 
   void setTranslationAlignmentThreshold(int threshold) {
     final changed = _setSettingValue(
-      currentSetting: _translationAlignmentThreshold,
+      currentSetting: _settings.translationAlignmentThreshold,
       value: threshold,
-      assign: (value) => _translationAlignmentThreshold = value,
+      assign: (value) => _settings.translationAlignmentThreshold = value,
       persist: _settingsService.setTranslationAlignmentThreshold,
     );
     if (!changed) return;
 
     // Changing the threshold requires realigning lyrics
-    _lastTranslationResultForAlignment = null;
+    _display.invalidateAlignment();
     notifyListeners();
   }
 
   void setTranslationCoverageThreshold(int threshold) {
     _setSettingValue(
-      currentSetting: _translationCoverageThreshold,
+      currentSetting: _settings.translationCoverageThreshold,
       value: threshold,
-      assign: (value) => _translationCoverageThreshold = value,
+      assign: (value) => _settings.translationCoverageThreshold = value,
       persist: _settingsService.setTranslationCoverageThreshold,
     );
   }
 
   void setTranslationEnabled(bool enabled) {
-    if (_translationEnabled.current == enabled) return;
-    final wasEnabled = _translationEnabled.current;
-    _translationEnabled = Setting(
+    if (_settings.translationEnabled.current == enabled) return;
+    final wasEnabled = _settings.translationEnabled.current;
+    _settings.translationEnabled = Setting(
       current: enabled,
-      defaultValue: _translationEnabled.defaultValue,
-      changed: enabled != _translationEnabled.defaultValue,
+      defaultValue: _settings.translationEnabled.defaultValue,
+      changed: enabled != _settings.translationEnabled.defaultValue,
     );
     _settingsService.setTranslationEnabled(enabled);
     if (!enabled) {
@@ -1119,144 +751,146 @@ class LyricsProvider with ChangeNotifier {
 
   void setTranslationHighlightOnly(bool highlightOnly) {
     _setSettingValue(
-      currentSetting: _translationHighlightOnly,
+      currentSetting: _settings.translationHighlightOnly,
       value: highlightOnly,
-      assign: (value) => _translationHighlightOnly = value,
+      assign: (value) => _settings.translationHighlightOnly = value,
       persist: _settingsService.setTranslationHighlightOnly,
     );
   }
 
   void setLlmApiEndpoint(String endpoint) {
     _setSettingValue(
-      currentSetting: _llmApiEndpoint,
+      currentSetting: _settings.llmApiEndpoint,
       value: endpoint,
-      assign: (value) => _llmApiEndpoint = value,
+      assign: (value) => _settings.llmApiEndpoint = value,
       persist: _settingsService.setLlmApiEndpoint,
     );
   }
 
   void setLlmApiKey(String apiKey) {
     _setSettingValue(
-      currentSetting: _llmApiKey,
+      currentSetting: _settings.llmApiKey,
       value: apiKey,
-      assign: (value) => _llmApiKey = value,
+      assign: (value) => _settings.llmApiKey = value,
       persist: _settingsService.setLlmApiKey,
     );
   }
 
   void setLlmModel(String model) {
     _setSettingValue(
-      currentSetting: _llmModel,
+      currentSetting: _settings.llmModel,
       value: model,
-      assign: (value) => _llmModel = value,
+      assign: (value) => _settings.llmModel = value,
       persist: _settingsService.setLlmModel,
     );
   }
 
   void setLlmReasoningEffort(String effort) {
     _setSettingValue(
-      currentSetting: _llmReasoningEffort,
+      currentSetting: _settings.llmReasoningEffort,
       value: effort,
-      assign: (value) => _llmReasoningEffort = value,
+      assign: (value) => _settings.llmReasoningEffort = value,
       persist: _settingsService.setLlmReasoningEffort,
     );
   }
 
   void setLlmTimeToFirstTokenSeconds(int seconds) {
     _setSettingValue(
-      currentSetting: _llmTimeToFirstTokenSeconds,
+      currentSetting: _settings.llmTimeToFirstTokenSeconds,
       value: seconds,
-      assign: (value) => _llmTimeToFirstTokenSeconds = value,
+      assign: (value) => _settings.llmTimeToFirstTokenSeconds = value,
       persist: _settingsService.setLlmTimeToFirstTokenSeconds,
     );
   }
 
   void setLlmMinTokensPerSecond(double tokensPerSecond) {
     _setSettingValue(
-      currentSetting: _llmMinTokensPerSecond,
+      currentSetting: _settings.llmMinTokensPerSecond,
       value: tokensPerSecond,
-      assign: (value) => _llmMinTokensPerSecond = value,
+      assign: (value) => _settings.llmMinTokensPerSecond = value,
       persist: _settingsService.setLlmMinTokensPerSecond,
     );
   }
 
   void setKeepScreenOn(bool enabled) {
     _setSettingValue(
-      currentSetting: _keepScreenOn,
+      currentSetting: _settings.keepScreenOn,
       value: enabled,
-      assign: (value) => _keepScreenOn = value,
+      assign: (value) => _settings.keepScreenOn = value,
       persist: _settingsService.setKeepScreenOn,
     );
   }
 
   void setBackgroundMotionEnabled(bool enabled) {
     _setSettingValue(
-      currentSetting: _backgroundMotionEnabled,
+      currentSetting: _settings.backgroundMotionEnabled,
       value: enabled,
-      assign: (value) => _backgroundMotionEnabled = value,
+      assign: (value) => _settings.backgroundMotionEnabled = value,
       persist: _settingsService.setBackgroundMotionEnabled,
     );
   }
 
   void setExperimentalRichInlineFontSizeGlitching(bool enabled) {
     _setSettingValue(
-      currentSetting: _experimentalRichInlineFontSizeGlitching,
+      currentSetting: _settings.experimentalRichInlineFontSizeGlitching,
       value: enabled,
-      assign: (value) => _experimentalRichInlineFontSizeGlitching = value,
+      assign: (value) =>
+          _settings.experimentalRichInlineFontSizeGlitching = value,
       persist: _settingsService.setExperimentalRichInlineFontSizeGlitching,
     );
   }
 
   void setExperimentalAnnotationFontSizeGlitching(bool enabled) {
     _setSettingValue(
-      currentSetting: _experimentalAnnotationFontSizeGlitching,
+      currentSetting: _settings.experimentalAnnotationFontSizeGlitching,
       value: enabled,
-      assign: (value) => _experimentalAnnotationFontSizeGlitching = value,
+      assign: (value) =>
+          _settings.experimentalAnnotationFontSizeGlitching = value,
       persist: _settingsService.setExperimentalAnnotationFontSizeGlitching,
     );
   }
 
   void setTrayEnabled(bool enabled) {
     _setSettingValue(
-      currentSetting: _trayEnabled,
+      currentSetting: _settings.trayEnabled,
       value: enabled,
-      assign: (value) => _trayEnabled = value,
+      assign: (value) => _settings.trayEnabled = value,
       persist: _settingsService.setTrayEnabled,
     );
   }
 
   void setHideToTrayOnClose(bool enabled) {
     _setSettingValue(
-      currentSetting: _hideToTrayOnClose,
+      currentSetting: _settings.hideToTrayOnClose,
       value: enabled,
-      assign: (value) => _hideToTrayOnClose = value,
+      assign: (value) => _settings.hideToTrayOnClose = value,
       persist: _settingsService.setHideToTrayOnClose,
     );
   }
 
   void setLyricsStreamPath(String value) {
     _setSettingValue(
-      currentSetting: _lyricsStreamPath,
+      currentSetting: _settings.lyricsStreamPath,
       value: value,
-      assign: (v) => _lyricsStreamPath = v,
+      assign: (v) => _settings.lyricsStreamPath = v,
       persist: _settingsService.setLyricsStreamPath,
     );
   }
 
   void setTranslationStreamPath(String value) {
     _setSettingValue(
-      currentSetting: _translationStreamPath,
+      currentSetting: _settings.translationStreamPath,
       value: value,
-      assign: (v) => _translationStreamPath = v,
+      assign: (v) => _settings.translationStreamPath = v,
       persist: _settingsService.setTranslationStreamPath,
     );
   }
 
   void setArtworkMinSize(int size) {
     _setSettingValue(
-      currentSetting: _artworkMinSize,
+      currentSetting: _settings.artworkMinSize,
       value: size,
-      assign: (v) => _artworkMinSize = v,
+      assign: (v) => _settings.artworkMinSize = v,
       persist: _settingsService.setArtworkMinSize,
     );
   }
@@ -1264,9 +898,9 @@ class LyricsProvider with ChangeNotifier {
   void setGlobalOffset(Duration offset) {
     final ms = offset.inMilliseconds;
     final changed = _setSettingValue(
-      currentSetting: _globalOffsetMs,
+      currentSetting: _settings.globalOffsetMs,
       value: ms,
-      assign: (value) => _globalOffsetMs = value,
+      assign: (value) => _settings.globalOffsetMs = value,
       persist: _settingsService.setGlobalOffset,
     );
     if (!changed) return;
@@ -1465,7 +1099,7 @@ class LyricsProvider with ChangeNotifier {
   ) async {
     await Future.wait(
       [
-        ..._translationTargetLanguages.current,
+        ..._settings.translationTargetLanguages.current,
         LyricsCacheService.manualTranslationSkipLanguage,
       ].map(
         (lang) => _cacheService.clearTranslationCache(
@@ -1489,7 +1123,7 @@ class LyricsProvider with ChangeNotifier {
       reading,
     );
 
-    if (!_cacheEnabled.current) return;
+    if (!_settings.cacheEnabled.current) return;
     final metadata = _currentMetadata;
     if (metadata == null) return;
     final cacheId = _cacheService.generateCacheId(
@@ -1529,7 +1163,7 @@ class LyricsProvider with ChangeNotifier {
     _readingResult = reading;
     notifyListeners();
 
-    if (!_cacheEnabled.current) return;
+    if (!_settings.cacheEnabled.current) return;
     final cacheId = _cacheService.generateCacheId(
       metadata.title,
       metadata.artist,
@@ -1548,7 +1182,7 @@ class LyricsProvider with ChangeNotifier {
   Future<void> markCurrentTranslationAsSkipped() async {
     final metadata = _currentMetadata;
     if (metadata == null) return;
-    if (!_translationEnabled.current) return;
+    if (!_settings.translationEnabled.current) return;
 
     _invalidateTranslationRequests();
     final skipped = LyricsResult(
@@ -1560,10 +1194,10 @@ class LyricsProvider with ChangeNotifier {
       sourceProvider: _lyricsResult.sourceProvider,
     );
     _translationResult = skipped;
-    _cachedAlignedLyrics = null;
+    _display.invalidateAlignment();
     notifyListeners();
 
-    if (_cacheEnabled.current) {
+    if (_settings.cacheEnabled.current) {
       final cacheId = _cacheService.generateTranslationCacheId(
         metadata.title,
         metadata.artist,
@@ -1596,7 +1230,7 @@ class LyricsProvider with ChangeNotifier {
     _updateCurrentIndex();
     notifyListeners();
 
-    if (_cacheEnabled.current) {
+    if (_settings.cacheEnabled.current) {
       await _cacheService.cacheLyrics(
         metadata.title,
         metadata.artist,
@@ -1604,193 +1238,6 @@ class LyricsProvider with ChangeNotifier {
         metadata.duration.inSeconds,
         result,
       );
-    }
-  }
-
-  Future<void> _fetchTranslationsForCurrentTrack(
-    MediaMetadata metadata, {
-    bool showLoadingState = false,
-    bool clearCachedTranslations = false,
-    bool clearTranslationState = true,
-    bool skipCacheLookup = false,
-    Map<LyricProviderType, Set<String>>? refetchTargets,
-  }) async {
-    if (!_translationEnabled.current || _lyricsResult.lyrics.isEmpty) return;
-
-    if (clearCachedTranslations) {
-      await _clearTranslationCacheForCurrentTrack(_currentMetadata!);
-    }
-
-    final requestVersion = _beginTranslationRequest();
-    if (clearTranslationState) {
-      _clearTranslationState();
-    }
-
-    if (showLoadingState) {
-      _beginTranslationRefreshState();
-    }
-
-    try {
-      final transStream = _lyricsService.fetchTranslation(
-        bestResult: _lyricsResult,
-        title: metadata.title,
-        artist: metadata.artist,
-        album: metadata.album,
-        durationSeconds: metadata.duration.inSeconds,
-        refetchTargets: refetchTargets,
-        skipCacheLookup: skipCacheLookup,
-        scope: _translationScope,
-        isCancelled: () =>
-            !_canAcceptTranslationResult(metadata, requestVersion),
-        onTranslationCandidate: (trans) {
-          if (!_canAcceptTranslationResult(metadata, requestVersion)) return;
-          if (_appendTranslationCandidateIfNeeded(trans)) {
-            notifyListeners();
-          }
-        },
-      );
-
-      await for (var transResult in transStream) {
-        if (!_canAcceptTranslationResult(metadata, requestVersion)) return;
-        _translationResult = transResult;
-        _cachedAlignedLyrics = null;
-        _updateCurrentIndex();
-        notifyListeners();
-      }
-    } catch (e) {
-      if (!_canAcceptTranslationResult(metadata, requestVersion)) return;
-      if (_setLoadingStatus('Error: $e')) {
-        notifyListeners();
-      }
-    } finally {
-      if (showLoadingState) {
-        _finishTranslationRefreshState(metadata, requestVersion);
-      }
-    }
-  }
-
-  Future<void> _fetchLyrics(
-    MediaMetadata metadata, {
-    bool skipFetchTranslations = false,
-  }) async {
-    final requestVersion = _beginLyricsRequest();
-    _beginLyricsFetchState();
-
-    try {
-      final stream = _lyricsService.fetchLyrics(
-        title: metadata.title,
-        artist: metadata.artist,
-        album: metadata.album,
-        durationSeconds: metadata.duration.inSeconds,
-        onStatusUpdate: (status) {
-          if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
-          if (_setLoadingStatus(status)) {
-            notifyListeners();
-          }
-        },
-        onFetchStatusUpdate: (status) {
-          if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
-          if (_setFetchingState(status)) {
-            notifyListeners();
-          }
-        },
-        scope: _lyricsScope,
-        isCancelled: () => !_canAcceptLyricsResult(metadata, requestVersion),
-        trimMetadataProviders: _trimMetadataProviders.current,
-        richSyncEnabled: _richSyncEnabled.current,
-        onTranslation: (trans) {
-          if (!_canAcceptLyricsResult(metadata, requestVersion) ||
-              !_translationEnabled.current ||
-              trans.rawTranslation!.isEmpty ||
-              trans.language == null) {
-            return;
-          }
-
-          if (!_matchesTranslationTargetLanguage(trans.language!)) return;
-          _appendTranslationCandidateIfNeeded(trans);
-
-          if (!_translationMatchesCurrentLyricsProvider(_translationResult)) {
-            _translationResult = trans;
-            notifyListeners();
-            if (_cacheEnabled.current &&
-                (trans.translation || trans.source == 'SKIPPED')) {
-              final cacheId = _cacheService.generateTranslationCacheId(
-                metadata.title,
-                metadata.artist,
-                trans.language!,
-              );
-              _cacheService.cacheTranslation(cacheId, trans).then((_) {
-                AppLogger.debug(
-                  'Cached translation from ${trans.source} for ${metadata.title} - ${metadata.artist.join(', ')}',
-                );
-              });
-            }
-          }
-        },
-        onCandidate: (candidate) {
-          if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
-          if (_appendCandidateIfNeeded(candidate)) {
-            notifyListeners();
-          }
-        },
-        onPauseForCandidates: () async {
-          if (!_canAcceptLyricsResult(metadata, requestVersion)) return false;
-          if (_isCandidateSheetOpen) {
-            return true;
-          }
-          // If the sheet was opened before we reached this point, skip waiting.
-          if (_candidateSheetOpenedEarly) {
-            _candidateSheetOpenedEarly = false;
-            return true;
-          }
-          _candidatePauseCompleter = Completer<bool>();
-          _isPausedForCandidates = true;
-          notifyListeners();
-          return _candidatePauseCompleter!.future;
-        },
-      );
-
-      await for (var result in stream) {
-        if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
-
-        result = _prepareLyricsResultForDisplay(result);
-
-        _lyricsResult = result;
-        _applyReadingFromResult(result);
-        if (!_translationMatchesCurrentLyricsProvider(_translationResult)) {
-          _clearTranslationState();
-        }
-        if (result.artworkUrls != null && result.artworkUrls!.isNotEmpty) {
-          final newUrls = result.artworkUrls!
-              .where((url) => !artworkUrlsNotifier.value.contains(url))
-              .toList();
-          if (newUrls.isNotEmpty) {
-            artworkUrlsNotifier.value = List.from(artworkUrlsNotifier.value)
-              ..addAll(newUrls);
-          }
-        }
-
-        if (result.lyrics.isNotEmpty || result.isPureMusic) {
-          _setLoadingState(false);
-        }
-
-        _updateCurrentIndex();
-        notifyListeners();
-      }
-
-      if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
-
-      if (_translationEnabled.current &&
-          !skipFetchTranslations &&
-          _lyricsResult.lyrics.isNotEmpty &&
-          !_translationMatchesCurrentLyricsProvider(_translationResult)) {
-        await _fetchTranslationsForCurrentTrack(metadata);
-      }
-    } catch (e) {
-      if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
-      _setLoadingStatus('Error: $e');
-    } finally {
-      _finishLyricsFetchState(metadata, requestVersion);
     }
   }
 
@@ -1849,11 +1296,11 @@ class LyricsProvider with ChangeNotifier {
 
     _lyricsResult = result;
     _translationRequestVersion++;
-    _cachedAlignedLyrics = null;
+    _display.invalidateAlignment();
     _updateCurrentIndex();
     notifyListeners();
 
-    if (_cacheEnabled.current) {
+    if (_settings.cacheEnabled.current) {
       await _cacheService.cacheLyrics(
         _currentMetadata!.title,
         _currentMetadata!.artist,
@@ -1866,7 +1313,7 @@ class LyricsProvider with ChangeNotifier {
       );
     }
 
-    if (_translationEnabled.current &&
+    if (_settings.translationEnabled.current &&
         result.lyrics.isNotEmpty &&
         invalidatedTranslationTargets.isNotEmpty) {
       unawaited(
@@ -1910,11 +1357,11 @@ class LyricsProvider with ChangeNotifier {
     );
     _translationRequestVersion++;
     _translationResult = taggedCandidate;
-    _cachedAlignedLyrics = null; // Invalidate alignment cache.
+    _display.invalidateAlignment(); // Invalidate alignment cache.
     _updateCurrentIndex();
     notifyListeners();
 
-    if (_cacheEnabled.current && taggedCandidate.language != null) {
+    if (_settings.cacheEnabled.current && taggedCandidate.language != null) {
       final targetLanguage = taggedCandidate.language!;
       final cacheId = _cacheService.generateTranslationCacheId(
         _currentMetadata!.title,
@@ -1946,7 +1393,7 @@ class LyricsProvider with ChangeNotifier {
   Future<void> refetchTranslations() async {
     final metadata = _currentMetadata;
     if (metadata == null) return;
-    if (!_translationEnabled.current) return;
+    if (!_settings.translationEnabled.current) return;
     if (_lyricsResult.lyrics.isEmpty) return;
     await _fetchTranslationsForCurrentTrack(
       metadata,
@@ -2006,6 +1453,8 @@ class LyricsProvider with ChangeNotifier {
   }
 
   bool _disposed = false;
+
+  void _notify() => notifyListeners();
 
   bool get cacheDatabasePromptPending =>
       LyricsCacheService.promptPending && !LyricsCacheService.rebuildDeclined;

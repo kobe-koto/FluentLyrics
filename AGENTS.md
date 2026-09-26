@@ -17,8 +17,11 @@ Do not widen a task into unrelated cleanup. The tree is large and some files (`l
 | Path | Role |
 | --- | --- |
 | `lib/main.dart` | Bootstrap: HTTP user agent, locale, desktop tray, lyrics stream writer |
-| `lib/providers/lyrics_provider.dart` | App state. Media changes, fetch, cache, display transforms |
-| `lib/providers/lyrics_provider_settings.dart` | In-memory settings snapshot used by the provider |
+| `lib/providers/lyrics_provider.dart` | App state. Media changes, cache, candidate selection |
+| `lib/providers/lyrics_provider_fetch.dart` | `part` of the provider. Lyrics and translation fetch |
+| `lib/providers/lyrics_display_pipeline.dart` | Memoized display transforms |
+| `lib/providers/lyrics_provider_settings.dart` | In-memory mirror of `PrefSettings.mirrored` |
+| `lib/services/pref_setting.dart` | Persisted setting table: key, default, read/write |
 | `lib/services/lyrics_service.dart` | Provider priority walk, winner selection, translation fetch |
 | `lib/services/lyrics_source_registry.dart` | `LyricsSource` contract and per-provider adapters |
 | `lib/services/providers/` | Network and cache implementations |
@@ -61,10 +64,10 @@ Known-good local SDK is Flutter 3.47.4 / Dart 3.13 (constraint in `pubspec.yaml`
 
 - User-visible copy goes through slang. Edit all three JSON files, then run `dart run slang`, and commit both the JSON and `lib/i18n/strings*.g.dart`. Read strings with the generated `t` variable (`import '../i18n/strings.g.dart'`). Brand names may stay untranslated. Do not hardcode new UI English in widgets.
 - Logs go through `AppLogger.debug`. It prints only in debug mode. Do not add `print`.
-- Persisted settings are a triple: a default in `AppDefaults`, a `SharedPreferences` key plus getter/setter on `SettingsService`, and a field on `LyricsProviderSettings` that `LyricsProvider` loads. UI reads the provider's `Setting<T>` (`current`, `defaultValue`, `changed`), not prefs directly.
+- Persisted settings start as a row in `PrefSettings` (`lib/services/pref_setting.dart`): key, default from `AppDefaults`, and read/write. Settings mirrored by the provider go in `PrefSettings.mirrored`; `LyricsProviderSettings.load` reads that list. Add a typed accessor there and a `SettingsService` one-line wrapper only if a caller still uses the named method. UI reads the provider's `Setting<T>` (`current`, `defaultValue`, `changed`), not prefs directly.
 - New settings UI belongs in `lib/widgets/screen/settings/`. `lib/screens/settings/` only wraps a section in `SettingsScaffold`. Keep both in sync when a destination already has a route.
 - A new lyrics provider needs all of: `LyricProviderType`, a service under `lib/services/providers/`, a `LyricsSource` in the registry factory, localized name/description keys, and a priority default only if it should be enabled out of the box. `llm` is a translation source, not a normal lyrics catalog.
-- Fetch orchestration stays in `LyricsService`. Ranking stays in `lib/services/winner_selector.dart`. Display transforms (Chinese conversion, reading annotations, rich-sync repair) stay on `LyricsProvider` or the matching `lib/utils/` helper. Do not fetch from widgets.
+- Fetch orchestration stays in `LyricsService`. Ranking stays in `lib/services/winner_selector.dart`. Provider fetch methods live in `lyrics_provider_fetch.dart`, a `part` of `lyrics_provider.dart`. Display transforms live in `LyricsDisplayPipeline`. Do not fetch from widgets.
 - Platform now-playing code is a `part` of `lib/services/media_service.dart`. Do not turn those files into separate libraries. Android and macOS share channel names `cc.koto.fluent_lyrics/media` and `cc.koto.fluent_lyrics/media_events`. Change both sides together.
 - Tests mirror `lib/` under `test/`. Inject fakes through constructors (`LyricsProvider`, `LyricsService`, `SettingsService` overrides). Widget tests must call `SharedPreferences.setMockInitialValues({})` and `LocaleSettings.setLocaleSync` before pumping `MyApp`.
 - Keep CMake flags in `hook/build.dart` and `tool/build_opencc.sh` aligned. OpenCC dictionaries are text (`OPENCC_DICT_FORMAT=text`), not `.ocd2`.

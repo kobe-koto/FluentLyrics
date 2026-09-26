@@ -76,7 +76,7 @@ There are widget, provider, service, and util tests under `test/`. CI does not r
 
 Patterns already in the tree:
 
-- Subclass `SettingsService` and override the getters a test needs. Return `Setting<T>`.
+- Subclass `SettingsService` and override the getters a test needs. Return `Setting<T>`. If the test constructs `LyricsProvider` and needs a non-default mirrored setting, also override `readSetting`; `LyricsProviderSettings.load` reads that table, not the named getters.
 - Pass fake `MediaService`, `LyricsService`, and `LyricsCacheService` into `LyricsProvider({...})`. The constructor starts polling, so fakes must implement `startPolling` and `addListener`.
 - `test/widget_test.dart` sets mock `SharedPreferences` and `LocaleSettings.setLocaleSync(AppLocale.en)` before pumping `MyApp`.
 - OpenCC tests in `test/services/opencc/` skip with `run tool/build_opencc.sh first` when `build/opencc/out` is missing. A green run that skipped those tests did not exercise conversion.
@@ -86,13 +86,13 @@ Prefer a focused test file over the full suite while iterating. Run `flutter tes
 ## Adding a setting
 
 1. Default in `lib/constants/app_defaults.dart`.
-2. Prefs key, getter, and setter on `lib/services/settings_service.dart`.
-3. Field on `LyricsProviderSettings`, loaded in `LyricsProvider._loadSettings`, exposed as a `Setting<T>` getter.
+2. A row in `PrefSettings` (`lib/services/pref_setting.dart`): key, default, and read/write. If the provider should mirror it, add that row to `PrefSettings.mirrored` and a typed accessor on `LyricsProviderSettings`.
+3. A one-line `SettingsService` wrapper only if a caller still uses the named getter or setter. Priority order and locale stay handwritten.
 4. Controls in the matching `lib/widgets/screen/settings/*_section.dart`.
 5. Strings in `en.i18n.json`, `zh_CN.i18n.json`, and `zh_TW.i18n.json`, then `dart run slang`.
 6. A unit test if the value changes fetch, cache, or display behavior.
 
-Do not invent a second default in the widget.
+Do not invent a second default in the widget. An empty translation-target list deletes the key. An empty `trimMetadataProviders` list reads back as the default.
 
 ## Adding a lyrics provider
 

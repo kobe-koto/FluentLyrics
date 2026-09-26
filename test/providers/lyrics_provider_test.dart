@@ -5,6 +5,8 @@ import 'package:fluent_lyrics/models/lyric_model.dart';
 import 'package:fluent_lyrics/models/lyric_provider_type.dart';
 import 'package:fluent_lyrics/models/setting.dart';
 import 'package:fluent_lyrics/providers/lyrics_provider.dart';
+import 'package:fluent_lyrics/services/lyrics_request_scope.dart';
+import 'package:fluent_lyrics/services/pref_setting.dart';
 import 'package:fluent_lyrics/services/lyrics_service.dart';
 import 'package:fluent_lyrics/services/media_service.dart';
 import 'package:fluent_lyrics/services/providers/lyrics_cache_service.dart';
@@ -72,6 +74,55 @@ class _FakeSettingsService extends SettingsService {
   List<String>? persistedTranslationIgnoredLanguages;
   final bool translationEnabled;
   final bool cacheEnabled;
+
+  @override
+  Future<Setting<T>> readSetting<T>(PrefSetting<T> spec) async {
+    final readers = <PrefSetting<dynamic>, Future<Setting<dynamic>> Function()>{
+      PrefSettings.cacheEnabled: getCacheEnabled,
+      PrefSettings.linesBefore: getLinesBefore,
+      PrefSettings.landscapeLeadingSpace: getLandscapeLeadingSpace,
+      PrefSettings.richSyncThresholdMs: getRichSyncThresholdMs,
+      PrefSettings.annotationEnabled: getAnnotationEnabled,
+      PrefSettings.annotationBias: getAnnotationBias,
+      PrefSettings.zhConversionTarget: getZhConversionTarget,
+      PrefSettings.zhConversionIgnoredLanguages:
+          getZhConversionIgnoredLanguages,
+      PrefSettings.globalOffsetMs: getGlobalOffset,
+      PrefSettings.scrollAutoResumeDelay: getScrollAutoResumeDelay,
+      PrefSettings.blurEnabled: getBlurEnabled,
+      PrefSettings.richSyncEnabled: getRichSyncEnabled,
+      PrefSettings.trimMetadataProviders: getTrimMetadataProviders,
+      PrefSettings.fontSize: getFontSize,
+      PrefSettings.inactiveScale: getInactiveScale,
+      PrefSettings.translationHighlightOnly: getTranslationHighlightOnly,
+      PrefSettings.translationEnabled: getTranslationEnabled,
+      PrefSettings.translationTargetLanguages: getTranslationTargetLanguages,
+      PrefSettings.translationIgnoredLanguages: getTranslationIgnoredLanguages,
+      PrefSettings.translationBias: getTranslationBias,
+      PrefSettings.translationAlignmentThreshold:
+          getTranslationAlignmentThreshold,
+      PrefSettings.translationCoverageThreshold:
+          getTranslationCoverageThreshold,
+      PrefSettings.llmApiEndpoint: getLlmApiEndpoint,
+      PrefSettings.llmApiKey: getLlmApiKey,
+      PrefSettings.llmModel: getLlmModel,
+      PrefSettings.llmReasoningEffort: getLlmReasoningEffort,
+      PrefSettings.keepScreenOn: getKeepScreenOn,
+      PrefSettings.backgroundMotionEnabled: getBackgroundMotionEnabled,
+      PrefSettings.experimentalRichInlineFontSizeGlitching:
+          getExperimentalRichInlineFontSizeGlitching,
+      PrefSettings.experimentalAnnotationFontSizeGlitching:
+          getExperimentalAnnotationFontSizeGlitching,
+      PrefSettings.trayEnabled: getTrayEnabled,
+      PrefSettings.hideToTrayOnClose: getHideToTrayOnClose,
+      PrefSettings.lyricsStreamPath: getLyricsStreamPath,
+      PrefSettings.translationStreamPath: getTranslationStreamPath,
+      PrefSettings.artworkMinSize: getArtworkMinSize,
+    };
+    final reader = readers[spec];
+    if (reader == null) return spec.initial;
+    return await reader() as Setting<T>;
+  }
 
   @override
   Future<Setting<List<LyricProviderType>>> getAllProvidersOrdered() async {
@@ -318,6 +369,7 @@ class _FakeLyricsService extends LyricsService {
     Function(String)? onStatusUpdate,
     Function(bool)? onFetchStatusUpdate,
     bool Function()? isCancelled,
+    LyricsRequestScope? scope,
     required List<LyricProviderType> trimMetadataProviders,
     required bool richSyncEnabled,
     Function(LyricsResult)? onTranslation,
@@ -352,6 +404,7 @@ class _FakeLyricsService extends LyricsService {
     required String album,
     required int durationSeconds,
     bool Function()? isCancelled,
+    LyricsRequestScope? scope,
     Map<LyricProviderType, Set<String>>? refetchTargets,
     bool skipCacheLookup = false,
     void Function(LyricsResult)? onTranslationCandidate,
@@ -425,6 +478,7 @@ class _StaleLyricsService extends LyricsService {
     Function(String)? onStatusUpdate,
     Function(bool)? onFetchStatusUpdate,
     bool Function()? isCancelled,
+    LyricsRequestScope? scope,
     required List<LyricProviderType> trimMetadataProviders,
     required bool richSyncEnabled,
     Function(LyricsResult)? onTranslation,
@@ -464,6 +518,7 @@ class _StaleTranslationLyricsService extends LyricsService {
     Function(String)? onStatusUpdate,
     Function(bool)? onFetchStatusUpdate,
     bool Function()? isCancelled,
+    LyricsRequestScope? scope,
     required List<LyricProviderType> trimMetadataProviders,
     required bool richSyncEnabled,
     Function(LyricsResult)? onTranslation,
@@ -482,6 +537,7 @@ class _StaleTranslationLyricsService extends LyricsService {
     required String album,
     required int durationSeconds,
     bool Function()? isCancelled,
+    LyricsRequestScope? scope,
     Map<LyricProviderType, Set<String>>? refetchTargets,
     bool skipCacheLookup = false,
     void Function(LyricsResult)? onTranslationCandidate,
@@ -528,6 +584,7 @@ class _PausedCandidateLyricsService extends LyricsService {
     Function(String)? onStatusUpdate,
     Function(bool)? onFetchStatusUpdate,
     bool Function()? isCancelled,
+    LyricsRequestScope? scope,
     required List<LyricProviderType> trimMetadataProviders,
     required bool richSyncEnabled,
     Function(LyricsResult)? onTranslation,
