@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'llm_stream_reader.dart';
 import '../../models/lyric_model.dart';
 import '../../models/general_translation_request_data.dart';
 import '../../utils/lrc_parser.dart';
@@ -132,28 +133,71 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
         pathSegments: [...baseURIParsed.pathSegments, 'chat', 'completions'],
       );
 
-      final response = await http.post(
-        requestURL,
-        headers: {
+      requestBody['stream'] = true;
+      final ttftSeconds =
+          (await _settingsService.getLlmTimeToFirstTokenSeconds()).current;
+      final minTokensPerSecond =
+          (await _settingsService.getLlmMinTokensPerSecond()).current;
+      final client = http.Client();
+      late final http.StreamedResponse response;
+      try {
+        final request = http.Request('POST', requestURL);
+        request.headers.addAll({
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $apiKey',
-        },
-        body: jsonEncode(requestBody),
+          'Accept': 'text/event-stream',
+        });
+        request.body = jsonEncode(requestBody);
+        response = await client.send(request);
+      } catch (e) {
+        client.close();
+        rethrow;
+      }
+
+      final contentType = response.headers['content-type'] ?? '';
+      final eventStream = contentType.contains('text/event-stream');
+      final pace = (
+        timeToFirstToken: ttftSeconds <= 0
+            ? null
+            : Duration(seconds: ttftSeconds),
+        minTokensPerSecond: minTokensPerSecond,
       );
+      late final String responseText;
+      try {
+        responseText = await collectLlmOutput(
+          response.stream,
+          eventStream: eventStream,
+          timeToFirstToken: pace.timeToFirstToken,
+          minTokensPerSecond: eventStream ? pace.minTokensPerSecond : 0,
+        );
+      } finally {
+        client.close();
+      }
       final int end = FlutterTimeline.now;
       final int requestElapsed = (end - start) ~/ 1000;
       AppLogger.debug('[LLM Translation] Request Elapsed: $requestElapsed ms');
 
       if (response.statusCode != 200) {
         AppLogger.debug(
-          '[LLM Translation] Failed: ${response.statusCode} ${response.body}',
+          '[LLM Translation] Failed: ${response.statusCode} $responseText',
         );
-        return LyricsResult.empty();
+        return LyricsResult.failure(
+          source: 'LLM Translation',
+          message: 'LLM HTTP ${response.statusCode}',
+          translation: true,
+          translationProvider: 'LLM Translation',
+        );
       }
 
-      var jsonResponse = jsonDecode(utf8.decode(response.bodyBytes));
-      String? content = jsonResponse['choices']?[0]?['message']?['content']
-          ?.trim();
+      String? content;
+      if (eventStream) {
+        content = responseText.trim();
+      } else {
+        final jsonResponse = jsonDecode(responseText);
+        content = jsonResponse['choices']?[0]?['message']?['content']
+            ?.toString()
+            .trim();
+      }
 
       // try strip out <thought></thought> block
       if (content != null) {
@@ -171,7 +215,12 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
       content = content?.trim();
 
       if (content == null || content.isEmpty) {
-        return LyricsResult.empty();
+        return LyricsResult.failure(
+          source: 'LLM Translation',
+          message: 'LLM returned an empty response',
+          translation: true,
+          translationProvider: 'LLM Translation',
+        );
       }
 
       // Handle SKIP response (case-insensitive and trimmed)
@@ -184,6 +233,7 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
         );
       }
       dynamic translatedLines;
+      dynamic jsonResponse;
       // try to decode raw as json directly
       try {
         jsonResponse = jsonDecode(content);
@@ -241,7 +291,12 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
         AppLogger.debug(
           '[LLM Translation] Error: Model produced malformed JSON. Expected Map<String, dynamic> or "SKIP", got $translatedLines',
         );
-        return LyricsResult.empty();
+        return LyricsResult.failure(
+          source: 'LLM Translation',
+          message: 'LLM returned malformed JSON',
+          translation: true,
+          translationProvider: 'LLM Translation',
+        );
       }
 
       final List<Map<String, String>> rawTranslation = [];
@@ -269,7 +324,12 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
       );
     } catch (e) {
       AppLogger.debug('[LLM Translation] Error: $e');
-      return LyricsResult.empty();
+      return LyricsResult.failure(
+        source: 'LLM Translation',
+        message: e.toString(),
+        translation: true,
+        translationProvider: 'LLM Translation',
+      );
     }
   }
 }

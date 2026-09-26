@@ -176,6 +176,48 @@ class TranslationSection extends StatelessWidget {
               const SizedBox(height: 24),
               // LLM Configuration
               LlmConfigurationCard(provider: provider),
+              const SizedBox(height: 8),
+              SettingsSliderCard(
+                title: i18n.llmTtftTitle,
+                subtitle: i18n.llmTtftSubtitle,
+                value: provider.llmTimeToFirstTokenSeconds.current.toDouble(),
+                min: 0,
+                max: 180,
+                divisions: 36,
+                label: provider.llmTimeToFirstTokenSeconds.current == 0
+                    ? i18n.llmLimitOff
+                    : '${provider.llmTimeToFirstTokenSeconds.current}s',
+                valueText: provider.llmTimeToFirstTokenSeconds.current == 0
+                    ? i18n.llmLimitOff
+                    : '${provider.llmTimeToFirstTokenSeconds.current}s',
+                onChanged: (value) =>
+                    provider.setLlmTimeToFirstTokenSeconds(value.round()),
+                onReset: provider.llmTimeToFirstTokenSeconds.changed
+                    ? () => provider.setLlmTimeToFirstTokenSeconds(
+                        provider.llmTimeToFirstTokenSeconds.defaultValue,
+                      )
+                    : null,
+              ),
+              SettingsSliderCard(
+                title: i18n.llmMinTpsTitle,
+                subtitle: i18n.llmMinTpsSubtitle,
+                value: provider.llmMinTokensPerSecond.current,
+                min: 0,
+                max: 10,
+                divisions: 20,
+                label: provider.llmMinTokensPerSecond.current == 0
+                    ? i18n.llmLimitOff
+                    : provider.llmMinTokensPerSecond.current.toStringAsFixed(1),
+                valueText: provider.llmMinTokensPerSecond.current == 0
+                    ? i18n.llmLimitOff
+                    : provider.llmMinTokensPerSecond.current.toStringAsFixed(1),
+                onChanged: provider.setLlmMinTokensPerSecond,
+                onReset: provider.llmMinTokensPerSecond.changed
+                    ? () => provider.setLlmMinTokensPerSecond(
+                        provider.llmMinTokensPerSecond.defaultValue,
+                      )
+                    : null,
+              ),
             ],
           ],
         );

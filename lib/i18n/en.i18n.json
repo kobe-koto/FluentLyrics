@@ -105,7 +105,12 @@
       "llmReasoningLow": "Low",
       "llmReasoningMedium": "Medium",
       "llmReasoningHigh": "High",
-      "llmReasoningAuto": "Auto"
+      "llmReasoningAuto": "Auto",
+      "llmTtftTitle": "Time to first token",
+      "llmTtftSubtitle": "Abort if the model produces no token within this time. Off waits indefinitely. Reasoning tokens count.",
+      "llmMinTpsTitle": "Minimum tokens per second",
+      "llmMinTpsSubtitle": "After the first token, abort if the stream stays silent longer than 1/rate (at least 1 second). Off disables the rate limit. Non-streaming endpoints ignore this.",
+      "llmLimitOff": "Off"
     },
     "lyricConfig": {
       "sectionTitle": "Lyric Configuration",

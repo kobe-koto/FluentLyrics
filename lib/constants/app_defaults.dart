@@ -39,6 +39,8 @@ class AppDefaults {
   static const String llmApiKey = 'sk-dummy';
   static const String llmModel = 'gpt-oss-120b';
   static const String llmReasoningEffort = 'auto';
+  static const int llmTimeToFirstTokenSeconds = 60;
+  static const double llmMinTokensPerSecond = 0;
   static const bool keepScreenOn = true;
   static const bool backgroundMotionEnabled = true;
   static const bool experimentalRichInlineFontSizeGlitching = false;

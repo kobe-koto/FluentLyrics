@@ -105,7 +105,12 @@
       "llmReasoningLow": "低",
       "llmReasoningMedium": "中",
       "llmReasoningHigh": "高",
-      "llmReasoningAuto": "自動"
+      "llmReasoningAuto": "自動",
+      "llmTtftTitle": "首 token 時間",
+      "llmTtftSubtitle": "若模型在此時長內沒有產出任何 token，則中止。關閉表示一直等待。推理 token 也算。",
+      "llmMinTpsTitle": "最低 token 速率",
+      "llmMinTpsSubtitle": "收到首個 token 後，如果靜默時間超過 1/速率（至少 1 秒）就中止。關閉表示不限制速率。非串流介面會忽略此項。",
+      "llmLimitOff": "關閉"
     },
     "lyricConfig": {
       "sectionTitle": "歌詞設定",

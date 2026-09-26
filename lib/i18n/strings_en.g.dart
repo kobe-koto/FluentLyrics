@@ -566,6 +566,21 @@ class Translations$settings$translation$en {
 
 	/// en: 'Auto'
 	String get llmReasoningAuto => 'Auto';
+
+	/// en: 'Time to first token'
+	String get llmTtftTitle => 'Time to first token';
+
+	/// en: 'Abort if the model produces no token within this time. Off waits indefinitely. Reasoning tokens count.'
+	String get llmTtftSubtitle => 'Abort if the model produces no token within this time. Off waits indefinitely. Reasoning tokens count.';
+
+	/// en: 'Minimum tokens per second'
+	String get llmMinTpsTitle => 'Minimum tokens per second';
+
+	/// en: 'After the first token, abort if the stream stays silent longer than 1/rate (at least 1 second). Off disables the rate limit. Non-streaming endpoints ignore this.'
+	String get llmMinTpsSubtitle => 'After the first token, abort if the stream stays silent longer than 1/rate (at least 1 second). Off disables the rate limit. Non-streaming endpoints ignore this.';
+
+	/// en: 'Off'
+	String get llmLimitOff => 'Off';
 }
 
 // Path: settings.lyricConfig

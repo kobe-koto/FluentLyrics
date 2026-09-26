@@ -146,6 +146,15 @@ class LyricsProvider with ChangeNotifier {
   set _llmReasoningEffort(Setting<String> value) =>
       _settings.llmReasoningEffort = value;
 
+  Setting<int> get _llmTimeToFirstTokenSeconds =>
+      _settings.llmTimeToFirstTokenSeconds;
+  set _llmTimeToFirstTokenSeconds(Setting<int> value) =>
+      _settings.llmTimeToFirstTokenSeconds = value;
+
+  Setting<double> get _llmMinTokensPerSecond => _settings.llmMinTokensPerSecond;
+  set _llmMinTokensPerSecond(Setting<double> value) =>
+      _settings.llmMinTokensPerSecond = value;
+
   Setting<bool> get _keepScreenOn => _settings.keepScreenOn;
   set _keepScreenOn(Setting<bool> value) => _settings.keepScreenOn = value;
 
@@ -532,6 +541,8 @@ class LyricsProvider with ChangeNotifier {
   Setting<String> get llmApiKey => _llmApiKey;
   Setting<String> get llmModel => _llmModel;
   Setting<String> get llmReasoningEffort => _llmReasoningEffort;
+  Setting<int> get llmTimeToFirstTokenSeconds => _llmTimeToFirstTokenSeconds;
+  Setting<double> get llmMinTokensPerSecond => _llmMinTokensPerSecond;
   Setting<bool> get keepScreenOn => _keepScreenOn;
   Setting<bool> get backgroundMotionEnabled => _backgroundMotionEnabled;
   Setting<bool> get experimentalRichInlineFontSizeGlitching =>
@@ -1137,6 +1148,24 @@ class LyricsProvider with ChangeNotifier {
       value: effort,
       assign: (value) => _llmReasoningEffort = value,
       persist: _settingsService.setLlmReasoningEffort,
+    );
+  }
+
+  void setLlmTimeToFirstTokenSeconds(int seconds) {
+    _setSettingValue(
+      currentSetting: _llmTimeToFirstTokenSeconds,
+      value: seconds,
+      assign: (value) => _llmTimeToFirstTokenSeconds = value,
+      persist: _settingsService.setLlmTimeToFirstTokenSeconds,
+    );
+  }
+
+  void setLlmMinTokensPerSecond(double tokensPerSecond) {
+    _setSettingValue(
+      currentSetting: _llmMinTokensPerSecond,
+      value: tokensPerSecond,
+      assign: (value) => _llmMinTokensPerSecond = value,
+      persist: _settingsService.setLlmMinTokensPerSecond,
     );
   }
 

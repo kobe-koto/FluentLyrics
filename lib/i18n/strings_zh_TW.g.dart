@@ -293,6 +293,11 @@ class Translations$settings$translation$zh_TW extends Translations$settings$tran
 	@override String get llmReasoningMedium => '中';
 	@override String get llmReasoningHigh => '高';
 	@override String get llmReasoningAuto => '自動';
+	@override String get llmTtftTitle => '首 token 時間';
+	@override String get llmTtftSubtitle => '若模型在此時長內沒有產出任何 token，則中止。關閉表示一直等待。推理 token 也算。';
+	@override String get llmMinTpsTitle => '最低 token 速率';
+	@override String get llmMinTpsSubtitle => '收到首個 token 後，如果靜默時間超過 1/速率（至少 1 秒）就中止。關閉表示不限制速率。非串流介面會忽略此項。';
+	@override String get llmLimitOff => '關閉';
 }
 
 // Path: settings.lyricConfig

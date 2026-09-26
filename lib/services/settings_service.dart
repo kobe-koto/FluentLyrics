@@ -587,6 +587,9 @@ class SettingsService {
   }
 
   static const String _llmReasoningEffortKey = 'llm_reasoning_effort';
+  static const String _llmTimeToFirstTokenSecondsKey =
+      'llm_time_to_first_token_seconds';
+  static const String _llmMinTokensPerSecondKey = 'llm_min_tokens_per_second';
 
   Future<Setting<String>> getLlmReasoningEffort() async {
     final prefs = await _prefs;
@@ -604,6 +607,40 @@ class SettingsService {
   Future<void> setLlmReasoningEffort(String effort) async {
     final prefs = await _prefs;
     await prefs.setString(_llmReasoningEffortKey, effort);
+  }
+
+  Future<Setting<int>> getLlmTimeToFirstTokenSeconds() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getInt(_llmTimeToFirstTokenSecondsKey) ??
+        AppDefaults.llmTimeToFirstTokenSeconds;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.llmTimeToFirstTokenSeconds,
+      changed: current != AppDefaults.llmTimeToFirstTokenSeconds,
+    );
+  }
+
+  Future<void> setLlmTimeToFirstTokenSeconds(int seconds) async {
+    final prefs = await _prefs;
+    await prefs.setInt(_llmTimeToFirstTokenSecondsKey, seconds);
+  }
+
+  Future<Setting<double>> getLlmMinTokensPerSecond() async {
+    final prefs = await _prefs;
+    final current =
+        prefs.getDouble(_llmMinTokensPerSecondKey) ??
+        AppDefaults.llmMinTokensPerSecond;
+    return Setting(
+      current: current,
+      defaultValue: AppDefaults.llmMinTokensPerSecond,
+      changed: current != AppDefaults.llmMinTokensPerSecond,
+    );
+  }
+
+  Future<void> setLlmMinTokensPerSecond(double tokensPerSecond) async {
+    final prefs = await _prefs;
+    await prefs.setDouble(_llmMinTokensPerSecondKey, tokensPerSecond);
   }
 
   Future<Setting<bool>> getKeepScreenOn() async {

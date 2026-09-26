@@ -31,6 +31,8 @@ class LyricsProviderSettings {
     required this.llmApiKey,
     required this.llmModel,
     required this.llmReasoningEffort,
+    required this.llmTimeToFirstTokenSeconds,
+    required this.llmMinTokensPerSecond,
     required this.keepScreenOn,
     required this.backgroundMotionEnabled,
     required this.experimentalRichInlineFontSizeGlitching,
@@ -174,6 +176,16 @@ class LyricsProviderSettings {
         defaultValue: AppDefaults.llmReasoningEffort,
         changed: false,
       ),
+      llmTimeToFirstTokenSeconds: const Setting(
+        current: AppDefaults.llmTimeToFirstTokenSeconds,
+        defaultValue: AppDefaults.llmTimeToFirstTokenSeconds,
+        changed: false,
+      ),
+      llmMinTokensPerSecond: const Setting(
+        current: AppDefaults.llmMinTokensPerSecond,
+        defaultValue: AppDefaults.llmMinTokensPerSecond,
+        changed: false,
+      ),
       keepScreenOn: const Setting(
         current: AppDefaults.keepScreenOn,
         defaultValue: AppDefaults.keepScreenOn,
@@ -258,6 +270,9 @@ class LyricsProviderSettings {
       llmApiKey: await settingsService.getLlmApiKey(),
       llmModel: await settingsService.getLlmModel(),
       llmReasoningEffort: await settingsService.getLlmReasoningEffort(),
+      llmTimeToFirstTokenSeconds: await settingsService
+          .getLlmTimeToFirstTokenSeconds(),
+      llmMinTokensPerSecond: await settingsService.getLlmMinTokensPerSecond(),
       keepScreenOn: await settingsService.getKeepScreenOn(),
       backgroundMotionEnabled: await settingsService
           .getBackgroundMotionEnabled(),
@@ -299,6 +314,8 @@ class LyricsProviderSettings {
   Setting<String> llmApiKey;
   Setting<String> llmModel;
   Setting<String> llmReasoningEffort;
+  Setting<int> llmTimeToFirstTokenSeconds;
+  Setting<double> llmMinTokensPerSecond;
   Setting<bool> keepScreenOn;
   Setting<bool> backgroundMotionEnabled;
   Setting<bool> experimentalRichInlineFontSizeGlitching;
