@@ -45,6 +45,7 @@ app.*.map.json
 /android/app/release
 /dist
 release.md
+TODO.md
 /tmp
 
 # F-Droid related
