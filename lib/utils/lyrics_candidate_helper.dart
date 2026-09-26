@@ -22,6 +22,7 @@ List<LyricsResult> appendTranslationCandidateIfNeeded(
         existing.translationProvider == candidate.translationProvider &&
         existing.language == candidate.language &&
         existing.source == candidate.source &&
+        existing.failureMessage == candidate.failureMessage &&
         _rawTranslationEquals(
           existing.rawTranslation,
           candidate.rawTranslation,
@@ -57,7 +58,8 @@ List<LyricsResult> appendCandidateIfNeeded(
     (existing) =>
         existing.source == candidate.source &&
         existing.isSynced == candidate.isSynced &&
-        existing.isRichSync == candidate.isRichSync,
+        existing.isRichSync == candidate.isRichSync &&
+        existing.failureMessage == candidate.failureMessage,
   );
   if (isDuplicate) return candidates;
   return List.unmodifiable([...candidates, candidate]);

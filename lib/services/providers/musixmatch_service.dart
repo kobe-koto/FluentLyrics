@@ -70,6 +70,7 @@ class MusixmatchService {
       }
     } catch (e) {
       AppLogger.debug('[Musixmatch] Error fetching lyrics: $e');
+      return LyricsResult.failure(source: 'Musixmatch', message: e.toString());
     }
     return LyricsResult.empty();
   }
@@ -269,7 +270,12 @@ class MusixmatchService {
         if (token != null) {
           await _settingsService.setMusixmatchToken(token);
         } else {
-          return LyricsResult.empty();
+          return LyricsResult.failure(
+            source: 'Musixmatch',
+            message: 'Failed to get Musixmatch token',
+            translation: true,
+            translationProvider: 'Musixmatch',
+          );
         }
       }
 
@@ -418,7 +424,12 @@ class MusixmatchService {
       return LyricsResult.empty();
     } catch (e) {
       AppLogger.debug('[Musixmatch] Error fetching translation: $e');
-      return LyricsResult.empty();
+      return LyricsResult.failure(
+        source: 'Musixmatch',
+        message: e.toString(),
+        translation: true,
+        translationProvider: 'Musixmatch',
+      );
     }
   }
 
@@ -444,7 +455,11 @@ class MusixmatchService {
                 queryParameters: Map.from(url.queryParameters)
                   ..['usertoken'] = newToken,
               );
-              return await _performGet(newUrl, newToken, maxTrial: maxTrial - 1);
+              return await _performGet(
+                newUrl,
+                newToken,
+                maxTrial: maxTrial - 1,
+              );
             }
           } else if (body.contains('"hint":"captcha"')) {
             // Wait and retry

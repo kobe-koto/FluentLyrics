@@ -75,6 +75,10 @@ class NeteaseService {
       }
     } catch (e) {
       AppLogger.debug('[NeteaseMusic] Error fetching lyrics: $e');
+      return LyricsResult.failure(
+        source: 'Netease Music',
+        message: e.toString(),
+      );
     }
     return LyricsResult.empty();
   }
@@ -98,8 +102,13 @@ class NeteaseService {
       return translationResult ?? LyricsResult.empty();
     } catch (e) {
       AppLogger.debug('[NeteaseMusic] Error fetching translation: $e');
+      return LyricsResult.failure(
+        source: 'Netease Music',
+        message: e.toString(),
+        translation: true,
+        translationProvider: 'Netease Music',
+      );
     }
-    return LyricsResult.empty();
   }
 
   static const Map<String, String> _headers = {
@@ -156,18 +165,14 @@ class NeteaseService {
             .timeout(const Duration(seconds: 10));
 
         if (searchResponse.statusCode != 200) {
-          AppLogger.debug(
-            '[NeteaseMusic] Search failed: ${searchResponse.statusCode}',
+          throw Exception(
+            'Netease search failed: HTTP ${searchResponse.statusCode}',
           );
-          continue;
         }
 
         final searchData = jsonDecode(searchResponse.body);
         if (searchData['code'] != 200) {
-          AppLogger.debug(
-            '[NeteaseMusic] Search returned unexpected code: ${searchData['code']}',
-          );
-          continue;
+          throw Exception('Netease search failed: code ${searchData['code']}');
         }
 
         final result = searchData['result'];
@@ -223,7 +228,7 @@ class NeteaseService {
       return [];
     } catch (e) {
       AppLogger.debug('[NeteaseMusic] Error searching song: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -256,7 +261,9 @@ class NeteaseService {
           .timeout(const Duration(seconds: 10));
 
       if (lyricResponse.statusCode != 200) {
-        return null;
+        throw Exception(
+          'Netease lyrics failed: HTTP ${lyricResponse.statusCode}',
+        );
       }
 
       final lyricData = jsonDecode(lyricResponse.body);

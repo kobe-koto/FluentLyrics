@@ -689,6 +689,7 @@ class _CandidateTile extends StatelessWidget {
   }
 
   String _syncLabel() {
+    if (candidate.isFailure) return t.candidateSheet.syncFailed;
     if (candidate.isPureMusic) return t.candidateSheet.syncInstrumental;
     if (candidate.isRichSync) return t.candidateSheet.syncRich;
     if (candidate.isSynced) return t.candidateSheet.syncSynced;
@@ -696,6 +697,7 @@ class _CandidateTile extends StatelessWidget {
   }
 
   IconData _syncIcon() {
+    if (candidate.isFailure) return Icons.error_outline_rounded;
     if (candidate.isPureMusic) return Icons.music_note_rounded;
     if (candidate.isRichSync) return Icons.auto_awesome_rounded;
     if (candidate.isSynced) return Icons.timer_rounded;
@@ -703,6 +705,7 @@ class _CandidateTile extends StatelessWidget {
   }
 
   Color _syncColor() {
+    if (candidate.isFailure) return Colors.redAccent;
     if (candidate.isPureMusic) return Colors.purple;
     if (candidate.isRichSync) return Colors.amber;
     if (candidate.isSynced) return Colors.lightBlue;
@@ -710,6 +713,11 @@ class _CandidateTile extends StatelessWidget {
   }
 
   String _preview() {
+    if (candidate.isFailure) {
+      return candidate.failureMessage?.trim().isNotEmpty == true
+          ? candidate.failureMessage!.trim()
+          : t.candidateSheet.syncFailed;
+    }
     final lines = candidate.lyrics
         .where((l) => l.text.trim().isNotEmpty)
         .take(2)
@@ -796,7 +804,7 @@ class _CandidateTile extends StatelessWidget {
     final providerName = candidate.source;
 
     return GestureDetector(
-      onTap: isActive ? null : onSelect,
+      onTap: candidate.isFailure || isActive ? null : onSelect,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.symmetric(vertical: 5),
@@ -853,7 +861,9 @@ class _CandidateTile extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                candidate.isPureMusic
+                candidate.isFailure
+                    ? t.candidateSheet.notUsable
+                    : candidate.isPureMusic
                     ? t.candidateSheet.instrumentalTrack
                     : t.candidateSheet.lines(
                         count: candidate.lyrics.length.toString(),
@@ -904,6 +914,11 @@ class _TranslationTile extends StatelessWidget {
 
   /// Return the first non-empty translated line as a preview.
   String _preview() {
+    if (candidate.isFailure) {
+      return candidate.failureMessage?.trim().isNotEmpty == true
+          ? candidate.failureMessage!.trim()
+          : t.candidateSheet.syncFailed;
+    }
     if (candidate.rawTranslation == null) {
       return t.candidateSheet.noTranslationPreview;
     }
@@ -930,7 +945,7 @@ class _TranslationTile extends StatelessWidget {
     final coverage = totalLines == 0 ? 0.0 : matchedLines / totalLines;
 
     return GestureDetector(
-      onTap: isActive ? null : onSelect,
+      onTap: candidate.isFailure || isActive ? null : onSelect,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.symmetric(vertical: 5),

@@ -35,6 +35,11 @@ class _FakeSettingsService extends SettingsService {
   }
 
   @override
+  Future<Setting<bool>> getTranslationEnabled() async {
+    return const Setting(current: false, defaultValue: false, changed: false);
+  }
+
+  @override
   Future<Setting<List<String>>> getTranslationTargetLanguages() async {
     return Setting(
       current: targetLanguages,
@@ -569,4 +574,90 @@ void main() {
       expect(results.single.translationProvider, 'Netease Music');
     },
   );
+
+  test(
+    'fetchLyrics reports a failure without yielding or caching it',
+    () async {
+      final cache = _RecordingCache();
+      final candidates = <LyricsResult>[];
+      final service = LyricsService(
+        settingsService: _FakeSettingsService(
+          cacheEnabled: true,
+          priority: const [LyricProviderType.qqmusic, LyricProviderType.lrclib],
+        ),
+        cacheService: cache,
+        sourceRegistry: LyricsSourceRegistry(
+          sources: [
+            _FailingSource(LyricProviderType.qqmusic),
+            _SyncedSource(LyricProviderType.lrclib),
+          ],
+        ),
+      );
+
+      final results = await service
+          .fetchLyrics(
+            title: 'Song',
+            artist: const ['Artist'],
+            album: 'Album',
+            durationSeconds: 120,
+            trimMetadataProviders: const [],
+            richSyncEnabled: true,
+            onCandidate: candidates.add,
+          )
+          .toList();
+
+      expect(results, hasLength(1));
+      expect(results.single.source, 'lrclib');
+      expect(candidates.where((c) => c.isFailure), hasLength(1));
+      expect(candidates.first.failureMessage, 'HTTP 500');
+      expect(cache.writes, 1);
+    },
+  );
+}
+
+class _FailingSource extends LyricsSource {
+  _FailingSource(this.type);
+
+  @override
+  final LyricProviderType type;
+
+  @override
+  Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) async {
+    return LyricsResult.failure(source: type.name, message: 'HTTP 500');
+  }
+}
+
+class _SyncedSource extends LyricsSource {
+  _SyncedSource(this.type);
+
+  @override
+  final LyricProviderType type;
+
+  @override
+  Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) async {
+    return LyricsResult(
+      lyrics: [
+        Lyric(startTime: const Duration(seconds: 1), text: 'hello'),
+        Lyric(startTime: const Duration(seconds: 2), text: 'world'),
+      ],
+      source: type.name,
+      isSynced: true,
+    );
+  }
+}
+
+class _RecordingCache extends LyricsCacheService {
+  int writes = 0;
+
+  @override
+  Future<void> cacheLyrics(
+    String title,
+    List<String> artist,
+    String? album,
+    int durationSeconds,
+    LyricsResult result,
+  ) async {
+    writes += 1;
+    expect(result.isFailure, isFalse);
+  }
 }

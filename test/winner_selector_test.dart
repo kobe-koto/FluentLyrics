@@ -134,4 +134,20 @@ void main() {
       expect(isGoodEnough, isTrue);
     },
   );
+
+  test(
+    'does not select a provider failure over real lyrics or as a winner',
+    () {
+      final failure = LyricsResult.failure(
+        source: 'QQ Music',
+        message: 'QQ Music search failed: HTTP 500',
+      );
+      final lyrics = result(source: 'LRCLIB', lyrics: [lyric('hello', 1000)]);
+
+      expect(selectBetterCandidate(failure, null, true), isNull);
+      expect(selectBetterCandidate(failure, lyrics, true)?.source, 'LRCLIB');
+      expect(selectBetterCandidate(lyrics, failure, true)?.source, 'LRCLIB');
+      expect(hasGoodEnoughLyricsResult(failure, true, false, false), isFalse);
+    },
+  );
 }

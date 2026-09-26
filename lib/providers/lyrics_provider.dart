@@ -559,6 +559,17 @@ class LyricsProvider with ChangeNotifier {
   /// Reading track (kana/romaji) of the current lyrics, when the provider
   /// shipped one. Used to annotate kanji.
   LyricsReading? get readingResult => _readingResult;
+  String? get fetchFailureMessage {
+    if (_lyricsResult.isPureMusic || _lyricsResult.lyrics.isNotEmpty) {
+      return null;
+    }
+    if (_lyricsResult.isFailure) return _lyricsResult.failureMessage;
+    for (final candidate in _candidates.reversed) {
+      if (candidate.isFailure) return candidate.failureMessage;
+    }
+    return null;
+  }
+
   List<LyricsReading> get readingCandidates => _readingCandidates;
 
   final Duration _interludeOffset = Duration(
@@ -1777,7 +1788,7 @@ class LyricsProvider with ChangeNotifier {
   /// Replaces the current lyrics display with [candidate] and persists it to
   /// the Isar cache so subsequent loads use this selection.
   Future<void> selectCandidate(LyricsResult candidate) async {
-    if (_currentMetadata == null) return;
+    if (_currentMetadata == null || candidate.isFailure) return;
 
     // Cancel any ongoing candidate fetch for this track.
     _candidatePauseCompleter?.complete(false);
@@ -1849,7 +1860,7 @@ class LyricsProvider with ChangeNotifier {
   /// Replaces the current translation with [candidate] and persists it to the
   /// Isar cache so subsequent loads use this selection.
   Future<void> selectTranslationCandidate(LyricsResult candidate) async {
-    if (_currentMetadata == null) return;
+    if (_currentMetadata == null || candidate.isFailure) return;
     final taggedCandidate = candidate.copyWith(
       sourceProvider: _lyricsResult.sourceProvider,
     );

@@ -138,10 +138,15 @@ class LrclibService {
             isPureMusic: isInstrumental,
           );
         }
+        return LyricsResult.empty();
       }
+      return LyricsResult.failure(
+        source: 'LRCLIB',
+        message: 'LRCLIB HTTP ${response.statusCode}',
+      );
     } catch (e) {
       AppLogger.debug('[LRCLIB] Error fetching lyrics: $e');
+      return LyricsResult.failure(source: 'LRCLIB', message: e.toString());
     }
-    return LyricsResult.empty();
   }
 }

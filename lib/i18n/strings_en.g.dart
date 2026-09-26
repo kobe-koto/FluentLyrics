@@ -329,6 +329,12 @@ class Translations$candidateSheet$en {
 
 	/// en: 'Richify'
 	String get richify => 'Richify';
+
+	/// en: 'Failed'
+	String get syncFailed => 'Failed';
+
+	/// en: 'Not usable'
+	String get notUsable => 'Not usable';
 }
 
 // Path: settings.language

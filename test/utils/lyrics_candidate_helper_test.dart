@@ -110,4 +110,21 @@ void main() {
     expect(prepared.lyrics.first.endTime, const Duration(seconds: 5));
     expect(prepared.lyrics.last.text, 'hello');
   });
+
+  test('appendCandidateIfNeeded keeps a failure beside an unsynced result', () {
+    final plain = LyricsResult(
+      lyrics: [Lyric(startTime: Duration.zero, text: 'hello')],
+      source: 'QQ Music',
+      isSynced: false,
+    );
+    final failure = LyricsResult.failure(
+      source: 'QQ Music',
+      message: 'timed out',
+    );
+
+    final updated = appendCandidateIfNeeded([plain], failure);
+
+    expect(updated, hasLength(2));
+    expect(updated.last.failureMessage, 'timed out');
+  });
 }

@@ -191,6 +191,8 @@ class _LyricsListState extends State<LyricsList> {
         message = t.lyrics.startPlaying;
       } else if (lyricsResult.isPureMusic) {
         message = t.lyrics.pureMusic;
+      } else if (provider.fetchFailureMessage != null) {
+        message = provider.fetchFailureMessage!;
       }
 
       return Center(

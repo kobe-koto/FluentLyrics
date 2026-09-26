@@ -157,7 +157,7 @@ class QQMusicService {
       return LyricsResult.empty();
     } catch (e) {
       AppLogger.debug('[QQMusic] Error fetching lyrics: $e');
-      return LyricsResult.empty();
+      return LyricsResult.failure(source: 'QQ Music', message: e.toString());
     }
   }
 
@@ -180,7 +180,12 @@ class QQMusicService {
       return translationResult ?? LyricsResult.empty();
     } catch (e) {
       AppLogger.debug('[QQMusic] Error fetching translation: $e');
-      return LyricsResult.empty();
+      return LyricsResult.failure(
+        source: 'QQ Music',
+        message: e.toString(),
+        translation: true,
+        translationProvider: 'QQ Music',
+      );
     }
   }
 
@@ -211,17 +216,15 @@ class QQMusicService {
             .timeout(const Duration(seconds: 10));
 
         if (searchResponse.statusCode != 200) {
-          AppLogger.debug(
-            '[QQMusic] Search failed: ${searchResponse.statusCode}',
+          throw Exception(
+            'QQ Music search failed: HTTP ${searchResponse.statusCode}',
           );
-          continue;
         }
 
         final searchData = jsonDecode(utf8.decode(searchResponse.bodyBytes));
         final req1 = searchData['req_1'];
         if (req1['code'] != 0) {
-          AppLogger.debug('[QQMusic] Search API error: ${req1['code']}');
-          continue;
+          throw Exception('QQ Music search failed: code ${req1['code']}');
         }
 
         final songList = req1['data']['body']['song']['list'] as List? ?? [];
@@ -272,7 +275,7 @@ class QQMusicService {
       return [];
     } catch (e) {
       AppLogger.debug('[QQMusic] Error searching song: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -303,7 +306,7 @@ class QQMusicService {
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        return null;
+        throw Exception('QQ Music lyrics failed: HTTP ${response.statusCode}');
       }
 
       return QQMusicLyricDecoder.parseLyricDownloadResponse(
@@ -311,7 +314,7 @@ class QQMusicService {
       );
     } catch (e) {
       AppLogger.debug('[QQMusic] Cannot fetch lyrics: $e');
-      return null;
+      rethrow;
     }
   }
 

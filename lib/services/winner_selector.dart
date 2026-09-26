@@ -5,6 +5,7 @@ LyricsResult? selectBetterCandidate(
   LyricsResult? best,
   bool richSyncEnabled,
 ) {
+  if (candidate.isFailure) return best;
   if (best == null) {
     return candidate.copyWith(
       lyrics: candidate.lyrics,
@@ -61,6 +62,7 @@ bool hasGoodEnoughLyricsResult(
   bool translationReceived,
 ) {
   return best != null &&
+      !best.isFailure &&
       (best.isPureMusic ||
           (best.lyrics.isNotEmpty &&
               ((best.isRichSync && richSyncEnabled) ||

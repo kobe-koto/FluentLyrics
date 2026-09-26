@@ -322,6 +322,8 @@
     "instrumentalTrack": "Instrumental track",
     "lines": "{{count}} lines",
     "unknownProvider": "Unknown",
-    "richify": "Richify"
+    "richify": "Richify",
+    "syncFailed": "Failed",
+    "notUsable": "Not usable"
   }
 }

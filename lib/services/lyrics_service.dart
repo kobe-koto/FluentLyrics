@@ -171,6 +171,11 @@ class LyricsService {
         result = result.copyWith(artworkUrls: accumulatedArtworkUrls);
       }
 
+      if (result.isFailure) {
+        onCandidate?.call(result);
+        continue;
+      }
+
       if (result.lyrics.isNotEmpty || result.isPureMusic) {
         // Report every provider result as a candidate (not just the best).
         onCandidate?.call(result);
@@ -445,6 +450,11 @@ class LyricsService {
         transResult = transResult.copyWith(
           sourceProvider: originalSourceProvider,
         );
+
+        if (transResult.isFailure) {
+          onTranslationCandidate?.call(transResult);
+          continue;
+        }
 
         final bool usableResult =
             transResult.translation || transResult.source == 'SKIPPED';

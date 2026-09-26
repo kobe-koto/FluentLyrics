@@ -322,6 +322,8 @@
     "instrumentalTrack": "純音樂曲目",
     "lines": "{{count}} 行",
     "unknownProvider": "未知",
-    "richify": "Richify"
+    "richify": "Richify",
+    "syncFailed": "失敗",
+    "notUsable": "不可使用"
   }
 }

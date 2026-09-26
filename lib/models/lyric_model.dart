@@ -132,6 +132,12 @@ class LyricsResult {
   final LyricProviderType? sourceProvider;
   final bool translationInvalidatable;
 
+  /// Set when a provider failed outright. Not lyrics, not selectable, not cached.
+  final String? failureMessage;
+
+  bool get isFailure =>
+      failureMessage != null && failureMessage!.trim().isNotEmpty;
+
   LyricsResult({
     required this.lyrics,
     required this.source,
@@ -152,6 +158,7 @@ class LyricsResult {
     this.reading,
     this.sourceProvider,
     this.translationInvalidatable = false,
+    this.failureMessage,
   }) : isSynced = isSynced ?? _checkIfSynced(lyrics),
        isRichSync = isRichSync ?? _checkIfRichSynced(lyrics);
 
@@ -221,6 +228,7 @@ class LyricsResult {
     LyricsReading? reading,
     LyricProviderType? sourceProvider,
     bool? translationInvalidatable,
+    String? failureMessage,
   }) {
     return LyricsResult(
       lyrics: lyrics ?? this.lyrics,
@@ -244,6 +252,25 @@ class LyricsResult {
       sourceProvider: sourceProvider ?? this.sourceProvider,
       translationInvalidatable:
           translationInvalidatable ?? this.translationInvalidatable,
+      failureMessage: failureMessage ?? this.failureMessage,
+    );
+  }
+
+  factory LyricsResult.failure({
+    required String source,
+    required String message,
+    LyricProviderType? sourceProvider,
+    bool translation = false,
+    String? translationProvider,
+  }) {
+    return LyricsResult(
+      lyrics: const [],
+      source: source,
+      isSynced: false,
+      failureMessage: message,
+      sourceProvider: sourceProvider,
+      translation: translation,
+      translationProvider: translationProvider,
     );
   }
 

@@ -186,6 +186,8 @@ class Translations$candidateSheet$zh_CN extends Translations$candidateSheet$en {
 	@override String lines({required Object count}) => '${count} 行';
 	@override String get unknownProvider => '未知';
 	@override String get richify => 'Richify';
+	@override String get syncFailed => '失败';
+	@override String get notUsable => '不可使用';
 }
 
 // Path: settings.language
