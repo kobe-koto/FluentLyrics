@@ -6,6 +6,7 @@ import '../models/setting.dart';
 import '../models/lyric_provider_type.dart';
 import 'lyrics_provider_settings.dart';
 import '../services/media_service.dart';
+import '../services/lyrics_request_scope.dart';
 import '../services/lyrics_service.dart';
 import '../services/settings_service.dart';
 import '../services/providers/lyrics_cache_service.dart';
@@ -204,6 +205,7 @@ class LyricsProvider with ChangeNotifier {
   bool _isPausedForCandidates = false;
   Completer<bool>? _candidatePauseCompleter;
   int _lyricsRequestVersion = 0;
+  LyricsRequestScope? _lyricsScope;
 
   /// Set to true when the sheet is opened before the stream reaches the pause
   /// point, so the pause skips waiting and continues immediately.
@@ -213,6 +215,7 @@ class LyricsProvider with ChangeNotifier {
   // Translation candidates
   List<LyricsResult> _translationCandidates = [];
   int _translationRequestVersion = 0;
+  LyricsRequestScope? _translationScope;
 
   MediaControlAbility _controlAbility = MediaControlAbility.none();
   DateTime? _playbackToggleLockedUntil;
@@ -625,21 +628,29 @@ class LyricsProvider with ChangeNotifier {
 
   void _invalidateTranslationRequests({bool clearCandidates = true}) {
     _translationRequestVersion++;
+    _translationScope?.cancel();
+    _translationScope = null;
     _clearTranslationState(clearCandidates: clearCandidates);
   }
 
   int _beginTranslationRequest() {
     _translationRequestVersion++;
+    _translationScope?.cancel();
+    _translationScope = LyricsRequestScope();
     return _translationRequestVersion;
   }
 
   int _beginLyricsRequest() {
     _lyricsRequestVersion++;
+    _lyricsScope?.cancel();
+    _lyricsScope = LyricsRequestScope();
     return _lyricsRequestVersion;
   }
 
   void _invalidateLyricsRequests() {
     _lyricsRequestVersion++;
+    _lyricsScope?.cancel();
+    _lyricsScope = null;
   }
 
   bool _canAcceptLyricsResult(MediaMetadata metadata, int requestVersion) {
@@ -1397,6 +1408,7 @@ class LyricsProvider with ChangeNotifier {
       _candidateSheetOpenedEarly = false;
       _candidates = [];
       _clearReadingState();
+      _invalidateLyricsRequests();
       _invalidateTranslationRequests();
 
       if (_currentMetadata != null) {
@@ -1627,6 +1639,7 @@ class LyricsProvider with ChangeNotifier {
         durationSeconds: metadata.duration.inSeconds,
         refetchTargets: refetchTargets,
         skipCacheLookup: skipCacheLookup,
+        scope: _translationScope,
         isCancelled: () =>
             !_canAcceptTranslationResult(metadata, requestVersion),
         onTranslationCandidate: (trans) {
@@ -1681,6 +1694,7 @@ class LyricsProvider with ChangeNotifier {
             notifyListeners();
           }
         },
+        scope: _lyricsScope,
         isCancelled: () => !_canAcceptLyricsResult(metadata, requestVersion),
         trimMetadataProviders: _trimMetadataProviders.current,
         richSyncEnabled: _richSyncEnabled.current,
@@ -2012,6 +2026,8 @@ class LyricsProvider with ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _lyricsScope?.cancel();
+    _translationScope?.cancel();
     LyricsCacheService.removeListener(_onCacheDatabaseChanged);
     _permissionTimer?.cancel();
     mediaService.removeListener(_onMediaChanged);

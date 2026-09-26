@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:http/http.dart' as http;
+import '../lyrics_request_scope.dart';
 
 import '../../models/general_translation_request_data.dart';
 import '../../models/lyric_model.dart';
@@ -35,14 +35,17 @@ class QQMusicService {
     int translationBias = 0,
     Function(String)? onArtworkUrl,
     Function(LyricsResult)? onTranslation,
+    LyricsRequestScope? scope,
   }) async {
     try {
+      if (scope?.isCancelled == true) return LyricsResult.empty();
       onStatusUpdate?.call('[QQMusic] Searching songs...');
 
       final bestMatch = await _searchSongs(
         title: title,
         artist: artist,
         durationSeconds: durationSeconds,
+        scope: scope,
       );
 
       if (bestMatch.isEmpty) {
@@ -66,6 +69,7 @@ class QQMusicService {
         final lyricsResponse = await _getLyrics(
           songId: songId,
           songMid: songMid,
+          scope: scope,
         );
         if (lyricsResponse == null) {
           AppLogger.debug('[QQMusic] Lyrics response for best match is null');
@@ -157,21 +161,24 @@ class QQMusicService {
       return LyricsResult.empty();
     } catch (e) {
       AppLogger.debug('[QQMusic] Error fetching lyrics: $e');
-      return LyricsResult.failure(source: 'QQ Music', message: e.toString());
+      return failureUnlessCancelled(e, scope: scope, source: 'QQ Music');
     }
   }
 
   Future<LyricsResult> fetchTranslation(
     GeneralTranslationRequestData data, {
     int translationBias = 0,
+    LyricsRequestScope? scope,
   }) async {
     try {
+      if (scope?.isCancelled == true) return LyricsResult.empty();
       LyricsResult? translationResult;
       await fetchLyrics(
         title: data.title,
         artist: data.artist,
         durationSeconds: data.durationSeconds,
         translationBias: translationBias,
+        scope: scope,
         onTranslation: (trans) {
           translationResult = trans;
         },
@@ -180,9 +187,10 @@ class QQMusicService {
       return translationResult ?? LyricsResult.empty();
     } catch (e) {
       AppLogger.debug('[QQMusic] Error fetching translation: $e');
-      return LyricsResult.failure(
+      return failureUnlessCancelled(
+        e,
+        scope: scope,
         source: 'QQ Music',
-        message: e.toString(),
         translation: true,
         translationProvider: 'QQ Music',
       );
@@ -193,6 +201,7 @@ class QQMusicService {
     required String title,
     required List<String> artist,
     int durationSeconds = 0,
+    LyricsRequestScope? scope,
   }) async {
     try {
       final keywordList = ['$title - ${artist.join(', ')}', title];
@@ -211,9 +220,12 @@ class QQMusicService {
           },
         };
 
-        final searchResponse = await http
-            .post(searchUrl, headers: _headers, body: jsonEncode(searchBody))
-            .timeout(const Duration(seconds: 10));
+        final searchResponse = await scopedPost(
+          searchUrl,
+          scope: scope,
+          headers: _headers,
+          body: jsonEncode(searchBody),
+        ).timeout(const Duration(seconds: 10));
 
         if (searchResponse.statusCode != 200) {
           throw Exception(
@@ -282,6 +294,7 @@ class QQMusicService {
   Future<QQMusicDecodedLyrics?> _getLyrics({
     required String? songId,
     required String songMid,
+    LyricsRequestScope? scope,
   }) async {
     try {
       if (songId == null || songId.isEmpty) {
@@ -301,9 +314,12 @@ class QQMusicService {
         'musicid': songId,
       };
 
-      final response = await http
-          .post(uri, headers: _headers, body: body)
-          .timeout(const Duration(seconds: 10));
+      final response = await scopedPost(
+        uri,
+        scope: scope,
+        headers: _headers,
+        body: body,
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
         throw Exception('QQ Music lyrics failed: HTTP ${response.statusCode}');

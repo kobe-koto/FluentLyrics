@@ -1,6 +1,7 @@
 import 'package:fluent_lyrics/models/lyric_model.dart';
 import 'package:fluent_lyrics/models/lyric_provider_type.dart';
 import 'package:fluent_lyrics/models/setting.dart';
+import 'package:fluent_lyrics/services/lyrics_request_scope.dart';
 import 'package:fluent_lyrics/services/lyrics_service.dart';
 import 'package:fluent_lyrics/services/lyrics_source_registry.dart';
 import 'package:fluent_lyrics/services/providers/lyrics_cache_service.dart';
@@ -575,6 +576,36 @@ void main() {
     },
   );
 
+  test('fetchLyrics drops a failure from a cancelled request', () async {
+    final scope = LyricsRequestScope();
+    final candidates = <LyricsResult>[];
+    final service = LyricsService(
+      settingsService: _FakeSettingsService(
+        priority: const [LyricProviderType.qqmusic],
+      ),
+      cacheService: _RecordingCache(),
+      sourceRegistry: LyricsSourceRegistry(
+        sources: [_CancellingFailureSource(LyricProviderType.qqmusic, scope)],
+      ),
+    );
+
+    final results = await service
+        .fetchLyrics(
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          durationSeconds: 120,
+          trimMetadataProviders: const [],
+          richSyncEnabled: true,
+          scope: scope,
+          onCandidate: candidates.add,
+        )
+        .toList();
+
+    expect(results, isEmpty);
+    expect(candidates, isEmpty);
+  });
+
   test(
     'fetchLyrics reports a failure without yielding or caching it',
     () async {
@@ -659,5 +690,19 @@ class _RecordingCache extends LyricsCacheService {
   ) async {
     writes += 1;
     expect(result.isFailure, isFalse);
+  }
+}
+
+class _CancellingFailureSource extends LyricsSource {
+  _CancellingFailureSource(this.type, this.scope);
+
+  @override
+  final LyricProviderType type;
+  final LyricsRequestScope scope;
+
+  @override
+  Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) async {
+    scope.cancel();
+    return LyricsResult.failure(source: type.name, message: 'HTTP 500');
   }
 }

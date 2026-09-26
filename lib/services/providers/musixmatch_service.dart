@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:http/http.dart' as http;
+import '../lyrics_request_scope.dart';
 import '../../models/lyric_model.dart';
 import '../../models/general_translation_request_data.dart';
 import '../../utils/lrc_parser.dart';
@@ -43,12 +43,14 @@ class MusixmatchService {
     required int durationSeconds,
     Function(String)? onStatusUpdate,
     Function(String)? onArtworkUrl,
+    LyricsRequestScope? scope,
   }) async {
     try {
+      if (scope?.isCancelled == true) return LyricsResult.empty();
       String? token = (await _settingsService.getMusixmatchToken()).current;
       if (token == null || token.isEmpty) {
         onStatusUpdate?.call('[Musixmatch] Getting token...');
-        token = await fetchNewToken();
+        token = await fetchNewToken(scope: scope);
         if (token != null) {
           await _settingsService.setMusixmatchToken(token);
         } else {
@@ -63,6 +65,7 @@ class MusixmatchService {
         durationSeconds,
         token,
         onArtworkUrl,
+        scope: scope,
       );
 
       if (result != null) {
@@ -70,20 +73,22 @@ class MusixmatchService {
       }
     } catch (e) {
       AppLogger.debug('[Musixmatch] Error fetching lyrics: $e');
-      return LyricsResult.failure(source: 'Musixmatch', message: e.toString());
+      return failureUnlessCancelled(e, scope: scope, source: 'Musixmatch');
     }
     return LyricsResult.empty();
   }
 
-  Future<String?> fetchNewToken() async {
+  Future<String?> fetchNewToken({LyricsRequestScope? scope}) async {
     final t = _randomId();
     final url = Uri.parse(
       'https://apic-desktop.musixmatch.com/ws/1.1/token.get?app_id=$_appId&t=$t',
     );
     try {
-      final response = await http
-          .get(url, headers: _headers)
-          .timeout(const Duration(seconds: 10));
+      final response = await scopedGet(
+        url,
+        scope: scope,
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -100,8 +105,9 @@ class MusixmatchService {
     List<String> artist,
     int duration,
     String token,
-    Function(String)? onArtworkUrl,
-  ) async {
+    Function(String)? onArtworkUrl, {
+    LyricsRequestScope? scope,
+  }) async {
     final t = _randomId();
     final url =
         Uri.parse(
@@ -123,9 +129,11 @@ class MusixmatchService {
           },
         );
 
-    final response = await http
-        .get(url, headers: _headers)
-        .timeout(const Duration(seconds: 10));
+    final response = await scopedGet(
+      url,
+      scope: scope,
+      headers: _headers,
+    ).timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -261,12 +269,14 @@ class MusixmatchService {
 
   Future<LyricsResult> fetchTranslation(
     GeneralTranslationRequestData data,
-    String language,
-  ) async {
+    String language, {
+    LyricsRequestScope? scope,
+  }) async {
     try {
+      if (scope?.isCancelled == true) return LyricsResult.empty();
       String? token = (await _settingsService.getMusixmatchToken()).current;
       if (token == null || token.isEmpty) {
-        token = await fetchNewToken();
+        token = await fetchNewToken(scope: scope);
         if (token != null) {
           await _settingsService.setMusixmatchToken(token);
         } else {
@@ -295,7 +305,7 @@ class MusixmatchService {
             },
           );
 
-      final trackResponse = await _performGet(trackUrl, token);
+      final trackResponse = await _performGet(trackUrl, token, scope: scope);
       if (trackResponse == null) return LyricsResult.empty();
 
       final trackData = jsonDecode(trackResponse);
@@ -324,7 +334,7 @@ class MusixmatchService {
             },
           );
 
-      final transResponse = await _performGet(transUrl, token);
+      final transResponse = await _performGet(transUrl, token, scope: scope);
       if (transResponse == null) return LyricsResult.empty();
 
       final transData = jsonDecode(transResponse);
@@ -361,7 +371,7 @@ class MusixmatchService {
             },
           );
 
-      final subResponse = await _performGet(subUrl, token);
+      final subResponse = await _performGet(subUrl, token, scope: scope);
       List<Lyric> originalLyrics = [];
       if (subResponse != null) {
         final subData = jsonDecode(subResponse);
@@ -424,22 +434,30 @@ class MusixmatchService {
       return LyricsResult.empty();
     } catch (e) {
       AppLogger.debug('[Musixmatch] Error fetching translation: $e');
-      return LyricsResult.failure(
+      return failureUnlessCancelled(
+        e,
+        scope: scope,
         source: 'Musixmatch',
-        message: e.toString(),
         translation: true,
         translationProvider: 'Musixmatch',
       );
     }
   }
 
-  Future<String?> _performGet(Uri url, String token, {int maxTrial = 3}) async {
+  Future<String?> _performGet(
+    Uri url,
+    String token, {
+    int maxTrial = 3,
+    LyricsRequestScope? scope,
+  }) async {
     if (maxTrial < 0) return null;
 
     try {
-      final response = await http
-          .get(url, headers: _headers)
-          .timeout(const Duration(seconds: 10));
+      final response = await scopedGet(
+        url,
+        scope: scope,
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final body = response.body;
@@ -447,7 +465,7 @@ class MusixmatchService {
         if (body.contains('"status_code":401')) {
           if (body.contains('"hint":"renew"')) {
             // Refresh token
-            final newToken = await fetchNewToken();
+            final newToken = await fetchNewToken(scope: scope);
             if (newToken != null) {
               await _settingsService.setMusixmatchToken(newToken);
               // Update URL with new token
@@ -459,12 +477,18 @@ class MusixmatchService {
                 newUrl,
                 newToken,
                 maxTrial: maxTrial - 1,
+                scope: scope,
               );
             }
           } else if (body.contains('"hint":"captcha"')) {
             // Wait and retry
             await Future.delayed(const Duration(seconds: 1));
-            return await _performGet(url, token, maxTrial: maxTrial - 1);
+            return await _performGet(
+              url,
+              token,
+              maxTrial: maxTrial - 1,
+              scope: scope,
+            );
           }
         }
         return body;

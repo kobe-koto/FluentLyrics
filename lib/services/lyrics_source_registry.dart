@@ -1,6 +1,7 @@
 import '../models/general_translation_request_data.dart';
 import '../models/lyric_model.dart';
 import '../models/lyric_provider_type.dart';
+import 'lyrics_request_scope.dart';
 import 'providers/llm_translation_service.dart';
 import 'providers/lrclib_service.dart';
 import 'providers/lyrics_cache_service.dart';
@@ -19,6 +20,7 @@ class LyricsFetchRequest {
     this.onStatusUpdate,
     this.onArtworkUrl,
     this.onTranslation,
+    this.scope,
   });
 
   final String title;
@@ -30,6 +32,7 @@ class LyricsFetchRequest {
   final Function(String)? onStatusUpdate;
   final Function(String)? onArtworkUrl;
   final Function(LyricsResult)? onTranslation;
+  final LyricsRequestScope? scope;
 }
 
 class LyricsTranslationRequest {
@@ -37,11 +40,13 @@ class LyricsTranslationRequest {
     required this.data,
     required this.targetLanguage,
     required this.translationBias,
+    this.scope,
   });
 
   final GeneralTranslationRequestData data;
   final String targetLanguage;
   final int translationBias;
+  final LyricsRequestScope? scope;
 }
 
 abstract class LyricsSource {
@@ -123,6 +128,7 @@ class LrclibLyricsSource extends LyricsSource {
       durationSeconds: request.durationSeconds,
       onStatusUpdate: request.onStatusUpdate,
       onArtworkUrl: request.onArtworkUrl,
+      scope: request.scope,
     );
   }
 }
@@ -143,6 +149,7 @@ class MusixmatchLyricsSource extends LyricsSource {
       durationSeconds: request.durationSeconds,
       onStatusUpdate: request.onStatusUpdate,
       onArtworkUrl: request.onArtworkUrl,
+      scope: request.scope,
     );
   }
 
@@ -153,7 +160,11 @@ class MusixmatchLyricsSource extends LyricsSource {
 
   @override
   Future<LyricsResult> fetchTranslation(LyricsTranslationRequest request) {
-    return _service.fetchTranslation(request.data, request.targetLanguage);
+    return _service.fetchTranslation(
+      request.data,
+      request.targetLanguage,
+      scope: request.scope,
+    );
   }
 }
 
@@ -176,6 +187,7 @@ class NeteaseLyricsSource extends LyricsSource {
       trimMetadata: request.shouldTrimMetadata,
       translationBias: request.translationBias,
       onTranslation: request.onTranslation,
+      scope: request.scope,
     );
   }
 
@@ -189,6 +201,7 @@ class NeteaseLyricsSource extends LyricsSource {
     return _service.fetchTranslation(
       request.data,
       translationBias: request.translationBias,
+      scope: request.scope,
     );
   }
 }
@@ -212,6 +225,7 @@ class QQMusicLyricsSource extends LyricsSource {
       trimMetadata: request.shouldTrimMetadata,
       translationBias: request.translationBias,
       onTranslation: request.onTranslation,
+      scope: request.scope,
     );
   }
 
@@ -225,6 +239,7 @@ class QQMusicLyricsSource extends LyricsSource {
     return _service.fetchTranslation(
       request.data,
       translationBias: request.translationBias,
+      scope: request.scope,
     );
   }
 }
@@ -249,6 +264,10 @@ class LlmLyricsSource extends LyricsSource {
 
   @override
   Future<LyricsResult> fetchTranslation(LyricsTranslationRequest request) {
-    return _service.fetchTranslation(request.data, request.targetLanguage);
+    return _service.fetchTranslation(
+      request.data,
+      request.targetLanguage,
+      scope: request.scope,
+    );
   }
 }

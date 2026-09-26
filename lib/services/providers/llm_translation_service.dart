@@ -6,6 +6,7 @@ import '../../models/lyric_model.dart';
 import '../../models/general_translation_request_data.dart';
 import '../../utils/lrc_parser.dart';
 import '../../utils/app_logger.dart';
+import '../lyrics_request_scope.dart';
 import '../settings_service.dart';
 
 class LlmTranslationService {
@@ -22,8 +23,9 @@ class LlmTranslationService {
 
   Future<LyricsResult> fetchTranslation(
     GeneralTranslationRequestData data,
-    String targetLanguage,
-  ) async {
+    String targetLanguage, {
+    LyricsRequestScope? scope,
+  }) async {
     try {
       final baseURI = (await _settingsService.getLlmApiEndpoint()).current;
       final baseURIParsed = Uri.parse(baseURI);
@@ -138,7 +140,9 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
           (await _settingsService.getLlmTimeToFirstTokenSeconds()).current;
       final minTokensPerSecond =
           (await _settingsService.getLlmMinTokensPerSecond()).current;
-      final client = http.Client();
+      if (scope?.isCancelled == true) return LyricsResult.empty();
+      final ownsClient = scope == null;
+      final client = scope?.client ?? http.Client();
       late final http.StreamedResponse response;
       try {
         final request = http.Request('POST', requestURL);
@@ -150,7 +154,7 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
         request.body = jsonEncode(requestBody);
         response = await client.send(request);
       } catch (e) {
-        client.close();
+        if (ownsClient) client.close();
         rethrow;
       }
 
@@ -171,8 +175,9 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
           minTokensPerSecond: eventStream ? pace.minTokensPerSecond : 0,
         );
       } finally {
-        client.close();
+        if (ownsClient) client.close();
       }
+      if (scope?.isCancelled == true) return LyricsResult.empty();
       final int end = FlutterTimeline.now;
       final int requestElapsed = (end - start) ~/ 1000;
       AppLogger.debug('[LLM Translation] Request Elapsed: $requestElapsed ms');
@@ -324,9 +329,10 @@ ${linesToTranslate.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
       );
     } catch (e) {
       AppLogger.debug('[LLM Translation] Error: $e');
-      return LyricsResult.failure(
+      return failureUnlessCancelled(
+        e,
+        scope: scope,
         source: 'LLM Translation',
-        message: e.toString(),
         translation: true,
         translationProvider: 'LLM Translation',
       );

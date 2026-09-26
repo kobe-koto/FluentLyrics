@@ -5,6 +5,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/lrc_parser.dart';
 import '../../utils/rich_lrc_parser.dart';
 import '../../utils/string_similarity.dart';
+import '../lyrics_request_scope.dart';
 
 class LrclibService {
   static const String _baseSearchUrl = 'https://lrclib.net/api/search';
@@ -21,8 +22,10 @@ class LrclibService {
     required int durationSeconds,
     Function(String)? onStatusUpdate,
     Function(String)? onArtworkUrl,
+    LyricsRequestScope? scope,
   }) async {
     try {
+      if (scope?.isCancelled == true) return LyricsResult.empty();
       final queryParams = {
         'artist_name': artist.join(', '),
         'track_name': title,
@@ -36,7 +39,10 @@ class LrclibService {
 
       onStatusUpdate?.call('[LRCLIB] Searching lyrics...');
 
-      final response = await _httpGet(uri).timeout(const Duration(seconds: 10));
+      final response = await _get(
+        uri,
+        scope,
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> rawResults = jsonDecode(response.body);
@@ -146,7 +152,13 @@ class LrclibService {
       );
     } catch (e) {
       AppLogger.debug('[LRCLIB] Error fetching lyrics: $e');
-      return LyricsResult.failure(source: 'LRCLIB', message: e.toString());
+      return failureUnlessCancelled(e, scope: scope, source: 'LRCLIB');
     }
+  }
+
+  Future<http.Response> _get(Uri uri, LyricsRequestScope? scope) {
+    if (scope?.isCancelled == true) throw const LyricsRequestCancelled();
+    if (scope != null) return scope.client.get(uri);
+    return _httpGet(uri);
   }
 }

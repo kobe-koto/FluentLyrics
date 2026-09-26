@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:http/http.dart' as http;
+import '../lyrics_request_scope.dart';
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_pkg;
 import '../../models/lyric_model.dart';
@@ -26,13 +26,16 @@ class NeteaseService {
     int translationBias = 0,
     Function(String)? onArtworkUrl,
     Function(LyricsResult)? onTranslation,
+    LyricsRequestScope? scope,
   }) async {
     try {
+      if (scope?.isCancelled == true) return LyricsResult.empty();
       onStatusUpdate?.call('[NeteaseMusic] Searching songs...');
       final matchingSongs = await _searchSongs(
         title: title,
         artist: artist,
         durationSeconds: durationSeconds,
+        scope: scope,
       );
 
       if (matchingSongs.isEmpty) {
@@ -59,6 +62,7 @@ class NeteaseService {
           onTranslation,
           title,
           artist,
+          scope: scope,
         );
 
         if (lyricData == null) {
@@ -75,10 +79,7 @@ class NeteaseService {
       }
     } catch (e) {
       AppLogger.debug('[NeteaseMusic] Error fetching lyrics: $e');
-      return LyricsResult.failure(
-        source: 'Netease Music',
-        message: e.toString(),
-      );
+      return failureUnlessCancelled(e, scope: scope, source: 'Netease Music');
     }
     return LyricsResult.empty();
   }
@@ -86,8 +87,10 @@ class NeteaseService {
   Future<LyricsResult> fetchTranslation(
     GeneralTranslationRequestData data, {
     int translationBias = 0,
+    LyricsRequestScope? scope,
   }) async {
     try {
+      if (scope?.isCancelled == true) return LyricsResult.empty();
       LyricsResult? translationResult;
       await fetchLyrics(
         title: data.title,
@@ -97,14 +100,16 @@ class NeteaseService {
         onTranslation: (trans) {
           translationResult = trans;
         },
+        scope: scope,
       );
 
       return translationResult ?? LyricsResult.empty();
     } catch (e) {
       AppLogger.debug('[NeteaseMusic] Error fetching translation: $e');
-      return LyricsResult.failure(
+      return failureUnlessCancelled(
+        e,
+        scope: scope,
         source: 'Netease Music',
-        message: e.toString(),
         translation: true,
         translationProvider: 'Netease Music',
       );
@@ -121,6 +126,7 @@ class NeteaseService {
     required String title,
     required List<String> artist,
     int durationSeconds = 0,
+    LyricsRequestScope? scope,
   }) async {
     try {
       final keywordList = ['$title - ${artist.join(', ')}', title];
@@ -160,9 +166,12 @@ class NeteaseService {
         final encrypted = _NeteaseEapiHelper.encrypt(eapiSearchUrl, eapiData);
         final headers = _NeteaseEapiHelper.buildHeaders(eapiHeader);
 
-        final searchResponse = await http
-            .post(Uri.parse(eapiSearchUrl), headers: headers, body: encrypted)
-            .timeout(const Duration(seconds: 10));
+        final searchResponse = await scopedPost(
+          Uri.parse(eapiSearchUrl),
+          scope: scope,
+          headers: headers,
+          body: encrypted,
+        ).timeout(const Duration(seconds: 10));
 
         if (searchResponse.statusCode != 200) {
           throw Exception(
@@ -238,8 +247,9 @@ class NeteaseService {
     int translationBias,
     Function(LyricsResult)? onTranslation,
     String title,
-    List<String> artist,
-  ) async {
+    List<String> artist, {
+    LyricsRequestScope? scope,
+  }) async {
     try {
       final lyricUri = Uri.parse('https://music.163.com/api/song/lyric')
           .replace(
@@ -256,9 +266,11 @@ class NeteaseService {
             },
           );
 
-      final lyricResponse = await http
-          .get(lyricUri, headers: _headers)
-          .timeout(const Duration(seconds: 10));
+      final lyricResponse = await scopedGet(
+        lyricUri,
+        scope: scope,
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
 
       if (lyricResponse.statusCode != 200) {
         throw Exception(

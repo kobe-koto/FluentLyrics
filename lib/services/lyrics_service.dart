@@ -10,6 +10,7 @@ import 'providers/lyrics_cache_service.dart';
 import 'providers/llm_translation_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/translation_helper.dart';
+import 'lyrics_request_scope.dart';
 import 'lyrics_source_registry.dart';
 import 'winner_selector.dart';
 
@@ -72,6 +73,13 @@ class LyricsService {
        _cacheService = cacheService ?? LyricsCacheService(),
        _sourceRegistryOverride = sourceRegistry;
 
+  bool _requestCancelled(
+    LyricsRequestScope? scope,
+    bool Function()? isCancelled,
+  ) {
+    return scope?.isCancelled == true || isCancelled?.call() == true;
+  }
+
   Stream<LyricsResult> fetchLyrics({
     required String title,
     required List<String> artist,
@@ -80,6 +88,7 @@ class LyricsService {
     Function(String)? onStatusUpdate,
     Function(bool)? onFetchStatusUpdate,
     bool Function()? isCancelled,
+    LyricsRequestScope? scope,
     required List<LyricProviderType> trimMetadataProviders,
     required bool richSyncEnabled,
     Function(LyricsResult)? onTranslation,
@@ -109,7 +118,7 @@ class LyricsService {
       AppLogger.debug(
         '[LyricsService.fetchLyrics]   ==> Fetching from $provider',
       );
-      if (isCancelled?.call() == true) {
+      if (_requestCancelled(scope, isCancelled)) {
         if (bestResult != null) yield bestResult;
         return;
       }
@@ -157,8 +166,13 @@ class LyricsService {
           onArtworkUrl: onArtworkUrl,
           translationBias: translationBias,
           onTranslation: onTranslationWrapper,
+          scope: scope,
         ),
       );
+      if (_requestCancelled(scope, isCancelled)) {
+        if (bestResult != null) yield bestResult;
+        return;
+      }
 
       result = result.copyWith(
         sourceProvider: provider == LyricProviderType.cache
@@ -172,6 +186,7 @@ class LyricsService {
       }
 
       if (result.isFailure) {
+        if (_requestCancelled(scope, isCancelled)) return;
         onCandidate?.call(result);
         continue;
       }
@@ -257,6 +272,7 @@ class LyricsService {
     required String album,
     required int durationSeconds,
     bool Function()? isCancelled,
+    LyricsRequestScope? scope,
     Map<LyricProviderType, Set<String>>? refetchTargets,
     bool skipCacheLookup = false,
 
@@ -342,7 +358,7 @@ class LyricsService {
     // ends this request, while a complete cache miss falls through to the
     // next provider.
     for (var tProvider in translationProviders) {
-      if (isCancelled?.call() == true) return;
+      if (_requestCancelled(scope, isCancelled)) return;
 
       AppLogger.debug(
         '[LyricsService.fetchTranslation]   ==> Processing provider ${tProvider.metadata['name']}',
@@ -361,7 +377,7 @@ class LyricsService {
             continue;
           }
 
-          if (isCancelled?.call() == true) return;
+          if (_requestCancelled(scope, isCancelled)) return;
 
           AppLogger.debug(
             '[LyricsService.fetchTranslation]     ==> Checking cache for $targetLanguage',
@@ -426,7 +442,7 @@ class LyricsService {
           continue;
         }
 
-        if (isCancelled?.call() == true) return;
+        if (_requestCancelled(scope, isCancelled)) return;
 
         final source = _sourceRegistry.sourceFor(tProvider);
         if (source == null || !source.checkTranslationSupport(targetLanguage)) {
@@ -445,13 +461,16 @@ class LyricsService {
             data: requestData,
             targetLanguage: targetLanguage,
             translationBias: translationBias,
+            scope: scope,
           ),
         );
+        if (_requestCancelled(scope, isCancelled)) return;
         transResult = transResult.copyWith(
           sourceProvider: originalSourceProvider,
         );
 
         if (transResult.isFailure) {
+          if (_requestCancelled(scope, isCancelled)) return;
           onTranslationCandidate?.call(transResult);
           continue;
         }
