@@ -24,7 +24,11 @@ class LyricsProviderSettings {
     return LyricsProviderSettings._(values);
   }
 
-  Setting<T> _get<T>(PrefSetting<T> spec) => _values[spec]! as Setting<T>;
+  Setting<T> _get<T>(PrefSetting<T> spec) {
+    final stored = _values[spec]!;
+    if (stored is Setting<T>) return stored;
+    return spec.settingFromCurrent(stored.current as T);
+  }
 
   void _set<T>(PrefSetting<T> spec, Setting<T> value) {
     _values[spec] = value;

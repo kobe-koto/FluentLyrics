@@ -375,12 +375,7 @@ class SettingsService {
     if (plan.unavailable) {
       throw const SecretStoreException(SecretStoreFailure.read);
     }
-    final current = _secretCurrent(spec, plan.value);
-    return Setting(
-      current: current,
-      defaultValue: spec.defaultValue,
-      changed: current != spec.defaultValue,
-    );
+    return spec.settingFromSecret(plan.value);
   }
 
   Future<void> _saveSecret(PrefSetting<dynamic> spec, String? value) async {
@@ -391,12 +386,5 @@ class SettingsService {
       placeholders: spec.placeholders,
       deletePlaintext: () => _removePlain(spec.key),
     );
-  }
-
-  T _secretCurrent<T>(PrefSetting<T> spec, String? value) {
-    if (spec.defaultValue is String) {
-      return (value ?? spec.defaultValue) as T;
-    }
-    return value as T;
   }
 }

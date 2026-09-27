@@ -31,20 +31,29 @@ class PrefSetting<T> {
   /// Values that mean "not configured" and must not be written to the store.
   final Set<String> placeholders;
 
-  Setting<T> get initial => Setting(
-    current: defaultValue,
-    defaultValue: defaultValue,
-    changed: false,
-  );
+  Setting<T> get initial => settingFromCurrent(defaultValue);
 
   Setting<T> settingFrom(SharedPreferences prefs) {
-    final current = read(prefs, key) ?? defaultValue;
+    return settingFromCurrent(read(prefs, key) ?? defaultValue);
+  }
+
+  /// Builds a [Setting] for this row. Must stay an instance method: a generic
+  /// function constructs `Setting<dynamic>`, which the provider cannot cast.
+  Setting<T> settingFromCurrent(T current) {
     final same = equals?.call(current, defaultValue) ?? current == defaultValue;
     return Setting(
       current: current,
       defaultValue: defaultValue,
       changed: !same,
     );
+  }
+
+  /// [String] null becomes [defaultValue]. [String?] null stays null.
+  Setting<T> settingFromSecret(String? value) {
+    final current = defaultValue is String
+        ? (value ?? defaultValue) as T
+        : value as T;
+    return settingFromCurrent(current);
   }
 
   Future<void> save(SharedPreferences prefs, T value) =>
