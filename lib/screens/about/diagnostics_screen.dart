@@ -9,6 +9,7 @@ import '../../constants/app_defaults.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/lyric_provider_type.dart';
 import '../../providers/lyrics_provider_settings.dart';
+import '../../services/musixmatch_token.dart';
 import '../../services/secret_store.dart';
 import '../../services/settings_service.dart';
 import '../../theme/monospace_text_style.dart';
@@ -125,8 +126,9 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
     var musixmatchTokenConfigured = false;
     try {
       final musixmatchToken = await settingsService.getMusixmatchToken();
-      musixmatchTokenConfigured =
-          musixmatchToken.current?.trim().isNotEmpty == true;
+      musixmatchTokenConfigured = isUsableMusixmatchToken(
+        musixmatchToken.current,
+      );
     } on SecretStoreException {
       secureStorageAvailable = false;
     }

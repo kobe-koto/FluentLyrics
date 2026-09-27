@@ -29,11 +29,18 @@ class SecretMigrationPlan {
   final bool unavailable;
 }
 
-bool isRealSecret(String? value, Set<String> placeholders) {
+bool isRealSecret(
+  String? value,
+  Set<String> placeholders, {
+  bool Function(String value)? placeholderWhen,
+}) {
   if (value == null) return false;
   final trimmed = value.trim();
   if (trimmed.isEmpty) return false;
-  return !placeholders.contains(value) && !placeholders.contains(trimmed);
+  if (placeholders.contains(value) || placeholders.contains(trimmed)) {
+    return false;
+  }
+  return placeholderWhen?.call(value) != true;
 }
 
 /// Decides how to move one secret out of plaintext preferences.
@@ -45,6 +52,7 @@ SecretMigrationPlan planSecretMigration({
   required SecureSecretSnapshot? secure,
   required PlaintextSecret plain,
   required Set<String> placeholders,
+  bool Function(String value)? placeholderWhen,
 }) {
   if (secure == null) {
     return const SecretMigrationPlan(
@@ -56,7 +64,12 @@ SecretMigrationPlan planSecretMigration({
     );
   }
 
-  if (secure.present && isRealSecret(secure.value, placeholders)) {
+  if (secure.present &&
+      isRealSecret(
+        secure.value,
+        placeholders,
+        placeholderWhen: placeholderWhen,
+      )) {
     return SecretMigrationPlan(
       value: secure.value,
       writeToSecure: false,
@@ -66,7 +79,11 @@ SecretMigrationPlan planSecretMigration({
     );
   }
 
-  if (isRealSecret(plain.value, placeholders)) {
+  if (isRealSecret(
+    plain.value,
+    placeholders,
+    placeholderWhen: placeholderWhen,
+  )) {
     return SecretMigrationPlan(
       value: plain.value,
       writeToSecure: true,

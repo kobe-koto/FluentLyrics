@@ -69,7 +69,7 @@ Provider services:
 | Type | Service | Notes |
 | --- | --- | --- |
 | `lrclib` | `LrclibService` | Open lyrics database |
-| `musixmatch` | `MusixmatchService` | Token stored in prefs; 401 renews the token |
+| `musixmatch` | `MusixmatchService` | Android API (`apic.musixmatch.com`, `android-player-v1.0`); token in secure storage. Placeholder tokens are not saved. 401 `renew` fetches a new token and does not replace a usable token with a placeholder |
 | `netease` | `NeteaseService` | EAPI search; can return reading tracks |
 | `qqmusic` | `QQMusicService` | Encrypted lyric payload in `qqmusic_lyric_decoder.dart`; word-level kana |
 | `cache` | `LyricsCacheService` | Isar, not a network source |
@@ -108,7 +108,7 @@ Position for highlighting comes from the media service, plus global and per-trac
 
 `Setting<T>` records `current`, `defaultValue`, and `changed`. Defaults live only in `AppDefaults`. Persistence keys live in `PrefSettings`; `SettingsService` reads and writes that table. `LyricsProviderSettings` mirrors `PrefSettings.mirrored` and exposes getters for the UI. Display transforms live in `LyricsDisplayPipeline`. The fetch methods live in `lyrics_provider_fetch.dart`.
 
-The LLM API key and Musixmatch token are `PrefSetting.secure`. They are stored with `flutter_secure_storage`: Android Keystore, the macOS login keychain (`usesDataProtectionKeychain: false`, so no Keychain Sharing entitlement), and Linux libsecret. A real value left in SharedPreferences is copied on the next successful read and then deleted. The dummy API key is not stored. If the store cannot be opened, the read is a failure: the plaintext copy is not used and is not deleted. Diagnostics report only whether a secret is configured and whether secure storage was available.
+The LLM API key and Musixmatch token are `PrefSetting.secure`. They are stored with `flutter_secure_storage`: Android Keystore, the macOS login keychain (`usesDataProtectionKeychain: false`, so no Keychain Sharing entitlement), and Linux libsecret. A real value left in SharedPreferences is copied on the next successful read and then deleted. The dummy API key is not stored. A Musixmatch placeholder (`null`, any all-zero token, or an `UpgradeOnly` stub) is not stored and is deleted on the next successful read. If the store cannot be opened, the read is a failure: the plaintext copy is not used and is not deleted. Diagnostics report only whether a secret is configured and whether secure storage was available.
 
 Changing a setting should update prefs and notify listeners. Reset actions compare against `AppDefaults`, not a second copy of the default buried in a widget.
 

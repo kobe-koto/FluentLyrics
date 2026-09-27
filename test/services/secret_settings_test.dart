@@ -117,6 +117,69 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(PrefSettings.llmApiKey.key), 'sk-live');
   });
+
+  test(
+    'a placeholder Musixmatch token is deleted and not configured',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = MemorySecretStore({
+        PrefSettings.musixmatchToken.key: '0' * 56,
+      });
+      final service = SettingsService(secretStore: store);
+
+      final setting = await service.getMusixmatchToken();
+
+      expect(setting.current, isNull);
+      expect(
+        store.values.containsKey(PrefSettings.musixmatchToken.key),
+        isFalse,
+      );
+    },
+  );
+
+  test('an upgrade stub is not configured', () async {
+    SharedPreferences.setMockInitialValues({});
+    final store = MemorySecretStore({
+      PrefSettings.musixmatchToken.key:
+          'UpgradeOnlyUpgradeOnlyUpgradeOnlyUpgradeOnly',
+    });
+    final service = SettingsService(secretStore: store);
+
+    expect((await service.getMusixmatchToken()).current, isNull);
+    expect(store.values.containsKey(PrefSettings.musixmatchToken.key), isFalse);
+  });
+
+  test('a short all-zero token does not hide a real plaintext token', () async {
+    SharedPreferences.setMockInitialValues({
+      PrefSettings.musixmatchToken.key: 'mxm-real',
+    });
+    final store = MemorySecretStore({
+      PrefSettings.musixmatchToken.key: '0' * 8,
+    });
+    final service = SettingsService(secretStore: store);
+
+    final setting = await service.getMusixmatchToken();
+
+    expect(setting.current, 'mxm-real');
+    expect(store.values[PrefSettings.musixmatchToken.key], 'mxm-real');
+  });
+
+  test(
+    'saving an all-zero token does not store it or erase unread plaintext',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        PrefSettings.musixmatchToken.key: 'mxm-token',
+      });
+      final store = MemorySecretStore();
+      final service = SettingsService(secretStore: store);
+
+      await service.setMusixmatchToken('0' * 12);
+
+      expect(store.values, isEmpty);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(PrefSettings.musixmatchToken.key), 'mxm-token');
+    },
+  );
 }
 
 class _WriteFailingSecretStore implements SecretStore {

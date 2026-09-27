@@ -12,6 +12,7 @@ class SecretSettings {
     required String key,
     required PlaintextSecret plain,
     required Set<String> placeholders,
+    bool Function(String value)? placeholderWhen,
     required Future<void> Function() deletePlaintext,
   }) {
     return _locked(key, () async {
@@ -24,6 +25,7 @@ class SecretSettings {
           secure: null,
           plain: plain,
           placeholders: placeholders,
+          placeholderWhen: placeholderWhen,
         );
       }
 
@@ -31,6 +33,7 @@ class SecretSettings {
         secure: secure,
         plain: plain,
         placeholders: placeholders,
+        placeholderWhen: placeholderWhen,
       );
       if (plan.writeToSecure) {
         try {
@@ -40,6 +43,7 @@ class SecretSettings {
             secure: null,
             plain: plain,
             placeholders: placeholders,
+            placeholderWhen: placeholderWhen,
           );
         }
       } else if (plan.deleteSecure) {
@@ -63,19 +67,29 @@ class SecretSettings {
     required String? value,
     required PlaintextSecret plain,
     required Set<String> placeholders,
+    bool Function(String value)? placeholderWhen,
     required Future<void> Function() deletePlaintext,
   }) {
     return _locked(key, () async {
-      if (isRealSecret(value, placeholders)) {
+      if (isRealSecret(value, placeholders, placeholderWhen: placeholderWhen)) {
         await _store.write(key, value!);
         await _dropPlaintext(key, deletePlaintext);
         return;
       }
 
       final existing = await _store.read(key);
-      final secureWasReal = isRealSecret(existing, placeholders);
+      final secureWasReal = isRealSecret(
+        existing,
+        placeholders,
+        placeholderWhen: placeholderWhen,
+      );
       final plainIsReal =
-          plain.present && isRealSecret(plain.value, placeholders);
+          plain.present &&
+          isRealSecret(
+            plain.value,
+            placeholders,
+            placeholderWhen: placeholderWhen,
+          );
       if (!secureWasReal && plainIsReal) {
         return;
       }

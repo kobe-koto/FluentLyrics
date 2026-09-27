@@ -3,6 +3,7 @@ import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../services/secret_store.dart';
 import '../../services/secret_store_message.dart';
+import '../../services/musixmatch_token.dart';
 import '../../services/providers/musixmatch_service.dart';
 import '../../widgets/settings_scaffold.dart';
 import '../../widgets/screen/settings/lyric_configuration_section.dart';
@@ -90,10 +91,11 @@ class _LyricConfigurationSettingsContentState
     setState(() => _isFetchingToken = true);
     try {
       final newToken = await _musixmatchService.fetchNewToken();
-      if (newToken != null) {
-        setState(() => _tokenController.text = newToken);
+      if (isUsableMusixmatchToken(newToken)) {
+        final acquired = newToken!;
+        setState(() => _tokenController.text = acquired);
         try {
-          await _settingsService.setMusixmatchToken(newToken);
+          await _settingsService.setMusixmatchToken(acquired);
           if (mounted) {
             setState(() => _secretError = null);
             _showSnackBar(t.settings.lyricConfig.tokenAcquired);
@@ -106,6 +108,18 @@ class _LyricConfigurationSettingsContentState
           }
         }
       } else {
+        if (!isUsableMusixmatchToken(_tokenController.text)) {
+          _tokenController.text = '';
+          try {
+            await _settingsService.setMusixmatchToken('');
+          } on SecretStoreException catch (error) {
+            if (mounted) {
+              setState(
+                () => _secretError = secretStoreFailureMessage(error.failure),
+              );
+            }
+          }
+        }
         if (mounted) _showSnackBar(t.settings.lyricConfig.tokenFailed);
       }
     } finally {

@@ -6,9 +6,15 @@ import '../../models/general_translation_request_data.dart';
 import '../../utils/lrc_parser.dart';
 import '../../utils/rich_lrc_parser.dart';
 import '../../utils/app_logger.dart';
+import '../musixmatch_token.dart';
 import '../settings_service.dart';
 
 class MusixmatchService {
+  MusixmatchService({SettingsService? settingsService})
+    : _settingsService = settingsService ?? SettingsService();
+
+  final SettingsService _settingsService;
+
   bool checkTranslationSupport(String language) {
     // musixmatch only accept lowercase input
     String lowercaseLanguage = language.toLowerCase();
@@ -26,15 +32,12 @@ class MusixmatchService {
     return true;
   }
 
-  final SettingsService _settingsService = SettingsService();
-  static const String _appId = 'web-desktop-app-v1.0';
+  static const String _apiBase = 'https://apic.musixmatch.com/ws/1.1';
+  static const String _appId = 'android-player-v1.0';
   static const Map<String, String> _headers = {
-    'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+    'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 13)',
     'Accept': 'application/json',
-    'Authority': 'apic-desktop.musixmatch.com',
-    'Cookie':
-        'AWSELB=unknown; x-mxm-user-id=; x-mxm-token-guid=; mxm-encrypted-token=;',
+    'Cookie': 'AWSELB=0; AWSELBCORS=0',
   };
 
   Future<LyricsResult> fetchLyrics({
@@ -47,8 +50,8 @@ class MusixmatchService {
   }) async {
     try {
       if (scope?.isCancelled == true) return LyricsResult.empty();
-      String? token = (await _settingsService.getMusixmatchToken()).current;
-      if (token == null || token.isEmpty) {
+      String? token = await _usableToken();
+      if (token == null) {
         onStatusUpdate?.call('[Musixmatch] Getting token...');
         token = await fetchNewToken(scope: scope);
         if (token != null) {
@@ -79,9 +82,8 @@ class MusixmatchService {
   }
 
   Future<String?> fetchNewToken({LyricsRequestScope? scope}) async {
-    final t = _randomId();
     final url = Uri.parse(
-      'https://apic-desktop.musixmatch.com/ws/1.1/token.get?app_id=$_appId&t=$t',
+      '$_apiBase/token.get?user_language=en&app_id=$_appId&t=${_requestId()}',
     );
     try {
       final response = await scopedGet(
@@ -89,11 +91,18 @@ class MusixmatchService {
         scope: scope,
         headers: _headers,
       ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['message']['body']['user_token'];
-      }
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body);
+      if (data is! Map) return null;
+      final message = data['message'];
+      if (message is! Map) return null;
+      final header = message['header'];
+      if (header is! Map || header['status_code'] != 200) return null;
+      final body = message['body'];
+      if (body is! Map) return null;
+      final token = body['user_token'];
+      if (token is! String || !isUsableMusixmatchToken(token)) return null;
+      return token.trim();
     } catch (e) {
       AppLogger.debug('[Musixmatch] Error fetching token: $e');
     }
@@ -107,27 +116,19 @@ class MusixmatchService {
     String token,
     Function(String)? onArtworkUrl, {
     LyricsRequestScope? scope,
+    bool allowRefresh = true,
   }) async {
-    final t = _randomId();
-    final url =
-        Uri.parse(
-          'https://apic-desktop.musixmatch.com/ws/1.1/macro.subtitles.get',
-        ).replace(
-          queryParameters: {
-            'namespace': 'lyrics_richsynched',
-            'optional_calls': 'track.richsync,matcher.track.get',
-            'subtitle_format': 'lrc',
-            'q_track': track,
-            'q_artist': artist.join(', '),
-            'f_subtitle_length': duration.toString(),
-            'q_duration': duration.toString(),
-            'f_subtitle_length_max_deviation': '40',
-            'usertoken': token,
-            'app_id': _appId,
-            't': t,
-            'format': 'json',
-          },
-        );
+    final url = _apiUri('macro.subtitles.get', {
+      'namespace': 'lyrics_richsynched',
+      'optional_calls': 'track.richsync,matcher.track.get',
+      'subtitle_format': 'lrc',
+      'q_track': track,
+      'q_artist': artist.join(', '),
+      'f_subtitle_length': duration.toString(),
+      'q_duration': duration.toString(),
+      'f_subtitle_length_max_deviation': '40',
+      'usertoken': token,
+    });
 
     final response = await scopedGet(
       url,
@@ -187,7 +188,10 @@ class MusixmatchService {
             isInstrumental ||
             (trackSubtitles != null &&
                 trackSubtitles['message']['header']['status_code'] == 200 &&
-                trackSubtitles['message']['header']['available'] > 0) ||
+                _headerHasSubtitles(
+                  trackSubtitles['message']['header'],
+                  trackSubtitles['message']['body'],
+                )) ||
             (trackRichsync != null &&
                 trackRichsync['message']['header']['status_code'] == 200)) {
           List<Lyric> lyrics = [];
@@ -204,7 +208,10 @@ class MusixmatchService {
               isPureMusic = lyricsHeader['instrumental'] == 1;
             }
 
-            if (header['available'] > 0) {
+            if (_headerHasSubtitles(
+              header,
+              trackSubtitles['message']['body'],
+            )) {
               final subtitleBody = trackSubtitles['message']['body'];
               final subtitleList = subtitleBody['subtitle_list'];
               if (subtitleList != null && subtitleList.isNotEmpty) {
@@ -259,12 +266,34 @@ class MusixmatchService {
             isPureMusic: isPureMusic,
           );
         }
-      } else if (statusCode == 401) {
-        // Token expired?
-        await _settingsService.setMusixmatchToken(''); // Clear token
+      } else if (statusCode == 401 &&
+          data['message']['header']['hint'] == 'renew' &&
+          allowRefresh) {
+        final refreshed = await fetchNewToken(scope: scope);
+        if (refreshed != null) {
+          await _settingsService.setMusixmatchToken(refreshed);
+          return _getLyricsResult(
+            track,
+            artist,
+            duration,
+            refreshed,
+            onArtworkUrl,
+            scope: scope,
+            allowRefresh: false,
+          );
+        }
       }
     }
     return null;
+  }
+
+  bool _headerHasSubtitles(dynamic header, dynamic body) {
+    if (header is! Map) return false;
+    final available = header['available'];
+    if (available is num) return available > 0;
+    if (body is! Map) return false;
+    final subtitleList = body['subtitle_list'];
+    return subtitleList is List && subtitleList.isNotEmpty;
   }
 
   Future<LyricsResult> fetchTranslation(
@@ -274,8 +303,8 @@ class MusixmatchService {
   }) async {
     try {
       if (scope?.isCancelled == true) return LyricsResult.empty();
-      String? token = (await _settingsService.getMusixmatchToken()).current;
-      if (token == null || token.isEmpty) {
+      String? token = await _usableToken();
+      if (token == null) {
         token = await fetchNewToken(scope: scope);
         if (token != null) {
           await _settingsService.setMusixmatchToken(token);
@@ -289,21 +318,11 @@ class MusixmatchService {
         }
       }
 
-      // 1. Get Track ID
-      final t = _randomId();
-      final trackUrl =
-          Uri.parse(
-            'https://apic-desktop.musixmatch.com/ws/1.1/matcher.track.get',
-          ).replace(
-            queryParameters: {
-              'q_artist': data.artist,
-              'q_track': data.title,
-              'usertoken': token,
-              'app_id': _appId,
-              't': t,
-              'format': 'json',
-            },
-          );
+      final trackUrl = _apiUri('matcher.track.get', {
+        'q_artist': data.artist,
+        'q_track': data.title,
+        'usertoken': token,
+      });
 
       final trackResponse = await _performGet(trackUrl, token, scope: scope);
       if (trackResponse == null) return LyricsResult.empty();
@@ -317,22 +336,14 @@ class MusixmatchService {
       final trackId = track['track_id'].toString();
 
       // 2. Fetch Translation
-      final transUrl =
-          Uri.parse(
-            'https://apic-desktop.musixmatch.com/ws/1.1/crowd.track.translations.get',
-          ).replace(
-            queryParameters: {
-              'translation_fields_set': 'minimal',
-              'selected_language': language,
-              'track_id': trackId,
-              'comment_format': 'text',
-              'part': 'user',
-              'usertoken': token,
-              'app_id': _appId,
-              't': t,
-              'format': 'json',
-            },
-          );
+      final transUrl = _apiUri('crowd.track.translations.get', {
+        'translation_fields_set': 'minimal',
+        'selected_language': language,
+        'track_id': trackId,
+        'comment_format': 'text',
+        'part': 'user',
+        'usertoken': token,
+      });
 
       final transResponse = await _performGet(transUrl, token, scope: scope);
       if (transResponse == null) return LyricsResult.empty();
@@ -357,19 +368,11 @@ class MusixmatchService {
 
       // 3. Fetch Original Lyrics for Timestamps
       // track.subtitles.get
-      final subUrl =
-          Uri.parse(
-            'https://apic-desktop.musixmatch.com/ws/1.1/track.subtitles.get',
-          ).replace(
-            queryParameters: {
-              'track_id': trackId,
-              'subtitle_format': 'lrc',
-              'usertoken': token,
-              'app_id': _appId,
-              't': t,
-              'format': 'json',
-            },
-          );
+      final subUrl = _apiUri('track.subtitles.get', {
+        'track_id': trackId,
+        'subtitle_format': 'lrc',
+        'usertoken': token,
+      });
 
       final subResponse = await _performGet(subUrl, token, scope: scope);
       List<Lyric> originalLyrics = [];
@@ -462,34 +465,32 @@ class MusixmatchService {
       if (response.statusCode == 200) {
         final body = response.body;
         // Check for 401 or captcha in body
-        if (body.contains('"status_code":401')) {
-          if (body.contains('"hint":"renew"')) {
-            // Refresh token
-            final newToken = await fetchNewToken(scope: scope);
-            if (newToken != null) {
-              await _settingsService.setMusixmatchToken(newToken);
-              // Update URL with new token
-              final newUrl = url.replace(
-                queryParameters: Map.from(url.queryParameters)
-                  ..['usertoken'] = newToken,
-              );
-              return await _performGet(
-                newUrl,
-                newToken,
-                maxTrial: maxTrial - 1,
-                scope: scope,
-              );
-            }
-          } else if (body.contains('"hint":"captcha"')) {
-            // Wait and retry
-            await Future.delayed(const Duration(seconds: 1));
+        final header = _messageHeader(body);
+        final statusCode = header?['status_code'];
+        final hint = header?['hint'];
+        if (statusCode == 401 && hint == 'renew') {
+          final newToken = await fetchNewToken(scope: scope);
+          if (newToken != null && newToken != token) {
+            await _settingsService.setMusixmatchToken(newToken);
+            final newUrl = url.replace(
+              queryParameters: Map<String, String>.from(url.queryParameters)
+                ..['usertoken'] = newToken,
+            );
             return await _performGet(
-              url,
-              token,
+              newUrl,
+              newToken,
               maxTrial: maxTrial - 1,
               scope: scope,
             );
           }
+        } else if (statusCode == 401 && hint == 'captcha') {
+          await Future.delayed(const Duration(seconds: 1));
+          return await _performGet(
+            url,
+            token,
+            maxTrial: maxTrial - 1,
+            scope: scope,
+          );
         }
         return body;
       }
@@ -499,9 +500,39 @@ class MusixmatchService {
     return null;
   }
 
-  String _randomId() {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  Future<String?> _usableToken() async {
+    final token = (await _settingsService.getMusixmatchToken()).current;
+    if (!isUsableMusixmatchToken(token)) return null;
+    return token!.trim();
+  }
+
+  Uri _apiUri(String method, Map<String, dynamic> query) {
+    return Uri.parse('$_apiBase/$method').replace(
+      queryParameters: {
+        ...query,
+        'app_id': _appId,
+        'format': 'json',
+        't': _requestId(),
+      },
+    );
+  }
+
+  Map<String, dynamic>? _messageHeader(String body) {
+    try {
+      final data = jsonDecode(body);
+      final message = data is Map ? data['message'] : null;
+      final header = message is Map ? message['header'] : null;
+      if (header is Map<String, dynamic>) return header;
+      if (header is Map) return Map<String, dynamic>.from(header);
+    } catch (_) {}
+    return null;
+  }
+
+  String _requestId() {
     final random = Random();
-    return List.generate(10, (i) => chars[random.nextInt(chars.length)]).join();
+    return List.generate(
+      16,
+      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
   }
 }

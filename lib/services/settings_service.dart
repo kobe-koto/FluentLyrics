@@ -370,6 +370,7 @@ class SettingsService {
       key: spec.key,
       plain: await _plain(spec.key),
       placeholders: spec.placeholders,
+      placeholderWhen: spec.placeholderWhen,
       deletePlaintext: () => _removePlain(spec.key),
     );
     if (plan.unavailable) {
@@ -384,6 +385,7 @@ class SettingsService {
       value: value,
       plain: await _plain(spec.key),
       placeholders: spec.placeholders,
+      placeholderWhen: spec.placeholderWhen,
       deletePlaintext: () => _removePlain(spec.key),
     );
   }

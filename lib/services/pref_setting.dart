@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_defaults.dart';
 import '../models/lyric_provider_type.dart';
 import '../models/setting.dart';
+import 'musixmatch_token.dart';
 
 /// One persisted preference. Add a row here instead of copying a getter and setter.
 class PrefSetting<T> {
@@ -15,6 +16,7 @@ class PrefSetting<T> {
     this.equals,
     this.secure = false,
     this.placeholders = const <String>{},
+    this.placeholderWhen,
   });
 
   final String key;
@@ -30,6 +32,9 @@ class PrefSetting<T> {
 
   /// Values that mean "not configured" and must not be written to the store.
   final Set<String> placeholders;
+
+  /// Extra rejection for values that are not a single exact placeholder.
+  final bool Function(String value)? placeholderWhen;
 
   Setting<T> get initial => settingFromCurrent(defaultValue);
 
@@ -368,6 +373,12 @@ class PrefSettings {
       return prefs.setString(key, value);
     },
     secure: true,
+    placeholders: {
+      musixmatchZeroPlaceholder,
+      musixmatchUpgradeOnlyPlaceholder,
+      'null',
+    },
+    placeholderWhen: musixmatchTokenIsPlaceholder,
   );
 
   /// Settings mirrored into [LyricsProviderSettings]. Adding a row here is enough
