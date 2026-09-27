@@ -13,14 +13,34 @@ import '../../utils/rich_lrc_parser.dart';
 import '../../utils/song_result_helper.dart';
 import '../../utils/translation_helper.dart';
 
+final Random random = Random();
+
 class QQMusicService {
   static const int lyricEmptyRetryCount = 3;
 
-  static const Map<String, String> _headers = {
-    'Referer': 'https://c.y.qq.com/',
-    'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-  };
+  static const List<String> _platforms = [
+    'Macintosh; Intel Mac OS X 10_15_7',
+    'Windows NT 10.0; Win64; x64',
+    'X11; Linux x86_64',
+    'Linux x86_64',
+    'X11; CrOS x86_64 14541.0.0',
+    'Linux; Android 10; K',
+    'iPhone; CPU iPhone OS 14_8 like Mac OS X',
+    'iPad; CPU OS 14_8 like Mac OS X',
+    'iPhone; CPU iPhone OS 15_8 like Mac OS X',
+    'iPad; CPU OS 15_8 like Mac OS X',
+    'iPhone; CPU iPhone OS 16_7 like Mac OS X',
+    'iPad; CPU OS 16_7 like Mac OS X',
+    'iPhone; CPU iPhone OS 17_7 like Mac OS X',
+    'iPad; CPU OS 17_7 like Mac OS X',
+    'iPhone; CPU iPhone OS 18_7 like Mac OS X',
+    'iPad; CPU OS 18_7 like Mac OS X',
+    'iPhone; CPU iPhone OS 26_7 like Mac OS X',
+    'iPad; CPU OS 26_7 like Mac OS X',
+  ];
+
+  String get _userAgent =>
+      'Mozilla/5.0 (${_platforms[random.nextInt(_platforms.length)]}; Nonce ${DateTime.now().millisecondsSinceEpoch.toString()}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${random.nextInt(55) + 100}.${random.nextInt(10)}.${random.nextInt(10)}.${random.nextInt(10)} Safari/537.36';
 
   bool checkTranslationSupport(String language) {
     return language == 'zh_CN';
@@ -208,11 +228,11 @@ class QQMusicService {
       for (final keyword in keywordList) {
         final searchUrl = Uri.parse('https://u.y.qq.com/cgi-bin/musicu.fcg');
         final searchBody = {
-          'req_1': {
+          'music.search.SearchCgiService': {
             'method': 'DoSearchForQQMusicDesktop',
             'module': 'music.search.SearchCgiService',
             'param': {
-              'num_per_page': 20,
+              'num_per_page': 10,
               'page_num': 1,
               'query': keyword,
               'search_type': 0,
@@ -223,7 +243,12 @@ class QQMusicService {
         final searchResponse = await scopedPost(
           searchUrl,
           scope: scope,
-          headers: _headers,
+          headers: {
+            'Host': 'u.y.qq.com',
+            'Origin': 'https://y.qq.com',
+            'Referer': 'https://y.qq.com/',
+            'User-Agent': _userAgent,
+          },
           body: jsonEncode(searchBody),
         ).timeout(const Duration(seconds: 10));
 
@@ -234,12 +259,7 @@ class QQMusicService {
         }
 
         final searchData = jsonDecode(utf8.decode(searchResponse.bodyBytes));
-        final req1 = searchData['req_1'];
-        if (req1['code'] != 0) {
-          throw Exception('QQ Music search failed: code ${req1['code']}');
-        }
-
-        final songList = req1['data']['body']['song']['list'] as List? ?? [];
+        final songList = QQMusicSearchParser.songList(searchData);
         if (songList.isEmpty) {
           AppLogger.debug('[QQMusic] Search returned no songs');
           continue;
@@ -317,7 +337,12 @@ class QQMusicService {
       final response = await scopedPost(
         uri,
         scope: scope,
-        headers: _headers,
+        headers: {
+          'Host': 'c.y.qq.com',
+          'Origin': 'https://y.qq.com',
+          'Referer': 'https://y.qq.com/',
+          'User-Agent': _userAgent,
+        },
         body: body,
       ).timeout(const Duration(seconds: 10));
 
@@ -361,5 +386,44 @@ class QQMusicService {
     } catch (_) {
       return latin1.decode(bodyBytes);
     }
+  }
+}
+
+/// Reads the song list from a `musicu.fcg` search response.
+///
+/// The request is keyed by the module name, and the response echoes that key.
+/// The old `req_1` envelope is the one that starts returning code 2001.
+class QQMusicSearchParser {
+  static const String resultKey = 'music.search.SearchCgiService';
+
+  static List<dynamic> songList(Object? response) {
+    if (response is! Map) {
+      throw Exception('QQ Music search failed: unexpected response');
+    }
+
+    final result = response[resultKey];
+    if (result is! Map) {
+      final topCode = response['code'];
+      if (topCode != null && topCode != 0) {
+        throw Exception('QQ Music search failed: code $topCode');
+      }
+      throw Exception('QQ Music search failed: missing $resultKey');
+    }
+
+    final code = result['code'];
+    if (code != 0) {
+      throw Exception('QQ Music search failed: code $code');
+    }
+
+    final data = result['data'];
+    if (data is! Map) return const [];
+    final dataCode = data['code'];
+    if (dataCode != null && dataCode != 0) {
+      throw Exception('QQ Music search failed: code $dataCode');
+    }
+
+    final list = data['body']?['song']?['list'];
+    if (list is List) return list;
+    return const [];
   }
 }
