@@ -58,7 +58,7 @@ dart run build_runner build --delete-conflicting-outputs  # after Isar schema ed
 
 Analyzer config is `analysis_options.yaml` (`package:flutter_lints` plus `prefer_single_quotes`). `experimental_member_use` is ignored because Isar needs it. Format changed Dart with `dart format` on the files you touched. Do not reformat unrelated files.
 
-Known-good local SDK is Flutter 3.47.4 / Dart 3.13 (constraint in `pubspec.yaml` is `sdk: ^3.10.4`). CI installs Flutter stable and runs `flutter test` on push, pull request, and before release builds. There is no committed FVM pin.
+Known-good local SDK is Flutter 3.47.5 / Dart 3.13.4 (constraint in `pubspec.yaml` is `sdk: ^3.12.0` and Flutter `>=3.44.0`). Android matches the Flutter 3.47 template: Gradle 9.3.1, AGP 9.1.0, Kotlin 2.4.0. Leave `android.builtInKotlin=false` and `android.newDsl=false` until every plugin has migrated. CI installs Flutter stable and runs `flutter test` on push, pull request, and before release builds. There is no committed FVM pin.
 
 ## Conventions
 
