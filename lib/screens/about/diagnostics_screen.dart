@@ -11,6 +11,7 @@ import '../../models/lyric_provider_type.dart';
 import '../../providers/lyrics_provider_settings.dart';
 import '../../services/secret_store.dart';
 import '../../services/settings_service.dart';
+import '../../widgets/settings_card_frame.dart';
 import '../../widgets/settings_scaffold.dart';
 
 class AboutDiagnosticsScreen extends StatefulWidget {
@@ -212,12 +213,10 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.045),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-              ),
+            SettingsCardFrame(
+              padding: EdgeInsets.zero,
+              color: Colors.white.withValues(alpha: 0.045),
+              borderColor: Colors.white.withValues(alpha: 0.08),
               child: SwitchListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 18,
