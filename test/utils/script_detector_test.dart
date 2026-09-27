@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('ScriptDetector.looksJapanese', () {
     test('detects Japanese by kana', () {
-      expect(ScriptDetector.looksJapanese('君の名は'), isTrue);
+      expect(ScriptDetector.looksJapanese('星の名は'), isTrue);
       expect(ScriptDetector.looksJapanese('東京は晴れ'), isTrue);
-      expect(ScriptDetector.looksJapanese('夜に駆ける'), isTrue);
+      expect(ScriptDetector.looksJapanese('風に光る'), isTrue);
       expect(ScriptDetector.looksJapanese('メロディー'), isTrue);
       expect(ScriptDetector.looksJapanese('すごい'), isTrue);
       expect(ScriptDetector.looksJapanese('カタカナとひらがな'), isTrue);
@@ -48,7 +48,7 @@ void main() {
 
   group('ScriptDetector.looksJapaneseLines', () {
     test('evaluates the whole document', () {
-      expect(ScriptDetector.looksJapaneseLines(['中文歌词第一行', '君の名は']), isTrue);
+      expect(ScriptDetector.looksJapaneseLines(['中文歌词第一行', '星の名は']), isTrue);
       expect(ScriptDetector.looksJapaneseLines(['中文歌词', '另一行']), isFalse);
       // Two `の` spread across lines still count as Japanese.
       expect(ScriptDetector.looksJapaneseLines(['奈雪の茶', '恋の季節']), isTrue);

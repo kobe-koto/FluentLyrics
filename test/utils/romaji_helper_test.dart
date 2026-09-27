@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('converts the mora separated readings providers ship', () {
-    expect(RomajiHelper.toKana('shi zu mu'), 'しずむ');
-    expect(RomajiHelper.toKana('yu me na ra ba'), 'ゆめならば');
-    expect(RomajiHelper.toKana('to ke te yu ku'), 'とけてゆく');
+    expect(RomajiHelper.toKana('ho shi'), 'ほし');
+    expect(RomajiHelper.toKana('ha na na ra ba'), 'はなならば');
+    expect(RomajiHelper.toKana('mi e te yu ku'), 'みえてゆく');
   });
 
   test('handles sokuon, small kana and long vowels', () {
@@ -29,12 +29,12 @@ void main() {
 
   test('converts a full aligned line', () {
     expect(
-      RomajiHelper.toKana('shi zu mu yo u ni to ke te yu ku yo u ni'),
-      'しずむようにとけてゆくように',
+      RomajiHelper.toKana('ho shi no yo u ni mi e te yu ku yo u ni'),
+      'ほしのようにみえてゆくように',
     );
     expect(
-      RomajiHelper.toKana('yu me na ra ba do re ho do yo ka tta de syo u'),
-      'ゆめならばどれほどよかったでしょう',
+      RomajiHelper.toKana('ha na na ra ba ki tto yo ka tta de syo u'),
+      'はなならばきっとよかったでしょう',
     );
   });
 
@@ -46,8 +46,8 @@ void main() {
 
   test('turns an aligned romaji track into kana annotations', () {
     final annotations = FuriganaHelper.align(
-      text: '沈むように溶けてゆくように',
-      reading: 'shi zu mu yo u ni to ke te yu ku yo u ni',
+      text: '星のように見えてゆくように',
+      reading: 'ho shi no yo u ni mi e te yu ku yo u ni',
       readingIsRomaji: true,
     );
     final kana = [
@@ -60,8 +60,8 @@ void main() {
     ];
 
     expect(kana, const [
-      FuriganaAnnotation(start: 0, end: 1, reading: 'しず'),
-      FuriganaAnnotation(start: 5, end: 6, reading: 'と'),
+      FuriganaAnnotation(start: 0, end: 1, reading: 'ほし'),
+      FuriganaAnnotation(start: 5, end: 6, reading: 'み'),
     ]);
   });
 }

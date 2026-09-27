@@ -6,14 +6,14 @@ void main() {
   group('LyricsReadingHelper.fromNeteasePayload', () {
     test('prefers the kana track when it is not empty', () {
       final reading = LyricsReadingHelper.fromNeteasePayload({
-        'klyric': {'lyric': '[00:01.430]きみのなは\n[00:02.000]とうきょう'},
-        'romalrc': {'lyric': '[00:01.430]ki mi no na wa'},
+        'klyric': {'lyric': '[00:01.430]ほしのなは\n[00:02.000]とうきょう'},
+        'romalrc': {'lyric': '[00:01.430]ho shi no na wa'},
       });
 
       expect(reading, isNotNull);
       expect(reading!.lineType, LyricsReadingType.kana);
       expect(reading.lines, hasLength(2));
-      expect(reading.lines.first.text, 'きみのなは');
+      expect(reading.lines.first.text, 'ほしのなは');
       expect(reading.lines.first.startTime, const Duration(milliseconds: 1430));
     });
 
@@ -22,14 +22,14 @@ void main() {
         'klyric': {'lyric': ''},
         'romalrc': {
           'lyric':
-              '[00:01.430]shi zu mu yo u ni\n[00:08.831]fu ta ri da ke no so ra ga',
+              '[00:01.430]ho shi no yo u ni\n[00:08.831]a o i so ra ga mi e ru',
         },
       });
 
       expect(reading, isNotNull);
       expect(reading!.lineType, LyricsReadingType.romaji);
       expect(reading.lines, hasLength(2));
-      expect(reading.lines.last.text, 'fu ta ri da ke no so ra ga');
+      expect(reading.lines.last.text, 'a o i so ra ga mi e ru');
       expect(reading.lines.last.startTime, const Duration(milliseconds: 8831));
     });
 
@@ -48,8 +48,8 @@ void main() {
   group('LyricsReadingHelper.fromQqPayload', () {
     // QQ serves word level QRC: [lineStartMs,lineDurationMs](wordMs,dur)word...
     const roma =
-        '[1800,7400]shi (1800,231)zu (2032,240)mu (2273,420)yo (2693,261)u (2955,261)ni (3217,223)to\n'
-        '[9201,1100]ki (9201,192)mi (9393,258)no (9651,198)na (9849,228)wa';
+        '[1800,7400]ho (1800,231)shi (2032,240)no (2273,420)yo (2693,261)u (2955,261)ni (3217,223)to\n'
+        '[9201,1100]a (9201,192)o (9393,258)i (9651,198)so (9849,228)ra';
 
     test('parses the romanized track into line level readings', () {
       final reading = LyricsReadingHelper.fromQqPayload(roma: roma);
@@ -58,15 +58,15 @@ void main() {
       expect(reading!.lineType, LyricsReadingType.romaji);
       expect(reading.lines, hasLength(2));
       expect(reading.lines.first.startTime, const Duration(milliseconds: 1800));
-      expect(reading.lines.first.text.replaceAll(' ', ''), 'shizumuyounito');
+      expect(reading.lines.first.text.replaceAll(' ', ''), 'hoshinoyounito');
       expect(reading.lines.last.startTime, const Duration(milliseconds: 9201));
     });
 
     test('extracts the word level kana payload from the lyric track', () {
       const lyric =
           '[ti:Test]\n'
-          '[kana:1よる1か1し1きょく1しず1と1ふ(9201,192)た(9393,258)1り1そら]\n'
-          '[0,946]夜(0,236)に(237,118)';
+          '[kana:1あお1か1し1きょく1ほし1と1ふ(9201,192)た(9393,258)1り1そら]\n'
+          '[0,946]青(0,236)い(237,118)';
 
       final reading = LyricsReadingHelper.fromQqPayload(
         lyric: lyric,
@@ -74,27 +74,27 @@ void main() {
       );
 
       expect(reading, isNotNull);
-      expect(reading!.kanaRaw, startsWith('1よる1か1し1きょく1しず'));
+      expect(reading!.kanaRaw, startsWith('1あお1か1し1きょく1ほし'));
       expect(reading.kanaRaw, endsWith('1り1そら'));
     });
 
     test('keeps the kana payload even without a romanized track', () {
-      const lyric = '[kana:1よる1か1し1きょく]\n[0,946]夜(0,236)に(237,118)';
+      const lyric = '[kana:1あお1か1し1きょく]\n[0,946]青(0,236)い(237,118)';
 
       final reading = LyricsReadingHelper.fromQqPayload(lyric: lyric);
 
       expect(reading, isNotNull);
       expect(reading!.lines, isEmpty);
       expect(reading.lineType, isNull);
-      expect(reading.kanaRaw, '1よる1か1し1きょく');
+      expect(reading.kanaRaw, '1あお1か1し1きょく');
     });
 
     test('accepts plain LRC readings and ignores missing payloads', () {
       final lrc = LyricsReadingHelper.fromQqPayload(
-        roma: '[00:01.800]shi zu mu yo u ni',
+        roma: '[00:01.800]ho shi no yo u ni',
       );
       expect(lrc!.lineType, LyricsReadingType.romaji);
-      expect(lrc.lines.single.text, 'shi zu mu yo u ni');
+      expect(lrc.lines.single.text, 'ho shi no yo u ni');
 
       expect(LyricsReadingHelper.fromQqPayload(), isNull);
       expect(LyricsReadingHelper.fromQqPayload(roma: '   '), isNull);
@@ -113,14 +113,14 @@ void main() {
   group('LyricsReading serialization', () {
     test('round trips through LyricsResult json', () {
       final result = LyricsResult(
-        lyrics: [Lyric(startTime: Duration.zero, text: '沈むように')],
+        lyrics: [Lyric(startTime: Duration.zero, text: '星のように')],
         source: 'test',
         reading: LyricsReading(
           lineType: LyricsReadingType.romaji,
           lines: [
-            Lyric(startTime: Duration(milliseconds: 1430), text: 'shi zu mu'),
+            Lyric(startTime: Duration(milliseconds: 1430), text: 'ho shi'),
           ],
-          kanaRaw: '1しず1む',
+          kanaRaw: '1ほし1の',
         ),
       );
 
@@ -128,12 +128,12 @@ void main() {
 
       expect(restored.reading, isNotNull);
       expect(restored.reading!.lineType, LyricsReadingType.romaji);
-      expect(restored.reading!.lines.single.text, 'shi zu mu');
+      expect(restored.reading!.lines.single.text, 'ho shi');
       expect(
         restored.reading!.lines.single.startTime,
         const Duration(milliseconds: 1430),
       );
-      expect(restored.reading!.kanaRaw, '1しず1む');
+      expect(restored.reading!.kanaRaw, '1ほし1の');
     });
 
     test('omits the reading when there is none', () {

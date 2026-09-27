@@ -5,16 +5,16 @@ import 'furigana_helper.dart';
 ///
 /// The payload is a flat, whole song list of these entries, and the single
 /// digit in front of each reading is its kanji count — not a separator. Most
-/// entries cover a single kanji (`1よね`), but a compound read as one word
+/// entries cover a single kanji (`1あお`), but a compound read as one word
 /// covers all of its kanji (`2きょう` is 今日 -> きょう), which is what lets
-/// adjacent kanji be annotated separately: `私分からなくて` is 私(わたし) +
-/// 分(わ), where a line level reading track can only say わたしわ.
+/// adjacent kanji be annotated separately: `山川を見た` is 山(やま) +
+/// 川(かわ), where a line level reading track can only say やまかわ.
 ///
 /// A run whose reading is empty carries no annotation: QQ emits those for the
 /// parts of a line that have no kanji reading (punctuation and latin words).
 /// They consume no kanji, so `1し1111きょく` is 詞(し) followed by three of
-/// them and 曲(きょく) — the run count of ENDROLL, whose lyrics stay aligned
-/// only when the padding is dropped.
+/// them and 曲(きょく). Dropping that padding is what keeps the following
+/// lyrics aligned.
 class QqKanaRun {
   final int kanjiCount;
   final String reading;

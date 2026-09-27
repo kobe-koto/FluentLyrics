@@ -58,7 +58,7 @@ void main() {
 
   group('ZhConversion.shouldSkip', () {
     test('skips Japanese lyrics by default', () {
-      final lyrics = [_lyric('君の名は'), _lyric('東京は晴れ')];
+      final lyrics = [_lyric('星の名は'), _lyric('東京は晴れ')];
       expect(
         ZhConversion.shouldSkip(lyrics: lyrics, ignoredLanguages: const ['ja']),
         isTrue,
@@ -74,7 +74,7 @@ void main() {
     });
 
     test('converts when the user removes Japanese from the ignore list', () {
-      final lyrics = [_lyric('君の名は')];
+      final lyrics = [_lyric('星の名は')];
       expect(
         ZhConversion.shouldSkip(lyrics: lyrics, ignoredLanguages: const []),
         isFalse,
@@ -100,7 +100,7 @@ void main() {
     test('considers translations and inline parts', () {
       expect(
         ZhConversion.shouldSkip(
-          lyrics: [_lyric('中文歌词', translation: '君の名は')],
+          lyrics: [_lyric('中文歌词', translation: '星の名は')],
           ignoredLanguages: const ['ja'],
         ),
         isTrue,

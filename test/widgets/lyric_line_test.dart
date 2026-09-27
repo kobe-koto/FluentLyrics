@@ -86,7 +86,7 @@ Widget _buildAnnotatedHarnessWith({
       body: LyricLine(
         lyric: Lyric(
           startTime: Duration.zero,
-          text: '沈むように溶けて',
+          text: '星のように光って',
           annotations: annotations,
         ),
         isHighlighted: true,
@@ -112,21 +112,21 @@ Widget _buildRichAnnotatedHarness() {
       body: LyricLine(
         lyric: Lyric(
           startTime: Duration.zero,
-          text: '矛盾に不純',
+          text: '青空に月光',
           inlineParts: [
             LyricInlinePart(
               startTime: Duration.zero,
               endTime: const Duration(seconds: 3),
-              text: '矛盾に',
+              text: '青空に',
             ),
             LyricInlinePart(
               startTime: const Duration(seconds: 3),
               endTime: const Duration(seconds: 6),
-              text: '不純',
+              text: '月光',
             ),
           ],
           annotations: const [
-            FuriganaAnnotation(start: 0, end: 2, reading: 'むじゅん'),
+            FuriganaAnnotation(start: 0, end: 2, reading: 'あおぞら'),
           ],
         ),
         isHighlighted: true,
@@ -144,7 +144,7 @@ Widget _buildRichAnnotatedHarness() {
 }
 
 Widget _buildMultiPartAnnotatedHarness() {
-  // 最低 / 界隈 are separate rich parts but one kanji run (さいていかいわい).
+  // 青空 / 月光 are separate rich parts but one kanji run (あおぞらげっこう).
   return MaterialApp(
     home: Scaffold(
       body: LyricLine(
@@ -153,17 +153,17 @@ Widget _buildMultiPartAnnotatedHarness() {
         adjustedPosition: const Duration(seconds: 5),
         lyric: Lyric(
           startTime: Duration.zero,
-          text: '最低界隈です',
+          text: '青空月光です',
           inlineParts: [
             LyricInlinePart(
               startTime: Duration.zero,
               endTime: const Duration(seconds: 2),
-              text: '最低',
+              text: '青空',
             ),
             LyricInlinePart(
               startTime: const Duration(seconds: 2),
               endTime: const Duration(seconds: 4),
-              text: '界隈',
+              text: '月光',
             ),
             LyricInlinePart(
               startTime: const Duration(seconds: 4),
@@ -172,7 +172,7 @@ Widget _buildMultiPartAnnotatedHarness() {
             ),
           ],
           annotations: const [
-            FuriganaAnnotation(start: 0, end: 4, reading: 'さいていかいわい'),
+            FuriganaAnnotation(start: 0, end: 4, reading: 'あおぞらげっこう'),
           ],
         ),
         isHighlighted: true,
@@ -234,30 +234,30 @@ void main() {
     await tester.pumpWidget(
       _buildAnnotatedHarness(
         annotations: const [
-          FuriganaAnnotation(start: 0, end: 1, reading: 'しず'),
-          FuriganaAnnotation(start: 5, end: 6, reading: 'と'),
+          FuriganaAnnotation(start: 0, end: 1, reading: 'ほし'),
+          FuriganaAnnotation(start: 5, end: 6, reading: 'ひか'),
         ],
       ),
     );
     await tester.pump();
 
     // The reading sits above the annotated run, the run itself stays in place.
-    expect(find.text('しず'), findsOneWidget);
-    expect(find.text('と'), findsOneWidget);
-    expect(find.text('沈'), findsOneWidget);
-    expect(find.text('溶'), findsOneWidget);
+    expect(find.text('ほし'), findsOneWidget);
+    expect(find.text('ひか'), findsOneWidget);
+    expect(find.text('星'), findsOneWidget);
+    expect(find.text('光'), findsOneWidget);
 
-    final readingRect = tester.getRect(find.text('しず'));
-    final kanjiRect = tester.getRect(find.text('沈'));
+    final readingRect = tester.getRect(find.text('ほし'));
+    final kanjiRect = tester.getRect(find.text('星'));
     expect(readingRect.bottom, lessThanOrEqualTo(kanjiRect.top));
   });
 
   testWidgets('annotation font fix scales only the ruby base', (tester) async {
-    const annotations = [FuriganaAnnotation(start: 0, end: 1, reading: 'しず')];
+    const annotations = [FuriganaAnnotation(start: 0, end: 1, reading: 'ほし')];
 
     await tester.pumpWidget(_buildAnnotatedHarness(annotations: annotations));
     await tester.pump();
-    expect(tester.widget<Text>(find.text('沈')).style?.fontSize, isNull);
+    expect(tester.widget<Text>(find.text('星')).style?.fontSize, isNull);
 
     await tester.pumpWidget(
       _buildAnnotatedHarnessWith(
@@ -270,11 +270,11 @@ void main() {
     // The kanji is grown by 1/0.9 to match the surrounding kana after the
     // platform shrinks it, while the reading above keeps its own size.
     expect(
-      tester.widget<Text>(find.text('沈')).style?.fontSize,
+      tester.widget<Text>(find.text('星')).style?.fontSize,
       closeTo(36 / 0.9, 0.001),
     );
     expect(
-      tester.widget<Text>(find.text('しず')).style?.fontSize,
+      tester.widget<Text>(find.text('ほし')).style?.fontSize,
       closeTo(36 * 0.42, 0.001),
     );
   });
@@ -283,7 +283,7 @@ void main() {
     await tester.pumpWidget(
       _buildAnnotatedHarness(
         annotations: const [
-          FuriganaAnnotation(start: 0, end: 1, reading: 'しず'),
+          FuriganaAnnotation(start: 0, end: 1, reading: 'ほし'),
         ],
       ),
     );
@@ -306,10 +306,10 @@ void main() {
         .first;
     expect((rubyBox.bottom - kanaBox.bottom).abs(), lessThan(2.0));
 
-    final reading = tester.getRect(find.text('しず'));
+    final reading = tester.getRect(find.text('ほし'));
     expect(
       reading.bottom,
-      lessThanOrEqualTo(tester.getRect(find.text('沈')).top),
+      lessThanOrEqualTo(tester.getRect(find.text('星')).top),
     );
   });
 
@@ -319,7 +319,7 @@ void main() {
     await tester.pumpWidget(_buildAnnotatedHarness(annotations: const []));
     await tester.pump();
 
-    expect(find.text('沈むように溶けて'), findsOneWidget);
+    expect(find.text('星のように光って'), findsOneWidget);
   });
 
   testWidgets('keeps rich sync while annotating a word', (tester) async {
@@ -327,7 +327,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
 
     // The reading is stacked above its word...
-    expect(find.text('むじゅん'), findsOneWidget);
+    expect(find.text('あおぞら'), findsOneWidget);
     // ...and the word keeps its rich sync progress wipe.
     expect(find.byType(ShaderMask), findsWidgets);
   });
@@ -339,12 +339,12 @@ void main() {
     // Let the lift/padding animations settle before measuring positions.
     await tester.pump(const Duration(milliseconds: 600));
 
-    // The run spans 最低 and 界隈: the parts are merged into one rich part, so
+    // The run spans 青空 and 月光: the parts are merged into one rich part, so
     // the reading shows once and the merged word keeps its progress wipe.
-    expect(find.text('さいていかいわい'), findsOneWidget);
+    expect(find.text('あおぞらげっこう'), findsOneWidget);
     // `_RichPart` paints the text twice (base + progress wipe), so the merged
     // word shows up as more than one Text.
-    expect(find.text('最低界隈'), findsWidgets);
+    expect(find.text('青空月光'), findsWidgets);
     expect(find.byType(ShaderMask), findsWidgets);
   });
 
@@ -354,9 +354,9 @@ void main() {
     await tester.pumpWidget(_buildMultiPartAnnotatedHarness());
     await tester.pump(const Duration(milliseconds: 600));
 
-    // 最低界隈 carries the reading, です does not: their glyph tops must line
+    // 青空月光 carries the reading, です does not: their glyph tops must line
     // up, or annotated words look sunk into the line.
-    final annotated = tester.getRect(find.text('最低界隈').first);
+    final annotated = tester.getRect(find.text('青空月光').first);
     final plain = tester.getRect(find.text('です').first);
     expect((annotated.top - plain.top).abs(), lessThan(2.5));
   });

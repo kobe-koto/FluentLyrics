@@ -2,7 +2,7 @@ import 'package:fluent_lyrics/models/lyric_model.dart';
 import 'package:fluent_lyrics/utils/lyrics_reading_candidate_helper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-LyricsReading _romajiReading(int lineCount, {String text = 'shi zu mu'}) =>
+LyricsReading _romajiReading(int lineCount, {String text = 'ho shi'}) =>
     LyricsReading(
       lineType: LyricsReadingType.romaji,
       lines: [
@@ -34,7 +34,7 @@ void main() {
       appendReadingCandidateIfNeeded(const [], _romajiReading(2)),
       LyricsReading(
         lineType: LyricsReadingType.kana,
-        lines: [Lyric(startTime: Duration.zero, text: 'しずむ')],
+        lines: [Lyric(startTime: Duration.zero, text: 'ほし')],
       ),
     );
     expect(candidates, hasLength(2));

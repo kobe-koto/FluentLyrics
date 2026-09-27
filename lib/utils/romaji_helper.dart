@@ -4,7 +4,7 @@ import 'furigana_helper.dart';
 /// QQ `roma`) back to kana, so kanji can be annotated with kana even when the
 /// provider only has a romanized track.
 ///
-/// Input is the provider's mora separated form (`shi zu mu yo u ni`,
+/// Input is the provider's mora separated form (`ho shi no yo u ni`,
 /// `ka tta de syo u`). Everything is a table lookup: the alignment that
 /// produced the reading already told us which kana belong to the kanji, so
 /// there is no ambiguity left to resolve beyond picking the common spelling

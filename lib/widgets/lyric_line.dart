@@ -219,8 +219,8 @@ class LyricLine extends StatelessWidget {
 
   /// Ruby for rich (word level) lines.
   ///
-  /// An annotated kanji run is rendered as one plain ruby block (`最低界隈` with
-  /// さいていかいわい above it) even when the rich sync payload splits it into
+  /// An annotated kanji run is rendered as one plain ruby block (`青空月光` with
+  /// あおぞらげっこう above it) even when the rich sync payload splits it into
   /// several parts: parts cannot share one reading, and repeating the reading
   /// above each of them would print it once per kanji. Everything outside the
   /// annotated runs stays a rich widget, so the progress wipe is kept where it
