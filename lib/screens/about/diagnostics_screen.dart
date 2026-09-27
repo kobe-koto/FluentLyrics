@@ -11,6 +11,7 @@ import '../../models/lyric_provider_type.dart';
 import '../../providers/lyrics_provider_settings.dart';
 import '../../services/secret_store.dart';
 import '../../services/settings_service.dart';
+import '../../theme/monospace_text_style.dart';
 import '../../widgets/settings_card_frame.dart';
 import '../../widgets/settings_scaffold.dart';
 
@@ -251,9 +252,8 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
                 minLines: null,
                 maxLines: null,
                 textAlignVertical: TextAlignVertical.top,
-                style: TextStyle(
+                style: monospaceTextStyle(
                   color: Colors.white.withValues(alpha: 0.8),
-                  fontFamily: 'monospace',
                   fontSize: 12,
                   height: 1.6,
                 ),

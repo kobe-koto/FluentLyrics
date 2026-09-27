@@ -4,6 +4,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../../services/opencc/zh_conversion.dart';
+import '../../../theme/monospace_text_style.dart';
 import '../../../utils/lyric_configuration_helper.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_section.dart';
@@ -240,10 +241,9 @@ class LyricConfigurationSection extends StatelessWidget {
                   const SizedBox(height: 12),
                   TextField(
                     controller: tokenController,
-                    style: const TextStyle(
+                    style: monospaceTextStyle(
                       color: Colors.white,
                       fontSize: 14,
-                      fontFamily: 'monospace',
                     ),
                     decoration: InputDecoration(
                       hintText: i18n.musixmatchHint,

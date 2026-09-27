@@ -4,6 +4,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_model.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../../providers/lyrics_provider.dart';
+import '../../../theme/monospace_text_style.dart';
 import '../../../utils/translation_helper.dart';
 
 /// Shows a modal bottom sheet that lists all lyric candidates and translation
@@ -185,10 +186,9 @@ class _LyricsCandidateSheetState extends State<_LyricsCandidateSheet>
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                               child: Text(
                                 provider.loadingStatus,
-                                style: TextStyle(
+                                style: monospaceTextStyle(
                                   color: Colors.white.withValues(alpha: 0.38),
                                   fontSize: 11,
-                                  fontFamily: 'monospace',
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
