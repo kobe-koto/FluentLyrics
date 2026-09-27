@@ -13,6 +13,8 @@ class PrefSetting<T> {
     required this.read,
     required this.write,
     this.equals,
+    this.secure = false,
+    this.placeholders = const <String>{},
   });
 
   final String key;
@@ -21,6 +23,13 @@ class PrefSetting<T> {
   final Future<void> Function(SharedPreferences prefs, String key, T value)
   write;
   final bool Function(T a, T b)? equals;
+
+  /// When true, [SettingsService] stores this value in the platform secret
+  /// store. [read] and [write] remain the plaintext copy used for migration.
+  final bool secure;
+
+  /// Values that mean "not configured" and must not be written to the store.
+  final Set<String> placeholders;
 
   Setting<T> get initial => Setting(
     current: defaultValue,
@@ -254,6 +263,8 @@ class PrefSettings {
     defaultValue: AppDefaults.llmApiKey,
     read: _readString,
     write: _writeString,
+    secure: true,
+    placeholders: {AppDefaults.llmApiKey},
   );
   static final llmModel = PrefSetting<String>(
     key: 'llm_model',
@@ -347,6 +358,7 @@ class PrefSettings {
       if (value == null) return prefs.remove(key);
       return prefs.setString(key, value);
     },
+    secure: true,
   );
 
   /// Settings mirrored into [LyricsProviderSettings]. Adding a row here is enough

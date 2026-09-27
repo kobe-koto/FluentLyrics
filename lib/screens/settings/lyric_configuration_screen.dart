@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
+import '../../services/secret_store.dart';
+import '../../services/secret_store_message.dart';
 import '../../services/providers/musixmatch_service.dart';
 import '../../widgets/settings_scaffold.dart';
 import '../../widgets/screen/settings/lyric_configuration_section.dart';
@@ -39,6 +41,7 @@ class _LyricConfigurationSettingsContentState
 
   bool _isFetchingToken = false;
   bool _isLoading = true;
+  String? _secretError;
 
   @override
   void initState() {
@@ -53,16 +56,34 @@ class _LyricConfigurationSettingsContentState
   }
 
   Future<void> _loadToken() async {
-    final token = (await _settingsService.getMusixmatchToken()).current;
-    setState(() {
-      _tokenController.text = token ?? '';
-      _isLoading = false;
-    });
+    try {
+      final token = (await _settingsService.getMusixmatchToken()).current;
+      if (!mounted) return;
+      setState(() {
+        _tokenController.text = token ?? '';
+        _isLoading = false;
+        _secretError = null;
+      });
+    } on SecretStoreException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _tokenController.text = '';
+        _isLoading = false;
+        _secretError = secretStoreFailureMessage(error.failure);
+      });
+    }
   }
 
   Future<void> _saveToken() async {
-    await _settingsService.setMusixmatchToken(_tokenController.text);
-    if (mounted) _showSnackBar(t.settings.lyricConfig.tokenSaved);
+    try {
+      await _settingsService.setMusixmatchToken(_tokenController.text);
+      if (!mounted) return;
+      setState(() => _secretError = null);
+      _showSnackBar(t.settings.lyricConfig.tokenSaved);
+    } on SecretStoreException catch (error) {
+      if (!mounted) return;
+      setState(() => _secretError = secretStoreFailureMessage(error.failure));
+    }
   }
 
   Future<void> _getNewToken() async {
@@ -71,8 +92,19 @@ class _LyricConfigurationSettingsContentState
       final newToken = await _musixmatchService.fetchNewToken();
       if (newToken != null) {
         setState(() => _tokenController.text = newToken);
-        await _settingsService.setMusixmatchToken(newToken);
-        if (mounted) _showSnackBar(t.settings.lyricConfig.tokenAcquired);
+        try {
+          await _settingsService.setMusixmatchToken(newToken);
+          if (mounted) {
+            setState(() => _secretError = null);
+            _showSnackBar(t.settings.lyricConfig.tokenAcquired);
+          }
+        } on SecretStoreException catch (error) {
+          if (mounted) {
+            setState(
+              () => _secretError = secretStoreFailureMessage(error.failure),
+            );
+          }
+        }
       } else {
         if (mounted) _showSnackBar(t.settings.lyricConfig.tokenFailed);
       }
@@ -103,6 +135,7 @@ class _LyricConfigurationSettingsContentState
               isFetchingToken: _isFetchingToken,
               onGetNewToken: _getNewToken,
               onTokenChanged: _saveToken,
+              secretError: _secretError,
             ),
           );
   }

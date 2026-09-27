@@ -64,7 +64,7 @@ Known-good local SDK is Flutter 3.47.4 / Dart 3.13 (constraint in `pubspec.yaml`
 
 - User-visible copy goes through slang. Edit all three JSON files, then run `dart run slang`, and commit both the JSON and `lib/i18n/strings*.g.dart`. Read strings with the generated `t` variable (`import '../i18n/strings.g.dart'`). Brand names may stay untranslated. Do not hardcode new UI English in widgets.
 - Logs go through `AppLogger.debug`. It prints only in debug mode. Do not add `print`.
-- Persisted settings start as a row in `PrefSettings` (`lib/services/pref_setting.dart`): key, default from `AppDefaults`, and read/write. Settings mirrored by the provider go in `PrefSettings.mirrored`; `LyricsProviderSettings.load` reads that list. Add a typed accessor there and a `SettingsService` one-line wrapper only if a caller still uses the named method. UI reads the provider's `Setting<T>` (`current`, `defaultValue`, `changed`), not prefs directly.
+- Persisted settings start as a row in `PrefSettings` (`lib/services/pref_setting.dart`): key, default from `AppDefaults`, and read/write. Settings mirrored by the provider go in `PrefSettings.mirrored`; `LyricsProviderSettings.load` reads that list. Add a typed accessor there and a `SettingsService` one-line wrapper only if a caller still uses the named method. UI reads the provider's `Setting<T>` (`current`, `defaultValue`, `changed`), not prefs directly. Mark a secret row `secure: true`. Those values go through `SecretStore`, not SharedPreferences. Do not log them.
 - New settings UI belongs in `lib/widgets/screen/settings/`. `lib/screens/settings/` only wraps a section in `SettingsScaffold`. Keep both in sync when a destination already has a route.
 - A new lyrics provider needs all of: `LyricProviderType`, a service under `lib/services/providers/`, a `LyricsSource` in the registry factory, localized name/description keys, and a priority default only if it should be enabled out of the box. `llm` is a translation source, not a normal lyrics catalog.
 - Fetch orchestration stays in `LyricsService`. Ranking stays in `lib/services/winner_selector.dart`. Provider fetch methods live in `lyrics_provider_fetch.dart`, a `part` of `lyrics_provider.dart`. Display transforms live in `LyricsDisplayPipeline`. Do not fetch from widgets.
@@ -91,6 +91,8 @@ Commit the slang and Isar outputs after regenerating them. Do not commit `assets
 ## Secrets and release
 
 Never commit `android/key.properties`, `*.jks`, keystore passwords, or LLM API keys. Signing uses env vars in CI (`ANDROID_KEYSTORE_*`) or a local `android/key.properties`. An example file is `android/key.properties.example`.
+
+The LLM API key and Musixmatch token are stored with `flutter_secure_storage` (Android Keystore, macOS login keychain, Linux libsecret). Do not put either value in logs, diagnostics, or a new preference. A failed open must not fall back to the plaintext copy or delete it. Linux builds need `libsecret-1-dev`. macOS must keep `usesDataProtectionKeychain: false`; do not add a Keychain Sharing entitlement.
 
 `pubspec.yaml` `version:` is `name+code` (currently `0.0.46+46`). Release tags look like `v0.0.46+46`. CI rewrites `version:` from the tag. Do not bump the version unless the user is cutting a release. `.github/workflows/test.yml` runs `flutter test` on push and pull request. Release builds call that workflow and do not start until it passes. OpenCC native tests still skip in CI unless `libopencc` is built.
 

@@ -7,7 +7,7 @@ Contributor and agent setup for Fluent Lyrics. Product install instructions stay
 - Flutter stable that satisfies `sdk: ^3.10.4`. Local development has used Flutter 3.47.4.
 - Dart (shipped with Flutter).
 - CMake, Ninja, and a C/C++ toolchain for the vendored OpenCC build.
-- Linux: GTK 3, Ayatana AppIndicator, and the usual Flutter Linux deps (`clang`, `ninja`, `pkg-config`, `libgtk-3-dev`, `liblzma-dev`, `libayatana-appindicator3-dev`).
+- Linux: GTK 3, Ayatana AppIndicator, libsecret, and the usual Flutter Linux deps (`clang`, `ninja`, `pkg-config`, `libgtk-3-dev`, `liblzma-dev`, `libayatana-appindicator3-dev`, `libsecret-1-dev`). Runtime needs `libsecret-1-0` and an unlocked secret service (GNOME Keyring or KWallet) to save an API key or Musixmatch token.
 - Android: SDK, NDK, Java 17 language level. CI builds with Java 21. `minSdk` is 24, `compileSdk` / `targetSdk` are 36.
 - macOS: Xcode, plus a prepared MediaRemote adapter. There is no maintainer Mac, so treat macOS changes as untested unless someone ran them.
 
@@ -49,6 +49,9 @@ VS Code launch configs in `.vscode/launch.json` cover debug, profile, and releas
 
 Android release signing reads `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`, or `android/key.properties` (see `android/key.properties.example`). Never commit the properties file or a keystore.
 
+API secrets are not signing keys. The LLM API key and Musixmatch token go through `FlutterSecureSecretStore`. Android backup is disabled (`android:allowBackup="false"`) so the Keystore-wrapped values are not restored without their key. Do not log those values or copy them into diagnostics.
+
+
 macOS, before the first build on a machine:
 
 ```bash
@@ -86,7 +89,7 @@ Prefer a focused test file over the full suite while iterating. Run `flutter tes
 ## Adding a setting
 
 1. Default in `lib/constants/app_defaults.dart`.
-2. A row in `PrefSettings` (`lib/services/pref_setting.dart`): key, default, and read/write. If the provider should mirror it, add that row to `PrefSettings.mirrored` and a typed accessor on `LyricsProviderSettings`.
+2. A row in `PrefSettings` (`lib/services/pref_setting.dart`): key, default, and read/write. If the provider should mirror it, add that row to `PrefSettings.mirrored` and a typed accessor on `LyricsProviderSettings`. A secret row sets `secure: true` and is not written to SharedPreferences except as a one-time migration source.
 3. A one-line `SettingsService` wrapper only if a caller still uses the named getter or setter. Priority order and locale stay handwritten.
 4. Controls in the matching `lib/widgets/screen/settings/*_section.dart`.
 5. Strings in `en.i18n.json`, `zh_CN.i18n.json`, and `zh_TW.i18n.json`, then `dart run slang`.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
+import '../../../services/secret_store_message.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_section.dart';
 import '../../settings_slider_card.dart';
@@ -275,6 +276,13 @@ class LlmConfigurationCard extends StatelessWidget {
             obscureText: true,
             onChanged: (value) => provider.setLlmApiKey(value),
           ),
+          if (provider.secretStoreFailure != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              secretStoreFailureMessage(provider.secretStoreFailure!),
+              style: const TextStyle(color: Colors.orangeAccent, fontSize: 12),
+            ),
+          ],
           const SizedBox(height: 12),
           // Model
           TextFormField(

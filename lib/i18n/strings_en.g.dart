@@ -94,6 +94,18 @@ class Translations$settings$en {
 	/// en: 'Settings'
 	String get title => 'Settings';
 
+	/// en: 'Couldn't open secure storage, so the saved secret was not loaded. Restart the app once storage is available.'
+	String get secureStorageReadFailed => 'Couldn\'t open secure storage, so the saved secret was not loaded. Restart the app once storage is available.';
+
+	/// en: 'Couldn't open secure storage, so the saved secret was not loaded. Unlock GNOME Keyring or KWallet, then restart the app.'
+	String get secureStorageReadFailedLinux => 'Couldn\'t open secure storage, so the saved secret was not loaded. Unlock GNOME Keyring or KWallet, then restart the app.';
+
+	/// en: 'Couldn't save to secure storage. The secret was not stored.'
+	String get secureStorageWriteFailed => 'Couldn\'t save to secure storage. The secret was not stored.';
+
+	/// en: 'Couldn't save to secure storage. Unlock GNOME Keyring or KWallet and try again.'
+	String get secureStorageWriteFailedLinux => 'Couldn\'t save to secure storage. Unlock GNOME Keyring or KWallet and try again.';
+
 	late final Translations$settings$language$en language = Translations$settings$language$en.internal(_root);
 	late final Translations$settings$destinations$en destinations = Translations$settings$destinations$en.internal(_root);
 	late final Translations$settings$display$en display = Translations$settings$display$en.internal(_root);

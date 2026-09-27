@@ -16,6 +16,7 @@ class LyricConfigurationSection extends StatelessWidget {
   final bool isFetchingToken;
   final VoidCallback onGetNewToken;
   final VoidCallback onTokenChanged;
+  final String? secretError;
 
   const LyricConfigurationSection({
     super.key,
@@ -23,6 +24,7 @@ class LyricConfigurationSection extends StatelessWidget {
     required this.isFetchingToken,
     required this.onGetNewToken,
     required this.onTokenChanged,
+    this.secretError,
   });
 
   @override
@@ -259,6 +261,16 @@ class LyricConfigurationSection extends StatelessWidget {
                     ),
                     onChanged: (_) => onTokenChanged(),
                   ),
+                  if (secretError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      secretError!,
+                      style: const TextStyle(
+                        color: Colors.orangeAccent,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Row(
                     children: [

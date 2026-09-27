@@ -75,6 +75,10 @@ class Translations$settings$zh_TW extends Translations$settings$en {
 
 	// Translations
 	@override String get title => '設定';
+	@override String get secureStorageReadFailed => '無法開啟安全儲存，已儲存的金鑰沒有被讀取。儲存可用後請重新啟動應用程式。';
+	@override String get secureStorageReadFailedLinux => '無法開啟安全儲存，已儲存的金鑰沒有被讀取。請解鎖 GNOME Keyring 或 KWallet，然後重新啟動應用程式。';
+	@override String get secureStorageWriteFailed => '無法寫入安全儲存，金鑰沒有被儲存。';
+	@override String get secureStorageWriteFailedLinux => '無法寫入安全儲存。請解鎖 GNOME Keyring 或 KWallet 後再試。';
 	@override late final Translations$settings$language$zh_TW language = Translations$settings$language$zh_TW.internal(_root);
 	@override late final Translations$settings$destinations$zh_TW destinations = Translations$settings$destinations$zh_TW.internal(_root);
 	@override late final Translations$settings$display$zh_TW display = Translations$settings$display$zh_TW.internal(_root);

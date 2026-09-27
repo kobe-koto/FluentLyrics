@@ -4,8 +4,16 @@ import '../models/setting.dart';
 import '../models/lyric_provider_type.dart';
 import '../constants/app_defaults.dart';
 import 'pref_setting.dart';
+import 'secret_migration.dart';
+import 'secret_settings.dart';
+import 'secret_store.dart';
 
 class SettingsService {
+  SettingsService({SecretStore? secretStore})
+    : _secrets = SecretSettings(secretStore ?? FlutterSecureSecretStore());
+
+  final SecretSettings _secrets;
+  SecretStoreFailure? secretStoreFailure;
   SharedPreferences? _sharedPreferences;
 
   Future<SharedPreferences> get _prefs async {
@@ -16,10 +24,20 @@ class SettingsService {
   static const String _localeKey = 'app_locale';
 
   Future<Setting<T>> readSetting<T>(PrefSetting<T> spec) async {
-    return spec.settingFrom(await _prefs);
+    if (!spec.secure) return spec.settingFrom(await _prefs);
+    try {
+      return await _readSecure(spec);
+    } on SecretStoreException catch (error) {
+      secretStoreFailure = error.failure;
+      return spec.initial;
+    }
   }
 
   Future<void> writeSetting<T>(PrefSetting<T> spec, T value) async {
+    if (spec.secure) {
+      await _saveSecret(spec, value is String ? value : null);
+      return;
+    }
     await spec.save(await _prefs, value);
   }
 
@@ -96,10 +114,10 @@ class SettingsService {
       writeSetting(PrefSettings.cacheEnabled, enabled);
 
   Future<Setting<String?>> getMusixmatchToken() =>
-      readSetting(PrefSettings.musixmatchToken);
+      _readSecure(PrefSettings.musixmatchToken);
 
   Future<void> setMusixmatchToken(String token) =>
-      writeSetting(PrefSettings.musixmatchToken, token);
+      _saveSecret(PrefSettings.musixmatchToken, token);
 
   Future<Setting<int>> getLinesBefore() =>
       readSetting(PrefSettings.linesBefore);
@@ -232,10 +250,10 @@ class SettingsService {
   Future<void> setLlmApiEndpoint(String endpoint) =>
       writeSetting(PrefSettings.llmApiEndpoint, endpoint);
 
-  Future<Setting<String>> getLlmApiKey() => readSetting(PrefSettings.llmApiKey);
+  Future<Setting<String>> getLlmApiKey() => _readSecure(PrefSettings.llmApiKey);
 
   Future<void> setLlmApiKey(String apiKey) =>
-      writeSetting(PrefSettings.llmApiKey, apiKey);
+      _saveSecret(PrefSettings.llmApiKey, apiKey);
 
   Future<Setting<String>> getLlmModel() => readSetting(PrefSettings.llmModel);
 
@@ -333,5 +351,52 @@ class SettingsService {
     } else {
       await prefs.setString(_localeKey, localeTag);
     }
+  }
+
+  Future<PlaintextSecret> _plain(String key) async {
+    final prefs = await _prefs;
+    if (!prefs.containsKey(key)) {
+      return const PlaintextSecret(present: false);
+    }
+    return PlaintextSecret(present: true, value: prefs.getString(key));
+  }
+
+  Future<void> _removePlain(String key) async {
+    await (await _prefs).remove(key);
+  }
+
+  Future<Setting<T>> _readSecure<T>(PrefSetting<T> spec) async {
+    final plan = await _secrets.resolve(
+      key: spec.key,
+      plain: await _plain(spec.key),
+      placeholders: spec.placeholders,
+      deletePlaintext: () => _removePlain(spec.key),
+    );
+    if (plan.unavailable) {
+      throw const SecretStoreException(SecretStoreFailure.read);
+    }
+    final current = _secretCurrent(spec, plan.value);
+    return Setting(
+      current: current,
+      defaultValue: spec.defaultValue,
+      changed: current != spec.defaultValue,
+    );
+  }
+
+  Future<void> _saveSecret(PrefSetting<dynamic> spec, String? value) async {
+    await _secrets.save(
+      key: spec.key,
+      value: value,
+      plain: await _plain(spec.key),
+      placeholders: spec.placeholders,
+      deletePlaintext: () => _removePlain(spec.key),
+    );
+  }
+
+  T _secretCurrent<T>(PrefSetting<T> spec, String? value) {
+    if (spec.defaultValue is String) {
+      return (value ?? spec.defaultValue) as T;
+    }
+    return value as T;
   }
 }

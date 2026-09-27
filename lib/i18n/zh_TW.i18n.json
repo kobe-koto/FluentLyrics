@@ -12,6 +12,10 @@
   },
   "settings": {
     "title": "設定",
+    "secureStorageReadFailed": "無法開啟安全儲存，已儲存的金鑰沒有被讀取。儲存可用後請重新啟動應用程式。",
+    "secureStorageReadFailedLinux": "無法開啟安全儲存，已儲存的金鑰沒有被讀取。請解鎖 GNOME Keyring 或 KWallet，然後重新啟動應用程式。",
+    "secureStorageWriteFailed": "無法寫入安全儲存，金鑰沒有被儲存。",
+    "secureStorageWriteFailedLinux": "無法寫入安全儲存。請解鎖 GNOME Keyring 或 KWallet 後再試。",
     "language": {
       "title": "語言",
       "subtitle": "選擇介面語言",

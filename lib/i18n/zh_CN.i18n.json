@@ -12,6 +12,10 @@
   },
   "settings": {
     "title": "设置",
+    "secureStorageReadFailed": "无法打开安全存储，已保存的密钥没有被读取。存储可用后请重启应用。",
+    "secureStorageReadFailedLinux": "无法打开安全存储，已保存的密钥没有被读取。请解锁 GNOME Keyring 或 KWallet，然后重启应用。",
+    "secureStorageWriteFailed": "无法写入安全存储，密钥没有被保存。",
+    "secureStorageWriteFailedLinux": "无法写入安全存储。请解锁 GNOME Keyring 或 KWallet 后重试。",
     "language": {
       "title": "语言",
       "subtitle": "选择界面语言",

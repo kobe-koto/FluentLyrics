@@ -12,6 +12,10 @@
   },
   "settings": {
     "title": "Settings",
+    "secureStorageReadFailed": "Couldn't open secure storage, so the saved secret was not loaded. Restart the app once storage is available.",
+    "secureStorageReadFailedLinux": "Couldn't open secure storage, so the saved secret was not loaded. Unlock GNOME Keyring or KWallet, then restart the app.",
+    "secureStorageWriteFailed": "Couldn't save to secure storage. The secret was not stored.",
+    "secureStorageWriteFailedLinux": "Couldn't save to secure storage. Unlock GNOME Keyring or KWallet and try again.",
     "language": {
       "title": "Language",
       "subtitle": "Choose the interface language",

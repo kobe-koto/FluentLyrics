@@ -10,7 +10,7 @@ platform now-playing
         v
 MediaService.create()  --->  LyricsProvider
         |                         |
-        |                         +--> SettingsService (SharedPreferences)
+        |                         +--> SettingsService (preferences + secure storage)
         |                         +--> LyricsService
         |                         |         |
         |                         |         +--> LyricsSourceRegistry
@@ -107,6 +107,8 @@ Position for highlighting comes from the media service, plus global and per-trac
 ## Settings
 
 `Setting<T>` records `current`, `defaultValue`, and `changed`. Defaults live only in `AppDefaults`. Persistence keys live in `PrefSettings`; `SettingsService` reads and writes that table. `LyricsProviderSettings` mirrors `PrefSettings.mirrored` and exposes getters for the UI. Display transforms live in `LyricsDisplayPipeline`. The fetch methods live in `lyrics_provider_fetch.dart`.
+
+The LLM API key and Musixmatch token are `PrefSetting.secure`. They are stored with `flutter_secure_storage`: Android Keystore, the macOS login keychain (`usesDataProtectionKeychain: false`, so no Keychain Sharing entitlement), and Linux libsecret. A real value left in SharedPreferences is copied on the next successful read and then deleted. The dummy API key is not stored. If the store cannot be opened, the read is a failure: the plaintext copy is not used and is not deleted. Diagnostics report only whether a secret is configured and whether secure storage was available.
 
 Changing a setting should update prefs and notify listeners. Reset actions compare against `AppDefaults`, not a second copy of the default buried in a widget.
 

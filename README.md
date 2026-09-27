@@ -40,6 +40,8 @@ paru -Sy fluent-lyrics-bin
 
    Download the portable archive from [GitHub Releases](https://github.com/kobe-koto/FluentLyrics/releases) or kindly package it yourself :3
 
+   Saving an LLM API key or Musixmatch token needs a Secret Service (GNOME Keyring or KWallet) and `libsecret`.
+
 ### Android
 
 1. [GitHub Releases](https://github.com/kobe-koto/FluentLyrics/releases)

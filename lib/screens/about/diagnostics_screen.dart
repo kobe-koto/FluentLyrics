@@ -9,6 +9,7 @@ import '../../constants/app_defaults.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/lyric_provider_type.dart';
 import '../../providers/lyrics_provider_settings.dart';
+import '../../services/secret_store.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings_scaffold.dart';
 
@@ -104,19 +105,29 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
         (await settingsService.getAllProvidersOrdered()).current;
     final enabledCount = (await settingsService.getEnabledCount()).current;
     final locale = await settingsService.getLocale();
-    final musixmatchToken = await settingsService.getMusixmatchToken();
-
     final enabledProviders = allProviders.take(enabledCount).toList();
     final disabledProviders = allProviders.skip(enabledCount).toList();
     final effectivePriority = [
       if (settings.cacheEnabled.current) LyricProviderType.cache,
       ...enabledProviders,
     ];
-    final apiKeyConfigured =
-        settings.llmApiKey.current.isNotEmpty &&
-        settings.llmApiKey.current != AppDefaults.llmApiKey;
-    final musixmatchTokenConfigured =
-        musixmatchToken.current?.trim().isNotEmpty == true;
+    var secureStorageAvailable = true;
+    var apiKeyConfigured = false;
+    try {
+      final apiKey = await settingsService.getLlmApiKey();
+      apiKeyConfigured =
+          apiKey.current.isNotEmpty && apiKey.current != AppDefaults.llmApiKey;
+    } on SecretStoreException {
+      secureStorageAvailable = false;
+    }
+    var musixmatchTokenConfigured = false;
+    try {
+      final musixmatchToken = await settingsService.getMusixmatchToken();
+      musixmatchTokenConfigured =
+          musixmatchToken.current?.trim().isNotEmpty == true;
+    } on SecretStoreException {
+      secureStorageAvailable = false;
+    }
 
     return [
       'Configuration:',
@@ -150,6 +161,7 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
       'LLM reasoning effort: ${settings.llmReasoningEffort.current}',
       'LLM API key configured: $apiKeyConfigured',
       'Musixmatch token configured: $musixmatchTokenConfigured',
+      'Secure storage available: $secureStorageAvailable',
       'Experimental rich inline font fix: ${settings.experimentalRichInlineFontSizeGlitching.current}',
       'Experimental annotation font fix: ${settings.experimentalAnnotationFontSizeGlitching.current}',
       'System tray enabled: ${settings.trayEnabled.current}',

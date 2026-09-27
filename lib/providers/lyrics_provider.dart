@@ -9,6 +9,7 @@ import '../services/media_service.dart';
 import '../services/lyrics_request_scope.dart';
 import '../services/lyrics_service.dart';
 import '../services/settings_service.dart';
+import '../services/secret_store.dart';
 import '../services/providers/lyrics_cache_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/lyrics_candidate_helper.dart';
@@ -172,6 +173,8 @@ class LyricsProvider with ChangeNotifier {
       _settings.translationCoverageThreshold;
   Setting<String> get llmApiEndpoint => _settings.llmApiEndpoint;
   Setting<String> get llmApiKey => _settings.llmApiKey;
+  SecretStoreFailure? _secretStoreFailure;
+  SecretStoreFailure? get secretStoreFailure => _secretStoreFailure;
   Setting<String> get llmModel => _settings.llmModel;
   Setting<String> get llmReasoningEffort => _settings.llmReasoningEffort;
   Setting<int> get llmTimeToFirstTokenSeconds =>
@@ -489,6 +492,7 @@ class LyricsProvider with ChangeNotifier {
 
   Future<void> _loadSettings() async {
     _settings = await LyricsProviderSettings.load(_settingsService);
+    _secretStoreFailure = _settingsService.secretStoreFailure;
 
     notifyListeners();
 
@@ -767,13 +771,26 @@ class LyricsProvider with ChangeNotifier {
     );
   }
 
-  void setLlmApiKey(String apiKey) {
-    _setSettingValue(
-      currentSetting: _settings.llmApiKey,
-      value: apiKey,
-      assign: (value) => _settings.llmApiKey = value,
-      persist: _settingsService.setLlmApiKey,
+  Future<void> setLlmApiKey(String apiKey) async {
+    final previous = _settings.llmApiKey;
+    if (previous.current == apiKey && _secretStoreFailure == null) return;
+    _settings.llmApiKey = Setting(
+      current: apiKey,
+      defaultValue: previous.defaultValue,
+      changed: apiKey != previous.defaultValue,
     );
+    notifyListeners();
+    try {
+      await _settingsService.setLlmApiKey(apiKey);
+      if (_secretStoreFailure != null) {
+        _secretStoreFailure = null;
+        notifyListeners();
+      }
+    } on SecretStoreException catch (error) {
+      _settings.llmApiKey = previous;
+      _secretStoreFailure = error.failure;
+      notifyListeners();
+    }
   }
 
   void setLlmModel(String model) {
