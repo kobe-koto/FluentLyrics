@@ -85,7 +85,7 @@ Do not hand-edit:
 - `third_party/opencc` sources. Bump the pin with `./tool/prepare_opencc.sh <tag>` (default `ver.1.4.2`) and then sync assets.
 - `build/`, `.dart_tool/`, `tmp/`, `release.md`, `dist/`
 
-Commit the slang and Isar outputs after regenerating them. Do not commit `assets/opencc/`. CI runs `./tool/sync_opencc_assets.sh` before each platform build. `hook/build.dart` fails if `assets/opencc/version.txt` is missing.
+Commit the slang and Isar outputs after regenerating them. Do not commit `assets/opencc/`. CI runs `./tool/sync_opencc_assets.sh` before `flutter test` and before each platform build. `hook/build.dart` fails if `assets/opencc/version.txt` is missing.
 
 `third_party/mediaremote-adapter` tracks the license, README, `VERSION`, and `bin/mediaremote-adapter.pl`. The framework is produced on macOS by `./tool/macos_prepare_mediaremote_adapter.sh` (default `v0.7.6`) and copied in by `macos/scripts/bundle_mediaremote_adapter.sh`. Do not commit built framework binaries.
 
@@ -95,7 +95,7 @@ Never commit `android/key.properties`, `*.jks`, keystore passwords, or LLM API k
 
 The LLM API key and Musixmatch token are stored with `flutter_secure_storage` (Android Keystore, macOS login keychain, Linux libsecret). Do not put either value in logs, diagnostics, or a new preference. A failed open must not fall back to the plaintext copy or delete it. Linux builds need `libsecret-1-dev`. macOS must keep `usesDataProtectionKeychain: false`; do not add a Keychain Sharing entitlement.
 
-`pubspec.yaml` `version:` is `name+code` (currently `0.0.46+46`). Release tags look like `v0.0.46+46`. CI rewrites `version:` from the tag. Do not bump the version unless the user is cutting a release. `.github/workflows/test.yml` runs `flutter test` on push and pull request. Release builds call that workflow and do not start until it passes. OpenCC native tests still skip in CI unless `libopencc` is built.
+`pubspec.yaml` `version:` is `name+code` (currently `0.0.46+46`). Release tags look like `v0.0.46+46`. CI rewrites `version:` from the tag. Do not bump the version unless the user is cutting a release. `.github/workflows/test.yml` runs `flutter test` on push and pull request, after syncing OpenCC assets and building host `libopencc`. Release builds call that workflow and do not start until it passes. Conversion tests therefore run in CI.
 
 ## Checks before finishing
 
@@ -103,4 +103,4 @@ The LLM API key and Musixmatch token are stored with `flutter_secure_storage` (A
 - If you touched Isar collections, regenerate `lyric_cache.g.dart` and make sure the schema still round-trips through `LyricsCacheService`.
 - If you touched user-facing strings, regenerate slang and keep `en`, `zh_CN`, and `zh_TW` in parity.
 - If you touched OpenCC bindings or CMake flags, update both `hook/build.dart` and `tool/build_opencc.sh`, then run `./tool/build_opencc.sh` so the native tests are not skipped.
-- CI runs `flutter test`. It does not build `libopencc`, so OpenCC native tests skip there. Do not claim CI verified conversion, signing, or a platform build.
+- CI runs `flutter test` after `./tool/sync_opencc_assets.sh`, so conversion tests are included. Do not claim CI verified signing or a platform build.

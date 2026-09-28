@@ -25,7 +25,7 @@ flutter pub get
 
 `third_party/opencc` is a shallow submodule pinned by `./tool/prepare_opencc.sh` (default tag `ver.1.4.2`). That script sparse-checkouts only the sources the app compiles. Do not commit a full OpenCC tree, and do not edit files under `third_party/opencc`.
 
-`assets/opencc/` is generated and gitignored. `flutter build` and `hook/build.dart` fail without `assets/opencc/version.txt`. CI syncs it in every build job. Sync again after changing the OpenCC pin or the asset script.
+`assets/opencc/` is generated and gitignored. `flutter test`, `flutter build`, and `hook/build.dart` fail without `assets/opencc/version.txt`. CI syncs it before tests and in every build job. Sync again after changing the OpenCC pin or the asset script.
 
 Host tests that load libopencc also need:
 
@@ -75,7 +75,7 @@ Locales are `en` (base, fallback), `zh_CN`, and `zh_TW`. Keys are camelCase. Int
 
 ## Tests
 
-There are widget, provider, service, and util tests under `test/`. CI runs `flutter test` on push, pull request, and before a release build. OpenCC native tests skip in CI because it does not build `libopencc`. Run the focused file locally before handing off, and `./tool/build_opencc.sh` when the change touches conversion.
+There are widget, provider, service, and util tests under `test/`. CI runs `flutter test` on push, pull request, and before a release build, after `./tool/sync_opencc_assets.sh`. That also builds host `libopencc`, so conversion tests run in CI. Run the focused file locally before handing off, and `./tool/sync_opencc_assets.sh` when the change touches conversion or the asset pin.
 
 Patterns already in the tree:
 
