@@ -162,10 +162,6 @@ class PrioritySection extends StatelessWidget {
     int index, {
     bool isEnabled = true,
   }) {
-    final metadata = type.metadata;
-    final Color color = metadata['color'];
-    final String name = type.localizedName(t);
-    final String description = type.localizedDescription(t);
     final segmentStart = isEnabled ? 0 : enabledCount;
     final segmentCount = isEnabled
         ? enabledCount
@@ -187,63 +183,162 @@ class PrioritySection extends StatelessWidget {
         ),
         child: SettingsGroupScope(
           position: position,
-          child: SettingsCardFrame(
-            padding: EdgeInsets.zero,
-            child: ReorderableDragStartListener(
-              index: index + (index >= enabledCount ? 1 : 0),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
-                ),
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: isEnabled
-                        ? Text(
-                            (index + 1).toString(),
-                            style: TextStyle(
-                              color: color,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        : Icon(
-                            Icons.block,
-                            size: 20,
-                            color: color.withValues(alpha: 0.5),
-                          ),
-                  ),
-                ),
-                title: Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                  ),
-                ),
-                subtitle: Text(
-                  description,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.drag_indicator,
-                  color: Colors.white24,
-                ),
-              ),
-            ),
+          child: _ProviderPriorityCard(
+            type: type,
+            index: index,
+            enabledCount: enabledCount,
+            isEnabled: isEnabled,
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ProviderPriorityCard extends StatefulWidget {
+  const _ProviderPriorityCard({
+    required this.type,
+    required this.index,
+    required this.enabledCount,
+    required this.isEnabled,
+  });
+
+  final LyricProviderType type;
+  final int index;
+  final int enabledCount;
+  final bool isEnabled;
+
+  @override
+  State<_ProviderPriorityCard> createState() => _ProviderPriorityCardState();
+}
+
+class _ProviderPriorityCardState extends State<_ProviderPriorityCard> {
+  final GlobalKey _boundsKey = GlobalKey();
+  final GlobalKey _iconKey = GlobalKey();
+  double _dragWidth = 0;
+  bool _measureScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleMeasure();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProviderPriorityCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _scheduleMeasure();
+  }
+
+  void _scheduleMeasure() {
+    if (_measureScheduled) return;
+    _measureScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureScheduled = false;
+      _measureDragWidth();
+    });
+  }
+
+  void _measureDragWidth() {
+    if (!mounted) return;
+    final bounds = _boundsKey.currentContext?.findRenderObject() as RenderBox?;
+    final icon = _iconKey.currentContext?.findRenderObject() as RenderBox?;
+    if (bounds == null ||
+        icon == null ||
+        !bounds.hasSize ||
+        !icon.hasSize ||
+        !bounds.attached ||
+        !icon.attached) {
+      return;
+    }
+    final iconCenter = icon.localToGlobal(
+      icon.size.center(Offset.zero),
+      ancestor: bounds,
+    );
+    final width = 2 * (bounds.size.width - iconCenter.dx);
+    final next = width.isFinite && width > 0 ? width : 0.0;
+    if ((next - _dragWidth).abs() < 0.5) return;
+    setState(() => _dragWidth = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _scheduleMeasure();
+    final metadata = widget.type.metadata;
+    final Color color = metadata['color'];
+    final name = widget.type.localizedName(t);
+    final description = widget.type.localizedDescription(t);
+    final reorderIndex =
+        widget.index + (widget.index >= widget.enabledCount ? 1 : 0);
+
+    return Stack(
+      key: _boundsKey,
+      clipBehavior: Clip.none,
+      children: [
+        SettingsCardFrame(
+          padding: EdgeInsets.zero,
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 8,
+            ),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: widget.isEnabled
+                    ? Text(
+                        (widget.index + 1).toString(),
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : Icon(
+                        Icons.block,
+                        size: 20,
+                        color: color.withValues(alpha: 0.5),
+                      ),
+              ),
+            ),
+            title: Text(
+              name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            subtitle: Text(
+              description,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            trailing: Icon(
+              Icons.drag_indicator,
+              key: _iconKey,
+              color: Colors.white24,
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: _dragWidth,
+          child: ReorderableDragStartListener(
+            index: reorderIndex,
+            child: const ColoredBox(color: Colors.transparent),
+          ),
+        ),
+      ],
     );
   }
 }
