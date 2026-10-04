@@ -1421,7 +1421,10 @@ class LyricsProvider with ChangeNotifier {
 
   bool _updateCurrentIndex() {
     final previousIndex = _currentIndex;
-    if (_lyricsResult.lyrics.isEmpty) {
+    // Unsynced lines share one timestamp, so a search would pin the index on
+    // the last row and notify on the first position tick. Progressive scroll
+    // follows currentPositionNotifier and must not rebuild the list.
+    if (_lyricsResult.lyrics.isEmpty || !_lyricsResult.isSynced) {
       _currentIndex = -1;
       return previousIndex != _currentIndex;
     }

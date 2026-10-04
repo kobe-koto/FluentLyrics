@@ -81,7 +81,7 @@ class LinuxMediaService extends MediaService implements MediaController {
     _fallbackTimer?.cancel();
     _fallbackTimer = Timer(delay, () {
       _refreshPlayerSubscriptions(session);
-      _updateState(session);
+      _updateState(session, holdInterpolatedPosition: true);
     });
   }
 
@@ -89,7 +89,10 @@ class LinuxMediaService extends MediaService implements MediaController {
     return hasMetadata ? _fallbackRefreshInterval : _disconnectedPollInterval;
   }
 
-  Future<void> _updateState(int session) async {
+  Future<void> _updateState(
+    int session, {
+    bool holdInterpolatedPosition = false,
+  }) async {
     if (session != _pollSession) {
       return;
     }
@@ -228,8 +231,36 @@ class LinuxMediaService extends MediaService implements MediaController {
         _positionAnchorTime = null;
         _stopPositionTicker();
       } else {
+        final now = DateTime.now();
+        var interpolated = appliedStatus.position;
+        if (_positionAnchorTime != null && _status.isPlaying) {
+          interpolated = _positionAnchor + now.difference(_positionAnchorTime!);
+          final duration = newMetadata?.duration;
+          if (duration != null &&
+              duration > Duration.zero &&
+              interpolated > duration) {
+            interpolated = duration;
+          }
+        }
+        // Polls and unrelated property refreshes often report a Position behind
+        // the interpolated clock. The 10s fallback is the periodic hitch.
+        // Explicit Position changes still apply; Seeked writes the position
+        // before its follow-up refresh.
+        final backwardBy = interpolated - appliedStatus.position;
+        final staleBackward =
+            appliedStatus.isPlaying &&
+            !trackChanged &&
+            backwardBy > Duration.zero &&
+            (holdInterpolatedPosition ||
+                backwardBy <= const Duration(seconds: 1));
+        if (staleBackward) {
+          appliedStatus = MediaPlaybackStatus(
+            isPlaying: appliedStatus.isPlaying,
+            position: interpolated,
+          );
+        }
         _positionAnchor = appliedStatus.position;
-        _positionAnchorTime = DateTime.now();
+        _positionAnchorTime = now;
         if (appliedStatus.isPlaying && newMetadata != null) {
           _startPositionTicker();
         } else {
@@ -300,7 +331,7 @@ class LinuxMediaService extends MediaService implements MediaController {
             if (_isPolling && session == _pollSession) {
               _cachedPlayerBusName = null;
               _lastDiscoveryTime = null;
-              _updateState(session);
+              _updateState(session, holdInterpolatedPosition: true);
             }
           },
         );
@@ -360,7 +391,9 @@ class LinuxMediaService extends MediaService implements MediaController {
       _lastDiscoveryTime = null;
     }
 
-    _updateState(session);
+    final positionChanged =
+        changed.containsKey('Position') || invalidated.contains('Position');
+    _updateState(session, holdInterpolatedPosition: !positionChanged);
   }
 
   void _handlePlayerSeeked(int session, String player, DBusSignal signal) {
@@ -387,7 +420,7 @@ class LinuxMediaService extends MediaService implements MediaController {
       }
     }
 
-    _updateState(session);
+    _updateState(session, holdInterpolatedPosition: true);
   }
 
   void _cancelPlayerSubscriptions() {

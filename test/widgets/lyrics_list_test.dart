@@ -7,6 +7,7 @@ import 'package:fluent_lyrics/services/lyrics_service.dart';
 import 'package:fluent_lyrics/services/media_service.dart';
 import 'package:fluent_lyrics/services/providers/lyrics_cache_service.dart';
 import 'package:fluent_lyrics/services/settings_service.dart';
+import 'package:fluent_lyrics/widgets/lyric_line.dart';
 import 'package:fluent_lyrics/widgets/screen/lyrics/lyrics_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -283,6 +284,7 @@ Widget _buildHarness({
   required double width,
   required double height,
   required VoidCallback onViewportResized,
+  bool isManualScrolling = false,
 }) {
   return TranslationProvider(
     child: MaterialApp(
@@ -291,19 +293,86 @@ Widget _buildHarness({
           child: SizedBox(
             width: width,
             height: height,
-            child: LyricsList(
-              provider: provider,
-              itemScrollController: ItemScrollController(),
-              itemPositionsListener: ItemPositionsListener.create(),
-              isManualScrolling: false,
-              onUserInteraction: (_) {},
-              onViewportResized: onViewportResized,
+            child: ListenableBuilder(
+              listenable: provider,
+              builder: (context, _) => LyricsList(
+                provider: provider,
+                itemScrollController: ItemScrollController(),
+                itemPositionsListener: ItemPositionsListener.create(),
+                isManualScrolling: isManualScrolling,
+                onUserInteraction: (_) {},
+                onViewportResized: onViewportResized,
+              ),
             ),
           ),
         ),
       ),
     ),
   );
+}
+
+class _UnsyncedListProvider extends _TestLyricsProvider {
+  _UnsyncedListProvider(this.lines, {this.metadata, this.playing = false})
+    : result = LyricsResult(lyrics: lines, source: 'Plain', isSynced: false);
+
+  List<Lyric> lines;
+  MediaMetadata? metadata;
+  late LyricsResult result;
+  int seekCount = 0;
+  bool playing;
+
+  static const Setting<double> fontSizeSetting = Setting(
+    current: 36,
+    defaultValue: 36,
+    changed: false,
+  );
+
+  @override
+  List<Lyric> get lyrics => lines;
+
+  @override
+  LyricsResult get lyricsResult => result;
+
+  @override
+  MediaMetadata? get currentMetadata => metadata;
+
+  @override
+  int get currentIndex => lines.length - 1;
+
+  @override
+  bool get isPlaying => playing;
+
+  @override
+  Setting<double> get fontSize => fontSizeSetting;
+
+  @override
+  Duration get globalOffset => const Duration(seconds: 30);
+
+  @override
+  Duration get trackOffset => const Duration(seconds: 30);
+
+  @override
+  MediaControlAbility get controlAbility => MediaControlAbility(
+    canPlayPause: true,
+    canGoNext: false,
+    canGoPrevious: false,
+    canSeek: true,
+  );
+
+  @override
+  Future<void> seek(Duration position) async {
+    seekCount++;
+  }
+
+  void replaceLines(List<Lyric> next) {
+    lines = next;
+    result = LyricsResult(lyrics: next, source: 'Plain', isSynced: false);
+    notifyListeners();
+  }
+}
+
+ScrollPosition _scrollOffset(WidgetTester tester) {
+  return tester.state<ScrollableState>(find.byType(Scrollable)).position;
 }
 
 void main() {
@@ -378,6 +447,297 @@ void main() {
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
+      provider.dispose();
+    },
+  );
+
+  testWidgets(
+    'unsynced lyrics scroll with the track and skip highlight effects',
+    (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      const duration = Duration(minutes: 3);
+      final lines = List<Lyric>.generate(
+        80,
+        (index) => Lyric(
+          startTime: Duration.zero,
+          text: 'Line $index',
+          translation: index == 0 ? '译文' : null,
+        ),
+      );
+      final provider = _UnsyncedListProvider(
+        lines,
+        metadata: MediaMetadata(
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          duration: duration,
+          artUrl: 'fallback',
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildHarness(
+          provider: provider,
+          width: 240,
+          height: 320,
+          onViewportResized: () {},
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LyricLine), findsNothing);
+      expect(find.byType(ImageFiltered), findsNothing);
+      expect(find.byType(ScrollablePositionedList), findsNothing);
+      expect(find.text('译文'), findsOneWidget);
+
+      final line = tester.widget<Text>(find.text('Line 0'));
+      expect(line.style?.fontFamily, 'Outfit');
+      expect(line.style?.fontSize, 36);
+      expect(line.style?.color, Colors.white);
+
+      for (final element in find.byType(GestureDetector).evaluate()) {
+        expect((element.widget as GestureDetector).onDoubleTap, isNull);
+      }
+
+      await tester.tap(find.text('Line 0'));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('Line 0'));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(provider.seekCount, 0);
+      expect(_scrollOffset(tester).pixels, 0);
+
+      provider.currentPositionNotifier.value = duration ~/ 2;
+      await tester.pumpAndSettle();
+
+      final halfway = _scrollOffset(tester);
+      expect(halfway.pixels, closeTo(halfway.maxScrollExtent * 0.5, 1));
+
+      provider.dispose();
+    },
+  );
+
+  testWidgets('unsynced position ticks do not rebuild the list', (
+    tester,
+  ) async {
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    const duration = Duration(minutes: 3);
+    final provider = _UnsyncedListProvider(
+      List<Lyric>.generate(
+        40,
+        (index) => Lyric(startTime: Duration.zero, text: 'Line $index'),
+      ),
+      metadata: MediaMetadata(
+        title: 'Song',
+        artist: const ['Artist'],
+        album: 'Album',
+        duration: duration,
+        artUrl: 'fallback',
+      ),
+    );
+
+    Future<void> pumpList() {
+      return tester.pumpWidget(
+        _buildHarness(
+          provider: provider,
+          width: 240,
+          height: 320,
+          onViewportResized: () {},
+        ),
+      );
+    }
+
+    await pumpList();
+    await tester.pumpAndSettle();
+
+    final lineElement = find.text('Line 0').evaluate().single;
+    final lineWidget = lineElement.widget;
+    final listElement = find.byType(ListView).evaluate().single;
+
+    provider.currentPositionNotifier.value = const Duration(seconds: 1);
+    await tester.pumpAndSettle();
+
+    expect(
+      identical(find.text('Line 0').evaluate().single, lineElement),
+      isTrue,
+    );
+    expect(identical(lineElement.widget, lineWidget), isTrue);
+    expect(
+      identical(find.byType(ListView).evaluate().single, listElement),
+      isTrue,
+    );
+    expect(_scrollOffset(tester).pixels, greaterThan(0));
+
+    await pumpList();
+    await tester.pump();
+
+    expect(
+      identical(find.text('Line 0').evaluate().single, lineElement),
+      isTrue,
+    );
+    expect(identical(lineElement.widget, lineWidget), isTrue);
+
+    provider.replaceLines(
+      List<Lyric>.generate(
+        8,
+        (index) => Lyric(startTime: Duration.zero, text: 'Next $index'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Line 0'), findsNothing);
+    expect(find.text('Next 0'), findsOneWidget);
+
+    provider.dispose();
+  });
+
+  testWidgets('unsynced lyrics do not scroll without a track duration', (
+    tester,
+  ) async {
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    final lines = List<Lyric>.generate(
+      40,
+      (index) => Lyric(startTime: Duration.zero, text: 'Line $index'),
+    );
+    final provider = _UnsyncedListProvider(
+      lines,
+      metadata: MediaMetadata(
+        title: 'Song',
+        artist: const ['Artist'],
+        album: 'Album',
+        duration: Duration.zero,
+        artUrl: 'fallback',
+      ),
+    );
+
+    await tester.pumpWidget(
+      _buildHarness(
+        provider: provider,
+        width: 240,
+        height: 320,
+        onViewportResized: () {},
+      ),
+    );
+    await tester.pump();
+
+    provider.currentPositionNotifier.value = const Duration(seconds: 30);
+    await tester.pump();
+    expect(_scrollOffset(tester).pixels, 0);
+
+    provider.metadata = null;
+    provider.notifyListeners();
+    provider.currentPositionNotifier.value = const Duration(seconds: 90);
+    await tester.pump();
+    expect(_scrollOffset(tester).pixels, 0);
+
+    provider.dispose();
+  });
+
+  testWidgets('manual scrolling pauses unsynced progress follow', (
+    tester,
+  ) async {
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    const duration = Duration(minutes: 3);
+    final provider = _UnsyncedListProvider(
+      List<Lyric>.generate(
+        40,
+        (index) => Lyric(startTime: Duration.zero, text: 'Line $index'),
+      ),
+      metadata: MediaMetadata(
+        title: 'Song',
+        artist: const ['Artist'],
+        album: 'Album',
+        duration: duration,
+        artUrl: 'fallback',
+      ),
+    );
+
+    Future<void> pumpList({required bool manual}) {
+      return tester.pumpWidget(
+        _buildHarness(
+          provider: provider,
+          width: 240,
+          height: 320,
+          isManualScrolling: manual,
+          onViewportResized: () {},
+        ),
+      );
+    }
+
+    await pumpList(manual: true);
+    await tester.pumpAndSettle();
+    provider.currentPositionNotifier.value = duration ~/ 2;
+    await tester.pumpAndSettle();
+    expect(_scrollOffset(tester).pixels, 0);
+
+    await pumpList(manual: false);
+    await tester.pumpAndSettle();
+    final position = _scrollOffset(tester);
+    expect(position.pixels, closeTo(position.maxScrollExtent * 0.5, 1));
+
+    provider.dispose();
+  });
+
+  testWidgets(
+    'playing unsynced lyrics advance at a constant rate and ignore small corrections',
+    (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      const duration = Duration(seconds: 60);
+      final provider = _UnsyncedListProvider(
+        List<Lyric>.generate(
+          40,
+          (index) => Lyric(startTime: Duration.zero, text: 'Line $index'),
+        ),
+        playing: true,
+        metadata: MediaMetadata(
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          duration: duration,
+          artUrl: 'fallback',
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildHarness(
+          provider: provider,
+          width: 240,
+          height: 320,
+          onViewportResized: () {},
+        ),
+      );
+      await tester.pump();
+
+      final extent = _scrollOffset(tester).maxScrollExtent;
+      final perSecond = extent / duration.inSeconds;
+      final start = _scrollOffset(tester).pixels;
+
+      await tester.pump(const Duration(seconds: 1));
+      final afterOne = _scrollOffset(tester).pixels;
+      expect(_scrollOffset(tester).maxScrollExtent, closeTo(extent, 0.5));
+      await tester.pump(const Duration(seconds: 1));
+      final afterTwo = _scrollOffset(tester).pixels;
+
+      expect(afterOne - start, closeTo(perSecond, 1.5));
+      expect(afterTwo - afterOne, closeTo(perSecond, 1.5));
+      expect(afterOne, greaterThan(start));
+      expect(afterTwo, greaterThan(afterOne));
+
+      // 2s of playback versus a 1s sample is inside the seek snap window.
+      // The linear run must keep its speed instead of restarting behind.
+      provider.currentPositionNotifier.value = const Duration(seconds: 1);
+      expect(_scrollOffset(tester).pixels, closeTo(afterTwo, 1));
+      await tester.pump(const Duration(seconds: 1));
+      final afterThree = _scrollOffset(tester).pixels;
+      expect(afterThree - afterTwo, closeTo(perSecond, 1.5));
+      expect(afterThree, greaterThan(afterTwo));
+
+      provider.currentPositionNotifier.value = const Duration(seconds: 30);
+      expect(_scrollOffset(tester).pixels, closeTo(extent * 0.5, 1.5));
+
+      provider.currentPositionNotifier.value = const Duration(seconds: 10);
+      expect(_scrollOffset(tester).pixels, closeTo(extent * 10 / 60, 1.5));
+
+      await tester.pumpWidget(const SizedBox.shrink());
       provider.dispose();
     },
   );

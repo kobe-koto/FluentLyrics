@@ -194,7 +194,18 @@ class _LyricsScreenState extends State<LyricsScreen> {
     );
   }
 
+  bool _followsLineIndex(LyricsProvider provider) {
+    return provider.lyrics.isNotEmpty && provider.lyricsResult.isSynced;
+  }
+
   void _syncCurrentIndex(int index, int linesBefore) {
+    final provider = _scrollSyncProvider;
+    if (provider != null && !_followsLineIndex(provider)) {
+      _previousIndex = index;
+      _scheduledScrollIndex = null;
+      return;
+    }
+
     if (index == _previousIndex) return;
     _previousIndex = index;
 
@@ -208,6 +219,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
         _scheduledScrollIndex = null;
       }
       if (!mounted || _isManualScrolling) return;
+      final current = _scrollSyncProvider;
+      if (current == null || !_followsLineIndex(current)) return;
       _scrollToCurrentIndex(index, linesBefore);
     });
   }
@@ -452,9 +465,10 @@ class _LyricsScreenState extends State<LyricsScreen> {
   /// Re-anchor the viewport to the current line without animation after the
   /// displayed content changes, so line-height differences from new lyrics or
   /// translations don't visually shift the page. Skipped while the user is
-  /// manually scrolling.
+  /// manually scrolling, and for unsynced lyrics, which scroll by track
+  /// progress instead of line index.
   void _resnapToCurrentIndex(LyricsProvider provider) {
-    if (_isManualScrolling) return;
+    if (_isManualScrolling || !_followsLineIndex(provider)) return;
     final index = provider.currentIndex;
     if (index < 0) return;
     final linesBefore = provider.linesBefore.current;
@@ -462,6 +476,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
     // item count / line widgets before we jump.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _isManualScrolling) return;
+      final current = _scrollSyncProvider;
+      if (current == null || !_followsLineIndex(current)) return;
       _jumpToCurrentIndex(index, linesBefore);
     });
   }
@@ -778,6 +794,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
           _isManualScrolling = false;
         });
         final provider = Provider.of<LyricsProvider>(context, listen: false);
+        if (!_followsLineIndex(provider)) return;
         _scrollToCurrentIndex(
           provider.currentIndex,
           provider.linesBefore.current,

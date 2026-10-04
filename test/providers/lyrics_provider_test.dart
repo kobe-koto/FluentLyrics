@@ -40,12 +40,14 @@ class _FakeMediaService extends MediaService {
 
   final MediaMetadata? _metadata;
   final _controller = _FakeMediaController();
+  Duration position = Duration.zero;
 
   @override
   MediaMetadata? get metadata => _metadata;
 
   @override
-  MediaPlaybackStatus get status => MediaPlaybackStatus.empty();
+  MediaPlaybackStatus get status =>
+      MediaPlaybackStatus(isPlaying: false, position: position);
 
   @override
   MediaControlAbility get controlAbility => MediaControlAbility.none();
@@ -954,4 +956,75 @@ void main() {
 
     provider.dispose();
   });
+
+  test(
+    'unsynced position ticks do not pin currentIndex on the last line',
+    () async {
+      final mediaService = _FakeMediaService(
+        MediaMetadata(
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          duration: const Duration(seconds: 120),
+          artUrl: 'fallback',
+        ),
+      );
+      final provider = LyricsProvider(
+        mediaService: mediaService,
+        lyricsService: _FakeLyricsService(),
+        settingsService: _FakeSettingsService(translationEnabled: false),
+        cacheService: _FakeLyricsCacheService(),
+      );
+
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      mediaService.emitChange();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      await provider.selectCandidate(
+        LyricsResult(
+          lyrics: [
+            Lyric(startTime: Duration.zero, text: 'plain a'),
+            Lyric(startTime: Duration.zero, text: 'plain b'),
+          ],
+          source: 'Manual',
+          isSynced: false,
+        ),
+      );
+
+      expect(provider.lyricsResult.isSynced, isFalse);
+      expect(provider.currentIndex, -1);
+
+      mediaService.position = const Duration(seconds: 40);
+      mediaService.emitChange();
+
+      expect(provider.currentIndex, -1);
+      expect(provider.currentPosition, const Duration(seconds: 40));
+      expect(
+        provider.currentPositionNotifier.value,
+        const Duration(seconds: 40),
+      );
+
+      mediaService.position = Duration.zero;
+      mediaService.emitChange();
+      await provider.selectCandidate(
+        LyricsResult(
+          lyrics: [
+            Lyric(startTime: Duration.zero, text: 'synced a'),
+            Lyric(startTime: const Duration(seconds: 10), text: 'synced b'),
+          ],
+          source: 'Manual synced',
+        ),
+      );
+      expect(provider.lyricsResult.isSynced, isTrue);
+      expect(provider.currentIndex, 0);
+
+      mediaService.position = const Duration(seconds: 10);
+      mediaService.emitChange();
+      expect(provider.currentIndex, 1);
+
+      provider.dispose();
+    },
+  );
 }

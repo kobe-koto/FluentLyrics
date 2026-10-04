@@ -211,6 +211,17 @@ class _LyricsListState extends State<LyricsList> {
       );
     }
 
+    // Plain lyrics have no line timestamps. Scroll the whole document by
+    // track progress instead of highlighting a row.
+    if (!lyricsResult.isSynced) {
+      return _UnsyncedLyricsView(
+        provider: provider,
+        lyrics: lyrics,
+        isManualScrolling: widget.isManualScrolling,
+        onUserInteraction: widget.onUserInteraction,
+      );
+    }
+
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification is UserScrollNotification &&
@@ -249,7 +260,7 @@ class _LyricsListState extends State<LyricsList> {
               minCacheExtent: 0,
               itemBuilder: (context, index) {
                 if (index == lyrics.length) {
-                  return _buildLyricsInfoLine();
+                  return _LyricsInfoLine(provider: provider);
                 }
 
                 final lyric = lyrics[index];
@@ -366,13 +377,503 @@ class _LyricsListState extends State<LyricsList> {
       isPlaying: provider.isPlaying,
     );
   }
+}
 
-  Widget _buildLyricsInfoLine() {
-    final provider = widget.provider;
+/// Scroll offset for unsynced lyrics. Returns null when there is no track
+/// duration to map onto, so the view leaves the current offset alone.
+double? _unsyncedScrollOffset({
+  required Duration position,
+  required Duration? duration,
+  required double maxScrollExtent,
+}) {
+  if (duration == null || duration <= Duration.zero) return null;
+  final progress = (position.inMicroseconds / duration.inMicroseconds).clamp(
+    0.0,
+    1.0,
+  );
+  if (maxScrollExtent <= 0) return 0;
+  return progress * maxScrollExtent;
+}
+
+Duration? _unsyncedPositionForOffset({
+  required double offset,
+  required Duration? duration,
+  required double maxScrollExtent,
+}) {
+  if (duration == null || duration <= Duration.zero) return null;
+  if (maxScrollExtent <= 0) return Duration.zero;
+  final progress = (offset / maxScrollExtent).clamp(0.0, 1.0);
+  return Duration(microseconds: (duration.inMicroseconds * progress).round());
+}
+
+/// Linear scroll that still accepts drags. [ScrollController.animateTo] ignores
+/// pointers and goes ballistic when it ends; both show up as hitching.
+class _LinearFollowActivity extends ScrollActivity {
+  _LinearFollowActivity(
+    super.delegate, {
+    required double from,
+    required double to,
+    required Duration duration,
+    required TickerProvider vsync,
+    required this.onDone,
+  }) {
+    _controller = AnimationController.unbounded(value: from, vsync: vsync)
+      ..addListener(_tick)
+      ..animateTo(
+        to,
+        duration: duration,
+        curve: Curves.linear,
+      ).whenComplete(_finish);
+  }
+
+  final void Function(bool completed) onDone;
+  late final AnimationController _controller;
+  bool _disposed = false;
+  bool _completed = false;
+  bool _reported = false;
+
+  @override
+  bool get shouldIgnorePointer => false;
+
+  @override
+  bool get isScrolling => true;
+
+  @override
+  double get velocity => _disposed ? 0 : _controller.velocity;
+
+  void _tick() {
+    if (_disposed || _reported) return;
+    if (delegate.setPixels(_controller.value).abs() <= 0.5) return;
+    delegate.goIdle();
+  }
+
+  void _finish() {
+    if (_disposed || _reported) return;
+    _completed = true;
+    _report(true);
+    delegate.goIdle();
+  }
+
+  void _report(bool completed) {
+    if (_reported) return;
+    _reported = true;
+    onDone(completed);
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _report(_completed);
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+/// Plain lyric document scrolled by track progress. Line widgets are built
+/// once per lyrics/style change. While playing, one linear activity runs to
+/// the end of the document over the remaining track time. Samples inside the
+/// seek window, and metrics noise, do not restart it.
+class _UnsyncedLyricsView extends StatefulWidget {
+  final LyricsProvider provider;
+  final List<Lyric> lyrics;
+  final bool isManualScrolling;
+  final Function(int) onUserInteraction;
+
+  const _UnsyncedLyricsView({
+    required this.provider,
+    required this.lyrics,
+    required this.isManualScrolling,
+    required this.onUserInteraction,
+  });
+
+  @override
+  State<_UnsyncedLyricsView> createState() => _UnsyncedLyricsViewState();
+}
+
+class _UnsyncedLyricsViewState extends State<_UnsyncedLyricsView>
+    with TickerProviderStateMixin {
+  /// Samples within this distance of the on-screen position are corrections,
+  /// not seeks. Restarting the linear run on them is what steps and jitters.
+  static const Duration _seekSnap = Duration(milliseconds: 1200);
+  static const double _offsetEpsilon = 0.5;
+  static const double _extentEpsilon = 1;
+  static const double _cacheExtent = 1000000;
+
+  final ScrollController _controller = ScrollController();
+  List<Widget>? _lineItems;
+  Object? _lineToken;
+  bool _pointerScrolling = false;
+  bool _touching = false;
+  bool _suppressFollow = false;
+  bool _followScheduled = false;
+  bool _followForce = false;
+  bool _applyingScroll = false;
+  bool _linearMotion = false;
+  int _motionGeneration = 0;
+  double? _plannedExtent;
+
+  bool get _blocked =>
+      _pointerScrolling || _suppressFollow || widget.isManualScrolling;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.provider.currentPositionNotifier.addListener(_onPosition);
+    _scheduleFollow(force: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _UnsyncedLyricsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.provider != widget.provider) {
+      oldWidget.provider.currentPositionNotifier.removeListener(_onPosition);
+      widget.provider.currentPositionNotifier.addListener(_onPosition);
+    }
+    final followResumed =
+        oldWidget.isManualScrolling && !widget.isManualScrolling;
+    if (followResumed) {
+      _suppressFollow = false;
+      _pointerScrolling = false;
+    }
+    final startedPlaying =
+        !oldWidget.provider.isPlaying && widget.provider.isPlaying;
+    final stoppedPlaying =
+        oldWidget.provider.isPlaying && !widget.provider.isPlaying;
+    if (stoppedPlaying) {
+      _stopFollowActivity();
+    }
+    if (_blocked) return;
+    if (followResumed ||
+        startedPlaying ||
+        oldWidget.provider != widget.provider) {
+      _syncFollow(force: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _motionGeneration++;
+    _linearMotion = false;
+    widget.provider.currentPositionNotifier.removeListener(_onPosition);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onPosition() {
+    if (_blocked || _touching) return;
+    _syncFollow(force: !widget.provider.isPlaying);
+  }
+
+  void _scheduleFollow({required bool force}) {
+    _followForce = _followForce || force;
+    if (_followScheduled) return;
+    _followScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final forceFollow = _followForce;
+      _followScheduled = false;
+      _followForce = false;
+      if (!mounted) return;
+      _syncFollow(force: forceFollow);
+    });
+  }
+
+  Duration _reportedPosition(Duration? duration) {
+    var reported = widget.provider.currentPositionNotifier.value;
+    if (reported.isNegative) reported = Duration.zero;
+    if (duration != null && duration > Duration.zero && reported > duration) {
+      return duration;
+    }
+    return reported;
+  }
+
+  bool _motionCovers(Duration reported, Duration duration, double extent) {
+    if (!_linearMotion || _plannedExtent == null || !_controller.hasClients) {
+      return false;
+    }
+    if ((extent - _plannedExtent!).abs() > _extentEpsilon) return false;
+    final visual = _unsyncedPositionForOffset(
+      offset: _controller.offset,
+      duration: duration,
+      maxScrollExtent: extent,
+    );
+    if (visual == null) return false;
+    return (reported - visual).abs() <= _seekSnap;
+  }
+
+  void _syncFollow({required bool force}) {
+    if (!mounted) return;
+    if (_blocked || _touching) {
+      // A drag already replaced the linear activity. jumpTo here would steal it.
+      if (!_pointerScrolling && !_touching) _stopFollowActivity();
+      return;
+    }
+    if (!_controller.hasClients) {
+      _scheduleFollow(force: force);
+      return;
+    }
+    final duration = widget.provider.currentMetadata?.duration;
+    final extent = _controller.position.maxScrollExtent;
+    if (duration == null || duration <= Duration.zero || extent <= 0) {
+      _stopFollowActivity();
+      _plannedExtent = extent;
+      return;
+    }
+    final reported = _reportedPosition(duration);
+    if (!widget.provider.isPlaying) {
+      _stopFollowActivity();
+      if (force) {
+        final target = _unsyncedScrollOffset(
+          position: reported,
+          duration: duration,
+          maxScrollExtent: extent,
+        );
+        if (target != null) _jumpTo(target);
+      }
+      _plannedExtent = extent;
+      return;
+    }
+    if (_motionCovers(reported, duration, extent)) return;
+    _startLinear(position: reported, duration: duration, extent: extent);
+  }
+
+  void _startLinear({
+    required Duration position,
+    required Duration duration,
+    required double extent,
+  }) {
+    final positionController = _controller.position;
+    if (positionController is! ScrollPositionWithSingleContext) {
+      final target = _unsyncedScrollOffset(
+        position: position,
+        duration: duration,
+        maxScrollExtent: extent,
+      );
+      if (target != null) _jumpTo(target);
+      _plannedExtent = extent;
+      return;
+    }
+    final target = _unsyncedScrollOffset(
+      position: position,
+      duration: duration,
+      maxScrollExtent: extent,
+    );
+    if (target == null) return;
+    final generation = ++_motionGeneration;
+    _linearMotion = false;
+    _jumpTo(target);
+    _plannedExtent = extent;
+    final remainingMicros = duration.inMicroseconds - position.inMicroseconds;
+    if (remainingMicros < 16000 ||
+        (extent - _controller.offset).abs() <= _offsetEpsilon) {
+      return;
+    }
+    _linearMotion = true;
+    positionController.beginActivity(
+      _LinearFollowActivity(
+        positionController,
+        from: _controller.offset,
+        to: extent,
+        duration: Duration(microseconds: remainingMicros),
+        vsync: this,
+        onDone: (completed) {
+          if (!mounted || generation != _motionGeneration) return;
+          _linearMotion = false;
+        },
+      ),
+    );
+  }
+
+  void _stopFollowActivity() {
+    if (!_linearMotion) return;
+    _motionGeneration++;
+    _linearMotion = false;
+    if (!_controller.hasClients) return;
+    _applyingScroll = true;
+    _controller.jumpTo(_controller.offset);
+    _applyingScroll = false;
+  }
+
+  void _jumpTo(double target) {
+    if (!_controller.hasClients) return;
+    if ((_controller.offset - target).abs() <= _offsetEpsilon) return;
+    _applyingScroll = true;
+    _controller.jumpTo(target);
+    _applyingScroll = false;
+  }
+
+  void _retargetExtent(double newExtent) {
+    final duration = widget.provider.currentMetadata?.duration;
+    final oldExtent = _plannedExtent;
+    if (!_controller.hasClients ||
+        duration == null ||
+        duration <= Duration.zero ||
+        oldExtent == null ||
+        oldExtent <= 0 ||
+        newExtent <= 0) {
+      _plannedExtent = newExtent;
+      _syncFollow(force: true);
+      return;
+    }
+    final progress = (_controller.offset / oldExtent).clamp(0.0, 1.0);
+    final position = Duration(
+      microseconds: (duration.inMicroseconds * progress).round(),
+    );
+    if (_blocked || !widget.provider.isPlaying) {
+      _stopFollowActivity();
+      _plannedExtent = newExtent;
+      _jumpTo(progress * newExtent);
+      return;
+    }
+    _startLinear(position: position, duration: duration, extent: newExtent);
+  }
+
+  void _endTouch() {
+    _touching = false;
+    if (!mounted || _blocked) return;
+    _syncFollow(force: true);
+  }
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification is! UserScrollNotification) return false;
+    if (notification.direction != ScrollDirection.idle) {
+      _pointerScrolling = true;
+      _stopFollowActivity();
+      final delay = widget.provider.scrollAutoResumeDelay.current;
+      _suppressFollow = delay > 0;
+      widget.onUserInteraction(delay);
+      return false;
+    }
+    _pointerScrolling = false;
+    if (!_suppressFollow && !widget.isManualScrolling) {
+      _syncFollow(force: true);
+    }
+    return false;
+  }
+
+  bool _handleMetrics(ScrollMetricsNotification notification) {
+    if (_applyingScroll || _blocked || _touching) return false;
+    final extent = notification.metrics.maxScrollExtent;
+    if (_plannedExtent != null &&
+        (extent - _plannedExtent!).abs() <= _extentEpsilon) {
+      return false;
+    }
+    _retargetExtent(extent);
+    return false;
+  }
+
+  List<Widget> _lineItemsFor(LyricsProvider provider, List<Lyric> lyrics) {
+    final fontSize = provider.fontSize.current;
+    final token = (
+      lyrics,
+      fontSize,
+      provider.lyricsResult,
+      provider.translationResult,
+    );
+    final cached = _lineItems;
+    if (cached != null && _lineToken == token) return cached;
+
+    _lineToken = token;
+    final items = <Widget>[
+      for (final lyric in lyrics)
+        _UnsyncedLyricText(lyric: lyric, fontSize: fontSize),
+      _LyricsInfoLine(provider: provider),
+    ];
+    _lineItems = items;
+    return items;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _lineItemsFor(widget.provider, widget.lyrics);
+    final fontSize = widget.provider.fontSize.current;
+    // One lyric row, so the last line can scroll clear of the bottom edge.
+    // Horizontal inset lives on the row, matching synced LyricLine.
+    final bottomLineSpacing =
+        fontSize * _unsyncedLineHeight + _unsyncedLineVerticalPadding * 2;
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: _handleMetrics,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: _handleScrollNotification,
+        child: Listener(
+          onPointerDown: (_) => _touching = true,
+          onPointerUp: (_) => _endTouch(),
+          onPointerCancel: (_) => _endTouch(),
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(
+              context,
+            ).copyWith(scrollbars: false),
+            child: ListView(
+              controller: _controller,
+              scrollCacheExtent: const ScrollCacheExtent.pixels(_cacheExtent),
+              padding: EdgeInsets.only(bottom: bottomLineSpacing),
+              children: items,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+const double _unsyncedLineHorizontalPadding = 24;
+const double _unsyncedLineVerticalPadding = 12;
+const double _unsyncedLineHeight = 1.2;
+
+class _UnsyncedLyricText extends StatelessWidget {
+  final Lyric lyric;
+  final double fontSize;
+
+  const _UnsyncedLyricText({required this.lyric, required this.fontSize});
+
+  @override
+  Widget build(BuildContext context) {
+    final translation = lyric.translation;
+    final hasTranslation = translation != null && translation.isNotEmpty;
+    final style = TextStyle(
+      fontFamily: 'Outfit',
+      fontSize: fontSize,
+      fontWeight: FontWeight.w800,
+      color: Colors.white,
+      height: _unsyncedLineHeight,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: _unsyncedLineVerticalPadding,
+        horizontal: _unsyncedLineHorizontalPadding,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(lyric.text, style: style),
+          if (hasTranslation)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                translation,
+                style: style.copyWith(
+                  fontSize: (fontSize * 0.65).roundToDouble(),
+                  height: _unsyncedLineHeight,
+                  color: Colors.white.withValues(alpha: 0.65),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LyricsInfoLine extends StatelessWidget {
+  final LyricsProvider provider;
+
+  const _LyricsInfoLine({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
     final result = provider.lyricsResult;
     final transResult = provider.translationResult;
     final info = t.lyrics.info;
-    final List<String> infoParts = [];
+    final infoParts = <String>[];
     if (result.source.isNotEmpty) {
       infoParts.add(info.source(value: result.source));
     }
@@ -406,25 +907,29 @@ class _LyricsListState extends State<LyricsList> {
     if (infoParts.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 16, left: 24, right: 24),
+      padding: const EdgeInsets.only(
+        top: 16,
+        bottom: 16,
+        left: _unsyncedLineHorizontalPadding,
+        right: _unsyncedLineHorizontalPadding,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: infoParts
-            .map(
-              (info) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Text(
-                  info,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.5,
-                  ),
+        children: [
+          for (final part in infoParts)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Text(
+                part,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.5,
                 ),
               ),
-            )
-            .toList(),
+            ),
+        ],
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:fluent_lyrics/models/setting.dart';
 import 'package:fluent_lyrics/providers/lyrics_provider.dart';
 import 'package:fluent_lyrics/screens/lyrics_screen.dart';
 import 'package:fluent_lyrics/services/lyrics_service.dart';
+import 'package:fluent_lyrics/widgets/lyric_line.dart';
 import 'package:fluent_lyrics/services/media_service.dart';
 import 'package:fluent_lyrics/services/providers/lyrics_cache_service.dart';
 import 'package:fluent_lyrics/services/settings_service.dart';
@@ -323,6 +324,26 @@ class _ScreenTestLyricsProvider extends LyricsProvider {
   Future<void> seek(Duration position) async {}
 }
 
+class _UnsyncedScreenProvider extends _ScreenTestLyricsProvider {
+  _UnsyncedScreenProvider(this._lyrics);
+
+  final List<Lyric> _lyrics;
+  late final LyricsResult _result = LyricsResult(
+    lyrics: _lyrics,
+    source: 'Plain',
+    isSynced: false,
+  );
+
+  @override
+  List<Lyric> get lyrics => _lyrics;
+
+  @override
+  LyricsResult get lyricsResult => _result;
+
+  @override
+  int get currentIndex => _lyrics.length - 1;
+}
+
 /// Mutable provider that drives the lyrics through a track switch
 /// (loading state -> new lyrics), mirroring how [LyricsProvider] notifies
 /// its listeners when the media service reports a new track.
@@ -587,5 +608,42 @@ void main() {
     // so the deltas between settings are the deltas of the setting itself.
     expect(at30 - at0, closeTo(0.30, 0.05));
     expect(at50 - at0, closeTo(0.50, 0.05));
+  });
+
+  testWidgets('unsynced lyrics follow track progress instead of currentIndex', (
+    tester,
+  ) async {
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    const size = Size(360, 640);
+    final lyrics = List<Lyric>.generate(
+      40,
+      (index) => Lyric(startTime: Duration.zero, text: 'Plain $index'),
+    );
+    final provider = _UnsyncedScreenProvider(lyrics);
+
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+      provider.dispose();
+    });
+
+    await tester.binding.setSurfaceSize(size);
+    await tester.pumpWidget(_buildHarness(provider));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.byType(ScrollablePositionedList), findsNothing);
+    expect(find.byType(LyricLine), findsNothing);
+    expect(_isTextVisible(tester, 'Plain 0', size), isTrue);
+    expect(_isTextVisible(tester, 'Plain 39', size), isFalse);
+
+    provider.currentPositionNotifier.value = provider.currentMetadata!.duration;
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(_isTextVisible(tester, 'Plain 0', size), isFalse);
+    expect(_isTextVisible(tester, 'Plain 39', size), isTrue);
+    expect(find.byType(LyricLine), findsNothing);
   });
 }
