@@ -4,6 +4,7 @@ import '../../../models/lyric_provider_type.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_group.dart';
 import '../../settings_section.dart';
+import 'musixmatch_token_card.dart';
 
 class PrioritySection extends StatelessWidget {
   final List<LyricProviderType> allProviders;
@@ -85,6 +86,8 @@ class PrioritySection extends StatelessWidget {
           },
           children: listItems,
         ),
+        const SizedBox(height: 16),
+        const MusixmatchTokenCard(),
       ],
     );
   }

@@ -672,27 +672,6 @@ class Translations$settings$lyricConfig$en {
 
 	/// en: 'Attempt to remove staff/metadata lines from selected providers.'
 	String get trimSubtitle => 'Attempt to remove staff/metadata lines from selected providers.';
-
-	/// en: 'Musixmatch Token'
-	String get musixmatchTitle => 'Musixmatch Token';
-
-	/// en: 'Required for Musixmatch provider.'
-	String get musixmatchSubtitle => 'Required for Musixmatch provider.';
-
-	/// en: 'Enter your User Token'
-	String get musixmatchHint => 'Enter your User Token';
-
-	/// en: 'Get New Token'
-	String get getNewToken => 'Get New Token';
-
-	/// en: 'Token saved'
-	String get tokenSaved => 'Token saved';
-
-	/// en: 'New token acquired'
-	String get tokenAcquired => 'New token acquired';
-
-	/// en: 'Failed to get new token'
-	String get tokenFailed => 'Failed to get new token';
 }
 
 // Path: settings.cache
@@ -799,11 +778,11 @@ class Translations$settings$priority$en {
 
 	// Translations
 
-	/// en: 'Provider Priority'
-	String get sectionTitle => 'Provider Priority';
+	/// en: 'Providers'
+	String get sectionTitle => 'Providers';
 
-	/// en: 'Reorder providers to prioritize where we fetch lyrics from first. Drag below "DISABLED AREA" to disable.'
-	String get sectionDescription => 'Reorder providers to prioritize where we fetch lyrics from first. Drag below "DISABLED AREA" to disable.';
+	/// en: 'Reorder providers to choose where lyrics are fetched first. Drag below "DISABLED AREA" to disable. Musixmatch needs a user token.'
+	String get sectionDescription => 'Reorder providers to choose where lyrics are fetched first. Drag below "DISABLED AREA" to disable. Musixmatch needs a user token.';
 
 	/// en: 'Lyrics Cache'
 	String get lyricsCacheTitle => 'Lyrics Cache';
@@ -824,6 +803,27 @@ class Translations$settings$priority$en {
 	String get cacheDisabled => 'Cache disabled';
 
 	late final Translations$settings$priority$providers$en providers = Translations$settings$priority$providers$en.internal(_root);
+
+	/// en: 'Musixmatch Token'
+	String get musixmatchTitle => 'Musixmatch Token';
+
+	/// en: 'Required for Musixmatch provider.'
+	String get musixmatchSubtitle => 'Required for Musixmatch provider.';
+
+	/// en: 'Enter your User Token'
+	String get musixmatchHint => 'Enter your User Token';
+
+	/// en: 'Get New Token'
+	String get getNewToken => 'Get New Token';
+
+	/// en: 'Token saved'
+	String get tokenSaved => 'Token saved';
+
+	/// en: 'New token acquired'
+	String get tokenAcquired => 'New token acquired';
+
+	/// en: 'Failed to get new token'
+	String get tokenFailed => 'Failed to get new token';
 }
 
 // Path: settings.misc
@@ -998,11 +998,11 @@ class Translations$settings$destinations$priority$en {
 
 	// Translations
 
-	/// en: 'Provider Priority'
-	String get title => 'Provider Priority';
+	/// en: 'Providers'
+	String get title => 'Providers';
 
-	/// en: 'Reorder and enable/disable lyrics providers'
-	String get subtitle => 'Reorder and enable/disable lyrics providers';
+	/// en: 'Order, enable/disable, Musixmatch token'
+	String get subtitle => 'Order, enable/disable, Musixmatch token';
 }
 
 // Path: settings.destinations.display
@@ -1046,8 +1046,8 @@ class Translations$settings$destinations$lyricConfiguration$en {
 	/// en: 'Lyric Configuration'
 	String get title => 'Lyric Configuration';
 
-	/// en: 'Rich sync, offset, metadata trim, Musixmatch token'
-	String get subtitle => 'Rich sync, offset, metadata trim, Musixmatch token';
+	/// en: 'Rich sync, offset, metadata trim'
+	String get subtitle => 'Rich sync, offset, metadata trim';
 }
 
 // Path: settings.destinations.cache

@@ -23,8 +23,8 @@
     },
     "destinations": {
       "priority": {
-        "title": "源优先级",
-        "subtitle": "调整顺序并启用/禁用歌词源"
+        "title": "歌词源",
+        "subtitle": "调整顺序、启用/禁用、Musixmatch token"
       },
       "display": {
         "title": "显示",
@@ -36,7 +36,7 @@
       },
       "lyricConfiguration": {
         "title": "歌词配置",
-        "subtitle": "Rich sync、偏移、元数据修剪、Musixmatch token"
+        "subtitle": "Rich sync、偏移、元数据修剪"
       },
       "cache": {
         "title": "缓存管理",
@@ -139,14 +139,7 @@
       "globalOffsetSubtitle": "为所有歌词设置默认偏移 (例如设备存在音频延迟)。",
       "globalOffsetReset": "重置为 0 秒",
       "trimTitle": "修剪元数据行",
-      "trimSubtitle": "尝试从选定源中移除制作人员/元数据行。",
-      "musixmatchTitle": "Musixmatch Token",
-      "musixmatchSubtitle": "Musixmatch 源所必需。",
-      "musixmatchHint": "输入你的 User Token",
-      "getNewToken": "获取新 Token",
-      "tokenSaved": "Token 已保存",
-      "tokenAcquired": "已获取新 Token",
-      "tokenFailed": "获取新 Token 失败"
+      "trimSubtitle": "尝试从选定源中移除制作人员/元数据行。"
     },
     "cache": {
       "sectionTitle": "缓存管理",
@@ -179,8 +172,8 @@
       "annotationFixSubtitle": "对有注音（ruby）标注的普通歌词行中的汉字启用字号调整（除以 0.9）。当注音基字比周围假名更小时使用。"
     },
     "priority": {
-      "sectionTitle": "源优先级",
-      "sectionDescription": "调整源顺序以优先从哪里获取歌词。拖到 \"已禁用区域\" 下方即可禁用。",
+      "sectionTitle": "歌词源",
+      "sectionDescription": "调整源顺序以决定优先从哪里获取歌词。拖到 \"已禁用区域\" 下方即可禁用。Musixmatch 需要 User Token。",
       "lyricsCacheTitle": "歌词缓存",
       "lyricsCacheSubtitle": "启用时始终优先",
       "disabledArea": "已禁用区域",
@@ -200,7 +193,14 @@
         "llmDescription": "OpenAI 兼容的 LLM API",
         "cacheName": "缓存",
         "cacheDescription": "已缓存的歌词"
-      }
+      },
+      "musixmatchTitle": "Musixmatch Token",
+      "musixmatchSubtitle": "Musixmatch 源所必需。",
+      "musixmatchHint": "输入你的 User Token",
+      "getNewToken": "获取新 Token",
+      "tokenSaved": "Token 已保存",
+      "tokenAcquired": "已获取新 Token",
+      "tokenFailed": "获取新 Token 失败"
     },
     "misc": {
       "sectionTitle": "杂项",

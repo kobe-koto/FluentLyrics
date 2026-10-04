@@ -335,13 +335,6 @@ class Translations$settings$lyricConfig$zh_TW extends Translations$settings$lyri
 	@override String get globalOffsetReset => '重設為 0 秒';
 	@override String get trimTitle => '修剪中繼資料行';
 	@override String get trimSubtitle => '嘗試從選定來源中移除製作人員/中繼資料行。';
-	@override String get musixmatchTitle => 'Musixmatch Token';
-	@override String get musixmatchSubtitle => 'Musixmatch 來源所必需。';
-	@override String get musixmatchHint => '輸入你的 User Token';
-	@override String get getNewToken => '取得新 Token';
-	@override String get tokenSaved => 'Token 已儲存';
-	@override String get tokenAcquired => '已取得新 Token';
-	@override String get tokenFailed => '取得新 Token 失敗';
 }
 
 // Path: settings.cache
@@ -395,8 +388,8 @@ class Translations$settings$priority$zh_TW extends Translations$settings$priorit
 	final TranslationsZhTw _root; // ignore: unused_field
 
 	// Translations
-	@override String get sectionTitle => '來源優先序';
-	@override String get sectionDescription => '調整來源順序以優先從哪裡擷取歌詞。拖到 "已停用區域" 下方即可停用。';
+	@override String get sectionTitle => '歌詞來源';
+	@override String get sectionDescription => '調整來源順序以決定優先從哪裡擷取歌詞。拖到 "已停用區域" 下方即可停用。Musixmatch 需要 User Token。';
 	@override String get lyricsCacheTitle => '歌詞快取';
 	@override String get lyricsCacheSubtitle => '啟用時始終優先';
 	@override String get disabledArea => '已停用區域';
@@ -404,6 +397,13 @@ class Translations$settings$priority$zh_TW extends Translations$settings$priorit
 	@override String get cacheEnabled => '快取已啟用';
 	@override String get cacheDisabled => '快取已停用';
 	@override late final Translations$settings$priority$providers$zh_TW providers = Translations$settings$priority$providers$zh_TW.internal(_root);
+	@override String get musixmatchTitle => 'Musixmatch Token';
+	@override String get musixmatchSubtitle => 'Musixmatch 來源所必需。';
+	@override String get musixmatchHint => '輸入你的 User Token';
+	@override String get getNewToken => '取得新 Token';
+	@override String get tokenSaved => 'Token 已儲存';
+	@override String get tokenAcquired => '已取得新 Token';
+	@override String get tokenFailed => '取得新 Token 失敗';
 }
 
 // Path: settings.misc
@@ -513,8 +513,8 @@ class Translations$settings$destinations$priority$zh_TW extends Translations$set
 	final TranslationsZhTw _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => '來源優先序';
-	@override String get subtitle => '調整順序並啟用/停用歌詞來源';
+	@override String get title => '歌詞來源';
+	@override String get subtitle => '調整順序、啟用/停用、Musixmatch token';
 }
 
 // Path: settings.destinations.display
@@ -547,7 +547,7 @@ class Translations$settings$destinations$lyricConfiguration$zh_TW extends Transl
 
 	// Translations
 	@override String get title => '歌詞設定';
-	@override String get subtitle => 'Rich sync、偏移、中繼資料修剪、Musixmatch token';
+	@override String get subtitle => 'Rich sync、偏移、中繼資料修剪';
 }
 
 // Path: settings.destinations.cache

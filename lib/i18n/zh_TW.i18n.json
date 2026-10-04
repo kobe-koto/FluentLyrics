@@ -23,8 +23,8 @@
     },
     "destinations": {
       "priority": {
-        "title": "來源優先序",
-        "subtitle": "調整順序並啟用/停用歌詞來源"
+        "title": "歌詞來源",
+        "subtitle": "調整順序、啟用/停用、Musixmatch token"
       },
       "display": {
         "title": "顯示",
@@ -36,7 +36,7 @@
       },
       "lyricConfiguration": {
         "title": "歌詞設定",
-        "subtitle": "Rich sync、偏移、中繼資料修剪、Musixmatch token"
+        "subtitle": "Rich sync、偏移、中繼資料修剪"
       },
       "cache": {
         "title": "快取管理",
@@ -139,14 +139,7 @@
       "globalOffsetSubtitle": "為所有歌詞設定預設偏移 (例如裝置存在音訊延遲)。",
       "globalOffsetReset": "重設為 0 秒",
       "trimTitle": "修剪中繼資料行",
-      "trimSubtitle": "嘗試從選定來源中移除製作人員/中繼資料行。",
-      "musixmatchTitle": "Musixmatch Token",
-      "musixmatchSubtitle": "Musixmatch 來源所必需。",
-      "musixmatchHint": "輸入你的 User Token",
-      "getNewToken": "取得新 Token",
-      "tokenSaved": "Token 已儲存",
-      "tokenAcquired": "已取得新 Token",
-      "tokenFailed": "取得新 Token 失敗"
+      "trimSubtitle": "嘗試從選定來源中移除製作人員/中繼資料行。"
     },
     "cache": {
       "sectionTitle": "快取管理",
@@ -179,8 +172,8 @@
       "annotationFixSubtitle": "對有注音（ruby）標註的普通歌詞行中的漢字啟用字型大小調整（除以 0.9）。當注音基字比周圍假名更小時使用。"
     },
     "priority": {
-      "sectionTitle": "來源優先序",
-      "sectionDescription": "調整來源順序以優先從哪裡擷取歌詞。拖到 \"已停用區域\" 下方即可停用。",
+      "sectionTitle": "歌詞來源",
+      "sectionDescription": "調整來源順序以決定優先從哪裡擷取歌詞。拖到 \"已停用區域\" 下方即可停用。Musixmatch 需要 User Token。",
       "lyricsCacheTitle": "歌詞快取",
       "lyricsCacheSubtitle": "啟用時始終優先",
       "disabledArea": "已停用區域",
@@ -200,7 +193,14 @@
         "llmDescription": "OpenAI 相容的 LLM API",
         "cacheName": "快取",
         "cacheDescription": "已快取的歌詞"
-      }
+      },
+      "musixmatchTitle": "Musixmatch Token",
+      "musixmatchSubtitle": "Musixmatch 來源所必需。",
+      "musixmatchHint": "輸入你的 User Token",
+      "getNewToken": "取得新 Token",
+      "tokenSaved": "Token 已儲存",
+      "tokenAcquired": "已取得新 Token",
+      "tokenFailed": "取得新 Token 失敗"
     },
     "misc": {
       "sectionTitle": "雜項",

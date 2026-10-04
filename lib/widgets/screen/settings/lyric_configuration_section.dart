@@ -4,7 +4,6 @@ import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../../services/opencc/zh_conversion.dart';
-import '../../../theme/monospace_text_style.dart';
 import '../../../utils/lyric_configuration_helper.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_section.dart';
@@ -14,20 +13,7 @@ import '../../settings_slider_card.dart';
 import '../../settings_toggle_card.dart';
 
 class LyricConfigurationSection extends StatelessWidget {
-  final TextEditingController tokenController;
-  final bool isFetchingToken;
-  final VoidCallback onGetNewToken;
-  final VoidCallback onTokenChanged;
-  final String? secretError;
-
-  const LyricConfigurationSection({
-    super.key,
-    required this.tokenController,
-    required this.isFetchingToken,
-    required this.onGetNewToken,
-    required this.onTokenChanged,
-    this.secretError,
-  });
+  const LyricConfigurationSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -218,98 +204,6 @@ class LyricConfigurationSection extends StatelessWidget {
                               );
                             })
                             .toList(),
-                      ),
-                    ],
-                  ),
-                ),
-                SettingsCardFrame(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        i18n.musixmatchTitle,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        i18n.musixmatchSubtitle,
-                        style: const TextStyle(
-                          color: Colors.white38,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: tokenController,
-                        style: monospaceTextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: i18n.musixmatchHint,
-                          hintStyle: const TextStyle(color: Colors.white24),
-                          filled: true,
-                          fillColor: Colors.black26,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        onChanged: (_) => onTokenChanged(),
-                      ),
-                      if (secretError != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          secretError!,
-                          style: const TextStyle(
-                            color: Colors.orangeAccent,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: isFetchingToken ? null : onGetNewToken,
-                              icon: isFetchingToken
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.orange,
-                                      ),
-                                    )
-                                  : const Icon(Icons.refresh, size: 18),
-                              label: Text(
-                                i18n.getNewToken,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange.withValues(
-                                  alpha: 0.2,
-                                ),
-                                foregroundColor: Colors.orange,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),

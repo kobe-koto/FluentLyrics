@@ -23,8 +23,8 @@
     },
     "destinations": {
       "priority": {
-        "title": "Provider Priority",
-        "subtitle": "Reorder and enable/disable lyrics providers"
+        "title": "Providers",
+        "subtitle": "Order, enable/disable, Musixmatch token"
       },
       "display": {
         "title": "Display",
@@ -36,7 +36,7 @@
       },
       "lyricConfiguration": {
         "title": "Lyric Configuration",
-        "subtitle": "Rich sync, offset, metadata trim, Musixmatch token"
+        "subtitle": "Rich sync, offset, metadata trim"
       },
       "cache": {
         "title": "Cache Management",
@@ -139,14 +139,7 @@
       "globalOffsetSubtitle": "Set a default offset for all lyrics (e.g. if your device has audio latency).",
       "globalOffsetReset": "Reset to 0s",
       "trimTitle": "Trim Metadata Lines",
-      "trimSubtitle": "Attempt to remove staff/metadata lines from selected providers.",
-      "musixmatchTitle": "Musixmatch Token",
-      "musixmatchSubtitle": "Required for Musixmatch provider.",
-      "musixmatchHint": "Enter your User Token",
-      "getNewToken": "Get New Token",
-      "tokenSaved": "Token saved",
-      "tokenAcquired": "New token acquired",
-      "tokenFailed": "Failed to get new token"
+      "trimSubtitle": "Attempt to remove staff/metadata lines from selected providers."
     },
     "cache": {
       "sectionTitle": "Cache Management",
@@ -179,8 +172,8 @@
       "annotationFixSubtitle": "Enable the font size adjustment (divide by 0.9) for the annotated kanji in plain lines. Use this when the ruby base prints smaller than the surrounding kana."
     },
     "priority": {
-      "sectionTitle": "Provider Priority",
-      "sectionDescription": "Reorder providers to prioritize where we fetch lyrics from first. Drag below \"DISABLED AREA\" to disable.",
+      "sectionTitle": "Providers",
+      "sectionDescription": "Reorder providers to choose where lyrics are fetched first. Drag below \"DISABLED AREA\" to disable. Musixmatch needs a user token.",
       "lyricsCacheTitle": "Lyrics Cache",
       "lyricsCacheSubtitle": "Always prioritized if enabled",
       "disabledArea": "DISABLED AREA",
@@ -200,7 +193,14 @@
         "llmDescription": "OpenAI compatible LLM API",
         "cacheName": "Cache",
         "cacheDescription": "Cached lyrics"
-      }
+      },
+      "musixmatchTitle": "Musixmatch Token",
+      "musixmatchSubtitle": "Required for Musixmatch provider.",
+      "musixmatchHint": "Enter your User Token",
+      "getNewToken": "Get New Token",
+      "tokenSaved": "Token saved",
+      "tokenAcquired": "New token acquired",
+      "tokenFailed": "Failed to get new token"
     },
     "misc": {
       "sectionTitle": "Misc",
