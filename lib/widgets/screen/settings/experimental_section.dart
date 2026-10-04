@@ -36,6 +36,14 @@ class ExperimentalSection extends StatelessWidget {
                   onChanged: (value) => provider
                       .setExperimentalAnnotationFontSizeGlitching(value),
                 ),
+                SettingsToggleCard(
+                  title: i18n.stripTimestamps,
+                  subtitle: i18n.stripTimestampsSubtitle,
+                  value:
+                      provider.experimentalStripTimestampsBeforeRender.current,
+                  onChanged: (value) => provider
+                      .setExperimentalStripTimestampsBeforeRender(value),
+                ),
               ],
             ),
           ],

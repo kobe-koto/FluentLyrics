@@ -4,6 +4,56 @@ import 'translation_helper.dart';
 class LyricsDisplayHelper {
   const LyricsDisplayHelper._();
 
+  /// Clears line and inline timestamps for the unsynced render test path.
+  /// Text, translation, and annotations are kept. Already-clear lines keep
+  /// their instance, and an unchanged list is returned as-is.
+  static List<Lyric> stripTimestamps(List<Lyric> source) {
+    var changed = false;
+    final stripped = <Lyric>[];
+    for (final lyric in source) {
+      final next = _withoutTimestamps(lyric);
+      if (!identical(next, lyric)) changed = true;
+      stripped.add(next);
+    }
+    return changed ? stripped : source;
+  }
+
+  static Lyric _withoutTimestamps(Lyric lyric) {
+    final parts = lyric.inlineParts;
+    List<LyricInlinePart>? strippedParts;
+    var partsChanged = false;
+    if (parts != null) {
+      strippedParts = <LyricInlinePart>[
+        for (final part in parts)
+          if (part.startTime == Duration.zero && part.endTime == Duration.zero)
+            part
+          else
+            LyricInlinePart(
+              startTime: Duration.zero,
+              endTime: Duration.zero,
+              text: part.text,
+            ),
+      ];
+      for (var i = 0; i < parts.length; i++) {
+        if (!identical(parts[i], strippedParts[i])) {
+          partsChanged = true;
+          break;
+        }
+      }
+    }
+    final timesClear =
+        lyric.startTime == Duration.zero && lyric.endTime == null;
+    if (timesClear && !partsChanged) return lyric;
+    return Lyric(
+      startTime: Duration.zero,
+      endTime: null,
+      text: lyric.text,
+      inlineParts: partsChanged ? strippedParts : parts,
+      translation: lyric.translation,
+      annotations: lyric.annotations,
+    );
+  }
+
   static List<Lyric> stripRichSync(List<Lyric> source) {
     return source.map((lyric) {
       if (lyric.inlineParts != null && lyric.inlineParts!.isNotEmpty) {

@@ -105,7 +105,8 @@ class LyricsProvider with ChangeNotifier {
   final LyricsDisplayPipeline _display = LyricsDisplayPipeline();
 
   /// The lyrics as rendered: rich-sync stripping, translation alignment,
-  /// Simplified/Traditional conversion, and kanji annotation.
+  /// Simplified/Traditional conversion, kanji annotation, and the experimental
+  /// timestamp strip.
   List<Lyric> get lyrics => _display.build(
     lyricsResult: _lyricsResult,
     translationResult: _translationResult,
@@ -119,9 +120,18 @@ class LyricsProvider with ChangeNotifier {
         _settings.zhConversionIgnoredLanguages.current,
     translationAlignmentThreshold:
         _settings.translationAlignmentThreshold.current,
+    stripTimestamps: _settings.experimentalStripTimestampsBeforeRender.current,
   );
 
+  LyricsResult? _timestampStrippedResult;
+  LyricsResult? _timestampStrippedResultSource;
+  List<Lyric>? _timestampStrippedResultLyrics;
+  bool? _timestampStrippedResultRichSync;
+
   LyricsResult get lyricsResult {
+    if (_settings.experimentalStripTimestampsBeforeRender.current) {
+      return _timestampStrippedLyricsResult();
+    }
     if (!_settings.richSyncEnabled.current && _lyricsResult.isRichSync) {
       return _lyricsResult.copyWith(
         isRichSync: false,
@@ -129,6 +139,28 @@ class LyricsProvider with ChangeNotifier {
       );
     }
     return _lyricsResult;
+  }
+
+  /// Render-only view of [_lyricsResult]. Stored lyrics keep their timestamps.
+  LyricsResult _timestampStrippedLyricsResult() {
+    final displayed = lyrics;
+    final richSyncEnabled = _settings.richSyncEnabled.current;
+    if (identical(_timestampStrippedResultSource, _lyricsResult) &&
+        identical(_timestampStrippedResultLyrics, displayed) &&
+        _timestampStrippedResultRichSync == richSyncEnabled &&
+        _timestampStrippedResult != null) {
+      return _timestampStrippedResult!;
+    }
+    final result = _lyricsResult.copyWith(
+      isSynced: false,
+      isRichSync: richSyncEnabled && _lyricsResult.isRichSync,
+      lyrics: displayed,
+    );
+    _timestampStrippedResult = result;
+    _timestampStrippedResultSource = _lyricsResult;
+    _timestampStrippedResultLyrics = displayed;
+    _timestampStrippedResultRichSync = richSyncEnabled;
+    return result;
   }
 
   LyricsResult? get translationResult =>
@@ -187,6 +219,8 @@ class LyricsProvider with ChangeNotifier {
       _settings.experimentalRichInlineFontSizeGlitching;
   Setting<bool> get experimentalAnnotationFontSizeGlitching =>
       _settings.experimentalAnnotationFontSizeGlitching;
+  Setting<bool> get experimentalStripTimestampsBeforeRender =>
+      _settings.experimentalStripTimestampsBeforeRender;
   Setting<bool> get trayEnabled => _settings.trayEnabled;
   Setting<bool> get hideToTrayOnClose => _settings.hideToTrayOnClose;
   Setting<String> get lyricsStreamPath => _settings.lyricsStreamPath;
@@ -493,6 +527,9 @@ class LyricsProvider with ChangeNotifier {
   Future<void> _loadSettings() async {
     _settings = await LyricsProviderSettings.load(_settingsService);
     _secretStoreFailure = _settingsService.secretStoreFailure;
+    if (_settings.experimentalStripTimestampsBeforeRender.current) {
+      _updateCurrentIndex();
+    }
 
     notifyListeners();
 
@@ -865,6 +902,23 @@ class LyricsProvider with ChangeNotifier {
           _settings.experimentalAnnotationFontSizeGlitching = value,
       persist: _settingsService.setExperimentalAnnotationFontSizeGlitching,
     );
+  }
+
+  void setExperimentalStripTimestampsBeforeRender(bool enabled) {
+    final currentSetting = _settings.experimentalStripTimestampsBeforeRender;
+    if (currentSetting.current == enabled) return;
+    _settings.experimentalStripTimestampsBeforeRender = Setting(
+      current: enabled,
+      defaultValue: currentSetting.defaultValue,
+      changed: enabled != currentSetting.defaultValue,
+    );
+    // Freeze or restore the line index before listeners rebuild, so the
+    // unsynced path does not see a stale highlighted row.
+    _updateCurrentIndex();
+    unawaited(
+      _settingsService.setExperimentalStripTimestampsBeforeRender(enabled),
+    );
+    notifyListeners();
   }
 
   void setTrayEnabled(bool enabled) {
@@ -1423,8 +1477,11 @@ class LyricsProvider with ChangeNotifier {
     final previousIndex = _currentIndex;
     // Unsynced lines share one timestamp, so a search would pin the index on
     // the last row and notify on the first position tick. Progressive scroll
-    // follows currentPositionNotifier and must not rebuild the list.
-    if (_lyricsResult.lyrics.isEmpty || !_lyricsResult.isSynced) {
+    // follows currentPositionNotifier and must not rebuild the list. The
+    // experimental strip flag uses that path without mutating stored lyrics.
+    if (_lyricsResult.lyrics.isEmpty ||
+        !_lyricsResult.isSynced ||
+        _settings.experimentalStripTimestampsBeforeRender.current) {
       _currentIndex = -1;
       return previousIndex != _currentIndex;
     }

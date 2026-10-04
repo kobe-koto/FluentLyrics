@@ -1,4 +1,5 @@
 import 'package:fluent_lyrics/models/lyric_model.dart';
+import 'package:fluent_lyrics/utils/furigana_helper.dart';
 import 'package:fluent_lyrics/utils/lyrics_display_helper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,6 +11,48 @@ void main() {
       text: text,
     );
   }
+
+  test('stripTimestamps clears line and inline times but keeps text', () {
+    const annotation = FuriganaAnnotation(start: 0, end: 1, reading: 'きみ');
+    final line = Lyric(
+      startTime: const Duration(seconds: 1),
+      endTime: const Duration(seconds: 3),
+      text: '君',
+      translation: 'you',
+      annotations: const [annotation],
+      inlineParts: [
+        LyricInlinePart(
+          startTime: const Duration(milliseconds: 1000),
+          endTime: const Duration(milliseconds: 1800),
+          text: '君',
+        ),
+      ],
+    );
+    final alreadyClear = Lyric(startTime: Duration.zero, text: 'plain');
+
+    final stripped = LyricsDisplayHelper.stripTimestamps([line, alreadyClear]);
+
+    expect(stripped, hasLength(2));
+    expect(stripped.first.text, '君');
+    expect(stripped.first.translation, 'you');
+    expect(stripped.first.annotations, [annotation]);
+    expect(stripped.first.startTime, Duration.zero);
+    expect(stripped.first.endTime, isNull);
+    expect(stripped.first.inlineParts, hasLength(1));
+    expect(stripped.first.inlineParts!.first.text, '君');
+    expect(stripped.first.inlineParts!.first.startTime, Duration.zero);
+    expect(stripped.first.inlineParts!.first.endTime, Duration.zero);
+    expect(stripped.last, same(alreadyClear));
+    expect(line.startTime, const Duration(seconds: 1));
+    expect(line.endTime, const Duration(seconds: 3));
+  });
+
+  test('stripTimestamps keeps an already-clear list unchanged', () {
+    final line = Lyric(startTime: Duration.zero, text: 'plain');
+    final source = [line];
+
+    expect(LyricsDisplayHelper.stripTimestamps(source), same(source));
+  });
 
   test('stripRichSync removes inline parts and preserves line fields', () {
     final richLine = Lyric(

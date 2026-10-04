@@ -768,6 +768,12 @@ class Translations$settings$experimental$en {
 
 	/// en: 'Enable the font size adjustment (divide by 0.9) for the annotated kanji in plain lines. Use this when the ruby base prints smaller than the surrounding kana.'
 	String get annotationFixSubtitle => 'Enable the font size adjustment (divide by 0.9) for the annotated kanji in plain lines. Use this when the ruby base prints smaller than the surrounding kana.';
+
+	/// en: 'Strip All Timestamps Before Render'
+	String get stripTimestamps => 'Strip All Timestamps Before Render';
+
+	/// en: 'Clear line and word timestamps before rendering so synced lyrics use the unsynced path. Cached and downloaded lyrics are left unchanged.'
+	String get stripTimestampsSubtitle => 'Clear line and word timestamps before rendering so synced lyrics use the unsynced path. Cached and downloaded lyrics are left unchanged.';
 }
 
 // Path: settings.priority

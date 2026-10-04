@@ -379,6 +379,8 @@ class Translations$settings$experimental$zh_CN extends Translations$settings$exp
 	@override String get richInlineFixSubtitle => '为 rich inline 歌词启用字体大小调整 (除以 0.9)。可修复某些字体或设备上的对齐问题。';
 	@override String get annotationFix => '注音汉字字号错位修复';
 	@override String get annotationFixSubtitle => '对有注音（ruby）标注的普通歌词行中的汉字启用字号调整（除以 0.9）。当注音基字比周围假名更小时使用。';
+	@override String get stripTimestamps => '渲染前清除全部时间戳';
+	@override String get stripTimestampsSubtitle => '渲染前清掉行和逐字时间戳，让已同步歌词走非同步路径。不会改动缓存或已下载的歌词。';
 }
 
 // Path: settings.priority

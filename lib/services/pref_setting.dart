@@ -328,6 +328,12 @@ class PrefSettings {
     read: _readBool,
     write: _writeBool,
   );
+  static final experimentalStripTimestampsBeforeRender = PrefSetting<bool>(
+    key: 'experimental_strip_timestamps_before_render',
+    defaultValue: AppDefaults.experimentalStripTimestampsBeforeRender,
+    read: _readBool,
+    write: _writeBool,
+  );
   static final trayEnabled = PrefSetting<bool>(
     key: 'tray_enabled',
     defaultValue: AppDefaults.trayEnabled,
@@ -416,6 +422,7 @@ class PrefSettings {
     backgroundMotionEnabled,
     experimentalRichInlineFontSizeGlitching,
     experimentalAnnotationFontSizeGlitching,
+    experimentalStripTimestampsBeforeRender,
     trayEnabled,
     hideToTrayOnClose,
     lyricsStreamPath,

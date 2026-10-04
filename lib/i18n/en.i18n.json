@@ -169,7 +169,9 @@
       "richInlineFix": "Rich Parts Fonts Size Glitching Fix",
       "richInlineFixSubtitle": "Enable the font size adjustment (divide by 0.9) for rich inline lyrics. This fixes alignment issues with certain fonts, or on some devices.",
       "annotationFix": "Annotated Kanji Font Size Glitching Fix",
-      "annotationFixSubtitle": "Enable the font size adjustment (divide by 0.9) for the annotated kanji in plain lines. Use this when the ruby base prints smaller than the surrounding kana."
+      "annotationFixSubtitle": "Enable the font size adjustment (divide by 0.9) for the annotated kanji in plain lines. Use this when the ruby base prints smaller than the surrounding kana.",
+      "stripTimestamps": "Strip All Timestamps Before Render",
+      "stripTimestampsSubtitle": "Clear line and word timestamps before rendering so synced lyrics use the unsynced path. Cached and downloaded lyrics are left unchanged."
     },
     "priority": {
       "sectionTitle": "Providers",

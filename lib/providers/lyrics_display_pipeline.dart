@@ -11,7 +11,8 @@ import '../utils/qq_kana_helper.dart';
 import '../utils/romaji_helper.dart';
 
 /// Memoized display transforms: rich-sync stripping, translation alignment,
-/// Simplified/Traditional conversion, and kanji annotation.
+/// Simplified/Traditional conversion, kanji annotation, and the experimental
+/// timestamp strip.
 class LyricsDisplayPipeline {
   List<Lyric>? _cachedAlignedLyrics;
   LyricsResult? _lastLyricsResultForAlignment;
@@ -32,6 +33,9 @@ class LyricsDisplayPipeline {
   LyricsReading? _annotatedLyricsReading;
   int? _annotatedLyricsBias;
 
+  List<Lyric>? _timestampStrippedLyrics;
+  List<Lyric>? _timestampStrippedSource;
+
   void invalidateAlignment() {
     _cachedAlignedLyrics = null;
     _lastTranslationResultForAlignment = null;
@@ -49,6 +53,7 @@ class LyricsDisplayPipeline {
     required String zhConversionTarget,
     required List<String> zhConversionIgnoredLanguages,
     required int translationAlignmentThreshold,
+    required bool stripTimestamps,
   }) {
     final displayed = _buildDisplayedLyrics(
       lyricsResult: lyricsResult,
@@ -63,12 +68,28 @@ class LyricsDisplayPipeline {
       ignoredLanguages: zhConversionIgnoredLanguages,
       languageHint: lyricsResult.language ?? translationResult?.language,
     );
-    return _applyReadingAnnotations(
+    final annotated = _applyReadingAnnotations(
       converted,
       reading: reading,
       annotationEnabled: annotationEnabled,
       annotationBias: annotationBias,
     );
+    return _applyTimestampStrip(annotated, enabled: stripTimestamps);
+  }
+
+  List<Lyric> _applyTimestampStrip(
+    List<Lyric> lyrics, {
+    required bool enabled,
+  }) {
+    if (!enabled) return lyrics;
+    if (identical(_timestampStrippedSource, lyrics) &&
+        _timestampStrippedLyrics != null) {
+      return _timestampStrippedLyrics!;
+    }
+    final stripped = LyricsDisplayHelper.stripTimestamps(lyrics);
+    _timestampStrippedSource = lyrics;
+    _timestampStrippedLyrics = stripped;
+    return stripped;
   }
 
   List<Lyric> _applyZhConversion(

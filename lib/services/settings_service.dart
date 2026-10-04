@@ -308,6 +308,15 @@ class SettingsService {
         enabled,
       );
 
+  Future<Setting<bool>> getExperimentalStripTimestampsBeforeRender() =>
+      readSetting(PrefSettings.experimentalStripTimestampsBeforeRender);
+
+  Future<void> setExperimentalStripTimestampsBeforeRender(bool enabled) =>
+      writeSetting(
+        PrefSettings.experimentalStripTimestampsBeforeRender,
+        enabled,
+      );
+
   Future<Setting<bool>> getTrayEnabled() =>
       readSetting(PrefSettings.trayEnabled);
 

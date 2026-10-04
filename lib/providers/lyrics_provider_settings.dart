@@ -174,6 +174,11 @@ class LyricsProviderSettings {
   set experimentalAnnotationFontSizeGlitching(Setting<bool> value) =>
       _set(PrefSettings.experimentalAnnotationFontSizeGlitching, value);
 
+  Setting<bool> get experimentalStripTimestampsBeforeRender =>
+      _get(PrefSettings.experimentalStripTimestampsBeforeRender);
+  set experimentalStripTimestampsBeforeRender(Setting<bool> value) =>
+      _set(PrefSettings.experimentalStripTimestampsBeforeRender, value);
+
   Setting<bool> get trayEnabled => _get(PrefSettings.trayEnabled);
   set trayEnabled(Setting<bool> value) => _set(PrefSettings.trayEnabled, value);
 

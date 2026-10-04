@@ -115,6 +115,8 @@ class _FakeSettingsService extends SettingsService {
           getExperimentalRichInlineFontSizeGlitching,
       PrefSettings.experimentalAnnotationFontSizeGlitching:
           getExperimentalAnnotationFontSizeGlitching,
+      PrefSettings.experimentalStripTimestampsBeforeRender:
+          getExperimentalStripTimestampsBeforeRender,
       PrefSettings.trayEnabled: getTrayEnabled,
       PrefSettings.hideToTrayOnClose: getHideToTrayOnClose,
       PrefSettings.lyricsStreamPath: getLyricsStreamPath,
@@ -284,6 +286,11 @@ class _FakeSettingsService extends SettingsService {
 
   @override
   Future<Setting<bool>> getExperimentalAnnotationFontSizeGlitching() async {
+    return const Setting(current: false, defaultValue: false, changed: false);
+  }
+
+  @override
+  Future<Setting<bool>> getExperimentalStripTimestampsBeforeRender() async {
     return const Setting(current: false, defaultValue: false, changed: false);
   }
 
@@ -1022,6 +1029,96 @@ void main() {
 
       mediaService.position = const Duration(seconds: 10);
       mediaService.emitChange();
+      expect(provider.currentIndex, 1);
+
+      provider.dispose();
+    },
+  );
+
+  test(
+    'experimental strip timestamps forces the unsynced render path',
+    () async {
+      final mediaService = _FakeMediaService(
+        MediaMetadata(
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          duration: const Duration(seconds: 120),
+          artUrl: 'fallback',
+        ),
+      );
+      final provider = LyricsProvider(
+        mediaService: mediaService,
+        lyricsService: _FakeLyricsService(),
+        settingsService: _FakeSettingsService(translationEnabled: false),
+        cacheService: _FakeLyricsCacheService(),
+      );
+      final storedLine = Lyric(
+        startTime: Duration.zero,
+        endTime: const Duration(seconds: 4),
+        text: 'synced a',
+        translation: '甲',
+        inlineParts: [
+          LyricInlinePart(
+            startTime: Duration.zero,
+            endTime: const Duration(seconds: 2),
+            text: 'synced ',
+          ),
+        ],
+      );
+      final stored = LyricsResult(
+        lyrics: [
+          storedLine,
+          Lyric(startTime: const Duration(seconds: 10), text: 'synced b'),
+        ],
+        source: 'Manual synced',
+      );
+
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      mediaService.emitChange();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      await provider.selectCandidate(stored);
+      expect(provider.lyricsResult.isSynced, isTrue);
+      expect(provider.currentIndex, 0);
+
+      provider.setExperimentalStripTimestampsBeforeRender(true);
+
+      expect(provider.experimentalStripTimestampsBeforeRender.current, isTrue);
+      expect(provider.lyricsResult.isSynced, isFalse);
+      expect(provider.currentIndex, -1);
+      expect(provider.lyrics.first.text, 'synced a');
+      expect(provider.lyrics.first.translation, '甲');
+      expect(provider.lyrics.first.startTime, Duration.zero);
+      expect(provider.lyrics.first.endTime, isNull);
+      expect(provider.lyrics.first.inlineParts!.single.text, 'synced ');
+      expect(
+        provider.lyrics.first.inlineParts!.single.startTime,
+        Duration.zero,
+      );
+      expect(provider.lyrics.first.inlineParts!.single.endTime, Duration.zero);
+      expect(provider.lyricsResult.lyrics, provider.lyrics);
+      expect(stored.isSynced, isTrue);
+      expect(storedLine.startTime, Duration.zero);
+      expect(storedLine.endTime, const Duration(seconds: 4));
+      expect(
+        storedLine.inlineParts!.single.endTime,
+        const Duration(seconds: 2),
+      );
+
+      final rendered = provider.lyrics;
+      mediaService.position = const Duration(seconds: 10);
+      mediaService.emitChange();
+      expect(provider.currentIndex, -1);
+      expect(provider.currentPosition, const Duration(seconds: 10));
+      expect(identical(provider.lyrics, rendered), isTrue);
+      expect(identical(provider.lyricsResult.lyrics, rendered), isTrue);
+
+      provider.setExperimentalStripTimestampsBeforeRender(false);
+      expect(provider.lyricsResult.isSynced, isTrue);
+      expect(provider.lyrics[1].startTime, const Duration(seconds: 10));
       expect(provider.currentIndex, 1);
 
       provider.dispose();
