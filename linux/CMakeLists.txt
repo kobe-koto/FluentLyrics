@@ -79,6 +79,13 @@ set_target_properties(${BINARY_NAME}
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# OpenJDK jni.h takes void** for AttachCurrentThread and JNI_CreateJavaVM.
+# package:jni 1.0.3 passes JNIEnv**. Clang treats that mismatch as an error.
+# Scoped to the plugin target; do not patch the regenerated plugin symlink.
+if(TARGET jni)
+  target_compile_options(jni PRIVATE -Wno-incompatible-pointer-types)
+endif()
+
 
 # === Installation ===
 # By default, "installing" just makes a relocatable bundle in the build
