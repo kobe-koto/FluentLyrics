@@ -209,117 +209,123 @@ class _SettingsEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = destination.color;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: selected
-                ? color.withValues(alpha: 0.15)
-                : Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 16.0,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(destination.icon, color: color, size: 20),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            destination.localizedTitle(i18n),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            destination.localizedSubtitle(i18n),
-                            style: TextStyle(
-                              color: Colors.white.withValues(
-                                alpha: selected ? 0.72 : 0.4,
-                              ),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ?trailing,
-                  ],
-                ),
-              ),
+    final cardRadius = BorderRadius.circular(16);
+    return ClipRRect(
+      borderRadius: cardRadius,
+      child: Stack(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: selected
+                  ? color.withValues(alpha: 0.15)
+                  : Colors.white.withValues(alpha: 0.05),
+              borderRadius: cardRadius,
             ),
-          ),
-        ),
-        if (showAccentBar)
-          Positioned(
-            left: -4,
-            top: 12,
-            bottom: 12,
-            child: IgnorePointer(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: ScaleTransition(
-                      scale: Tween<double>(
-                        begin: 0.4,
-                        end: 1.0,
-                      ).animate(animation),
-                      alignment: Alignment.centerLeft,
-                      child: child,
-                    ),
-                  );
-                },
-                child: selected
-                    ? Container(
-                        key: const ValueKey('bar'),
-                        width: 4,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: cardRadius,
+              child: InkWell(
+                borderRadius: cardRadius,
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 16.0,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: BorderRadius.circular(2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.5),
-                              blurRadius: 8,
+                          color: color.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(destination.icon, color: color, size: 20),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              destination.localizedTitle(i18n),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              destination.localizedSubtitle(i18n),
+                              style: TextStyle(
+                                color: Colors.white.withValues(
+                                  alpha: selected ? 0.72 : 0.4,
+                                ),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
-                      )
-                    : const SizedBox.shrink(key: ValueKey('empty')),
+                      ),
+                      ?trailing,
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-      ],
+          if (showAccentBar)
+            Positioned(
+              left: 0,
+              top: 16,
+              bottom: 16,
+              child: IgnorePointer(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(
+                        scale: Tween<double>(
+                          begin: 0.4,
+                          end: 1.0,
+                        ).animate(animation),
+                        alignment: Alignment.centerLeft,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: selected
+                      ? Container(
+                          key: const ValueKey('bar'),
+                          width: 4,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: const BorderRadius.horizontal(
+                              right: Radius.circular(2),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withValues(alpha: 0.5),
+                                blurRadius: 8,
+                                offset: const Offset(2, 0),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(key: ValueKey('empty')),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
