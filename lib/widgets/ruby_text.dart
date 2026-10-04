@@ -41,7 +41,7 @@ class _RenderRubyText extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, _RubyTextParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, _RubyTextParentData> {
-  _RenderRubyText({required Alignment alignment}) : _alignment = alignment;
+  _RenderRubyText({required this._alignment});
 
   Alignment _alignment;
 
