@@ -9,6 +9,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/lrc_parser.dart';
 import '../../utils/lyrics_reading_helper.dart';
 import '../../utils/qqmusic_lyric_decoder.dart';
+import '../../utils/qqmusic_request_sign.dart';
 import '../../utils/rich_lrc_parser.dart';
 import '../../utils/song_result_helper.dart';
 import '../../utils/translation_helper.dart';
@@ -18,29 +19,18 @@ final Random random = Random();
 class QQMusicService {
   static const int lyricEmptyRetryCount = 3;
 
-  static const List<String> _platforms = [
-    'Macintosh; Intel Mac OS X 10_15_7',
-    'Windows NT 10.0; Win64; x64',
-    'X11; Linux x86_64',
-    'Linux x86_64',
-    'X11; CrOS x86_64 14541.0.0',
-    'Linux; Android 10; K',
-    'iPhone; CPU iPhone OS 14_8 like Mac OS X',
-    'iPad; CPU OS 14_8 like Mac OS X',
-    'iPhone; CPU iPhone OS 15_8 like Mac OS X',
-    'iPad; CPU OS 15_8 like Mac OS X',
-    'iPhone; CPU iPhone OS 16_7 like Mac OS X',
-    'iPad; CPU OS 16_7 like Mac OS X',
-    'iPhone; CPU iPhone OS 17_7 like Mac OS X',
-    'iPad; CPU OS 17_7 like Mac OS X',
-    'iPhone; CPU iPhone OS 18_7 like Mac OS X',
-    'iPad; CPU OS 18_7 like Mac OS X',
-    'iPhone; CPU iPhone OS 26_7 like Mac OS X',
-    'iPad; CPU OS 26_7 like Mac OS X',
-  ];
+  String _generateRandomString(int length) {
+    const chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return List.generate(
+      length,
+      (index) => chars[random.nextInt(chars.length)],
+    ).join();
+  }
 
   String get _userAgent =>
-      'Mozilla/5.0 (${_platforms[random.nextInt(_platforms.length)]}; Nonce ${DateTime.now().millisecondsSinceEpoch.toString()}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${random.nextInt(55) + 100}.${random.nextInt(10)}.${random.nextInt(10)}.${random.nextInt(10)} Safari/537.36';
+      'Mozilla/5.0 (Linux; Android ${random.nextInt(10) + 7}; ${_generateRandomString(24)}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${random.nextInt(85) + 70}.${random.nextInt(10)}.${random.nextInt(10)}.${random.nextInt(10)} Safari/537.36';
+  // String get _userAgent => _generateRandomString(24);
 
   bool checkTranslationSupport(String language) {
     return language == 'zh_CN';
@@ -226,30 +216,18 @@ class QQMusicService {
     try {
       final keywordList = ['$title - ${artist.join(', ')}', title];
       for (final keyword in keywordList) {
-        final searchUrl = Uri.parse('https://u.y.qq.com/cgi-bin/musicu.fcg');
-        final searchBody = {
-          'music.search.SearchCgiService': {
-            'method': 'DoSearchForQQMusicDesktop',
-            'module': 'music.search.SearchCgiService',
-            'param': {
-              'num_per_page': 10,
-              'page_num': 1,
-              'query': keyword,
-              'search_type': 0,
-            },
-          },
-        };
-
+        final request = QQMusicSearchRequest.build(query: keyword);
         final searchResponse = await scopedPost(
-          searchUrl,
+          request.uri,
           scope: scope,
           headers: {
             'Host': 'u.y.qq.com',
             'Origin': 'https://y.qq.com',
             'Referer': 'https://y.qq.com/',
             'User-Agent': _userAgent,
+            'Content-Type': 'application/json',
           },
-          body: jsonEncode(searchBody),
+          body: request.body,
         ).timeout(const Duration(seconds: 10));
 
         if (searchResponse.statusCode != 200) {
@@ -389,12 +367,11 @@ class QQMusicService {
   }
 }
 
-/// Reads the song list from a `musicu.fcg` search response.
+/// Reads the song list from a signed `musics.fcg` search response.
 ///
-/// The request is keyed by the module name, and the response echoes that key.
-/// The old `req_1` envelope is the one that starts returning code 2001.
+/// The request is keyed by `result`, and the response echoes that key.
 class QQMusicSearchParser {
-  static const String resultKey = 'music.search.SearchCgiService';
+  static const String resultKey = QQMusicSearchRequest.resultKey;
 
   static List<dynamic> songList(Object? response) {
     if (response is! Map) {

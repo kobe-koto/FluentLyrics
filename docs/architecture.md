@@ -71,7 +71,7 @@ Provider services:
 | `lrclib` | `LrclibService` | Open lyrics database |
 | `musixmatch` | `MusixmatchService` | Android API (`apic.musixmatch.com`, `android-player-v1.0`); token in secure storage. Placeholder tokens are not saved. 401 `renew` fetches a new token and does not replace a usable token with a placeholder |
 | `netease` | `NeteaseService` | EAPI search; can return reading tracks |
-| `qqmusic` | `QQMusicService` | Encrypted lyric payload in `qqmusic_lyric_decoder.dart`; word-level kana |
+| `qqmusic` | `QQMusicService` | Signed `musics.fcg` search; encrypted lyric payload in `qqmusic_lyric_decoder.dart`; word-level kana |
 | `cache` | `LyricsCacheService` | Isar, not a network source |
 | `llm` | `LlmTranslationService` | Translation only |
 

@@ -2,10 +2,10 @@ import 'package:fluent_lyrics/services/providers/qqmusic_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('reads songs from the module-keyed search response', () {
+  test('reads songs from the signed search response', () {
     final songs = QQMusicSearchParser.songList({
       'code': 0,
-      'music.search.SearchCgiService': {
+      'result': {
         'code': 0,
         'data': {
           'code': 0,
@@ -36,11 +36,11 @@ void main() {
     expect(songs.single['album']['mid'], 'album1');
   });
 
-  test('returns no songs when the new envelope has an empty list', () {
+  test('returns no songs when the signed envelope has an empty list', () {
     expect(
       QQMusicSearchParser.songList({
         'code': 0,
-        'music.search.SearchCgiService': {
+        'result': {
           'code': 0,
           'data': {
             'body': {
@@ -53,31 +53,34 @@ void main() {
     );
   });
 
-  test('surfaces a non-zero module code instead of reading req_1', () {
-    expect(
-      () => QQMusicSearchParser.songList({
-        'code': 0,
-        'req_1': {
+  test(
+    'surfaces a non-zero result code instead of reading a sibling envelope',
+    () {
+      expect(
+        () => QQMusicSearchParser.songList({
           'code': 0,
-          'data': {
-            'body': {
-              'song': {
-                'list': [
-                  {'name': 'ignored'},
-                ],
+          'req_1': {
+            'code': 0,
+            'data': {
+              'body': {
+                'song': {
+                  'list': [
+                    {'name': 'ignored'},
+                  ],
+                },
               },
             },
           },
-        },
-        'music.search.SearchCgiService': {'code': 2001},
-      }),
-      throwsA(
-        isA<Exception>().having(
-          (error) => error.toString(),
-          'message',
-          contains('code 2001'),
+          'result': {'code': 2001},
+        }),
+        throwsA(
+          isA<Exception>().having(
+            (error) => error.toString(),
+            'message',
+            contains('code 2001'),
+          ),
         ),
-      ),
-    );
-  });
+      );
+    },
+  );
 }
