@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../services/settings_service.dart';
+import '../../settings_card_frame.dart';
+import '../../settings_group.dart';
 import '../../settings_section.dart';
 
 class LanguageSection extends StatefulWidget {
@@ -66,22 +68,23 @@ class _LanguageSectionState extends State<LanguageSection> {
       title: i18n.settings.language.title,
       description: i18n.settings.language.subtitle,
       children: [
-        _LanguageTile(
-          label: i18n.settings.language.system,
-          subtitle: null,
-          selected: _savedLocaleTag == null,
-          onTap: () => _setLocale(null),
+        SettingsGroup(
+          children: [
+            _LanguageTile(
+              label: i18n.settings.language.system,
+              subtitle: null,
+              selected: _savedLocaleTag == null,
+              onTap: () => _setLocale(null),
+            ),
+            for (final locale in AppLocale.values)
+              _LanguageTile(
+                label: _displayName(locale),
+                subtitle: locale.languageTag,
+                selected: _savedLocaleTag == locale.languageTag,
+                onTap: () => _setLocale(locale),
+              ),
+          ],
         ),
-        const SizedBox(height: 8),
-        for (final locale in AppLocale.values) ...[
-          _LanguageTile(
-            label: _displayName(locale),
-            subtitle: locale.languageTag,
-            selected: _savedLocaleTag == locale.languageTag,
-            onTap: () => _setLocale(locale),
-          ),
-          const SizedBox(height: 8),
-        ],
       ],
     );
   }
@@ -102,16 +105,13 @@ class _LanguageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected
-          ? Colors.cyan.withValues(alpha: 0.15)
-          : Colors.white.withValues(alpha: 0.05),
-      borderRadius: BorderRadius.circular(16),
+    return SettingsCardFrame(
+      padding: EdgeInsets.zero,
+      color: selected ? Colors.cyan.withValues(alpha: 0.15) : null,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Expanded(

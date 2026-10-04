@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../settings_card_frame.dart';
+import '../../settings_group.dart';
 import '../../settings_section.dart';
 import '../../settings_toggle_card.dart';
 
@@ -22,25 +23,27 @@ class MiscSection extends StatelessWidget {
           title: i18n.sectionTitle,
           description: i18n.sectionDescription,
           children: [
-            if (isDesktop) ...[
-              SettingsToggleCard(
-                title: i18n.tray,
-                subtitle: i18n.traySubtitle,
-                value: provider.trayEnabled.current,
-                onChanged: (value) => provider.setTrayEnabled(value),
-              ),
-              const SizedBox(height: 16),
-              if (provider.trayEnabled.current) ...[
-                SettingsToggleCard(
-                  title: i18n.hideToTray,
-                  subtitle: i18n.hideToTraySubtitle,
-                  value: provider.hideToTrayOnClose.current,
-                  onChanged: (value) => provider.setHideToTrayOnClose(value),
-                ),
-                const SizedBox(height: 16),
-              ],
-              const _LyricsStreamCard(),
-            ] else
+            if (isDesktop)
+              SettingsGroup(
+                children: [
+                  SettingsToggleCard(
+                    title: i18n.tray,
+                    subtitle: i18n.traySubtitle,
+                    value: provider.trayEnabled.current,
+                    onChanged: (value) => provider.setTrayEnabled(value),
+                  ),
+                  if (provider.trayEnabled.current)
+                    SettingsToggleCard(
+                      title: i18n.hideToTray,
+                      subtitle: i18n.hideToTraySubtitle,
+                      value: provider.hideToTrayOnClose.current,
+                      onChanged: (value) =>
+                          provider.setHideToTrayOnClose(value),
+                    ),
+                  const _LyricsStreamCard(),
+                ],
+              )
+            else
               _UnsupportedNotice(message: i18n.unsupported),
           ],
         );

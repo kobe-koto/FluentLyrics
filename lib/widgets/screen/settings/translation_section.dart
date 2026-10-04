@@ -5,6 +5,7 @@ import '../../../providers/lyrics_provider.dart';
 import '../../../services/secret_store_message.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_section.dart';
+import '../../settings_group.dart';
 import '../../settings_slider_card.dart';
 import '../../settings_toggle_card.dart';
 
@@ -20,206 +21,210 @@ class TranslationSection extends StatelessWidget {
           title: i18n.sectionTitle,
           description: i18n.sectionDescription,
           children: [
-            // Translation Toggle
-            SettingsToggleCard(
-              title: i18n.enable,
-              subtitle: i18n.enableSubtitle,
-              value: provider.translationEnabled.current,
-              onChanged: (value) => provider.setTranslationEnabled(value),
-            ),
-            if (provider.translationEnabled.current) ...[
-              const SizedBox(height: 24),
-              // Highlight Only
-              SettingsToggleCard(
-                title: i18n.highlightOnly,
-                subtitle: i18n.highlightOnlySubtitle,
-                value: provider.translationHighlightOnly.current,
-                onChanged: (value) =>
-                    provider.setTranslationHighlightOnly(value),
-              ),
-              const SizedBox(height: 24),
-              // Target Language
-              SettingsCardFrame(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      i18n.targetLanguageTitle,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      i18n.targetLanguageDescription,
-                      style: const TextStyle(
-                        color: Colors.white38,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      i18n.targetLanguageNoteMusixmatch,
-                      style: const TextStyle(
-                        color: Colors.white38,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      i18n.targetLanguageNoteLlm,
-                      style: const TextStyle(
-                        color: Colors.white38,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      i18n.targetLanguageNoteCJK,
-                      style: const TextStyle(
-                        color: Colors.white38,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      initialValue: provider.translationTargetLanguages.current
-                          .join(', '),
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: i18n.targetLanguageHint,
-                        hintStyle: const TextStyle(color: Colors.white24),
-                        filled: true,
-                        fillColor: Colors.black26,
-                      ),
-                      onChanged: (value) {
-                        provider.setTranslationTargetLanguages(
-                          value.isEmpty
-                              ? []
-                              : value
-                                    .split(',')
-                                    .map((e) => e.trim())
-                                    .map(
-                                      (e) => e.startsWith('llm:')
-                                          ? 'llm: ${e.substring(4).trim()}' // normalize input with 'llm:' prefix
-                                          : e,
-                                    )
-                                    .toList(),
-                        );
-                      },
-                    ),
-                  ],
+            SettingsGroup(
+              children: [
+                SettingsToggleCard(
+                  title: i18n.enable,
+                  subtitle: i18n.enableSubtitle,
+                  value: provider.translationEnabled.current,
+                  onChanged: (value) => provider.setTranslationEnabled(value),
                 ),
-              ),
-              const SizedBox(height: 24),
-              // Bias
-              SettingsSliderCard(
-                title: i18n.bias,
-                subtitle: i18n.biasSubtitle,
-                value: provider.translationBias.current.toDouble(),
-                min: 0,
-                max: 1000,
-                divisions: 20,
-                label: '${provider.translationBias.current}ms',
-                valueText: '${provider.translationBias.current}ms',
-                onChanged: (value) =>
-                    provider.setTranslationBias(value.toInt()),
-                onReset: provider.translationBias.changed
-                    ? () => provider.setTranslationBias(
-                        provider.translationBias.defaultValue,
-                      )
-                    : null,
-                resetTooltip: i18n.biasReset,
-              ),
-              const SizedBox(height: 24),
-              // Alignment Threshold
-              SettingsSliderCard(
-                title: i18n.alignmentThreshold,
-                subtitle: i18n.alignmentThresholdSubtitle,
-                value: provider.translationAlignmentThreshold.current
-                    .toDouble(),
-                min: 0,
-                max: 100,
-                divisions: 20,
-                label: '${provider.translationAlignmentThreshold.current}%',
-                valueText: '${provider.translationAlignmentThreshold.current}%',
-                onChanged: (value) =>
-                    provider.setTranslationAlignmentThreshold(value.toInt()),
-                onReset: provider.translationAlignmentThreshold.changed
-                    ? () => provider.setTranslationAlignmentThreshold(
-                        provider.translationAlignmentThreshold.defaultValue,
-                      )
-                    : null,
-                resetTooltip: i18n.alignmentThresholdReset,
-              ),
-              const SizedBox(height: 24),
-              // Coverage Threshold (cache validation)
-              SettingsSliderCard(
-                title: i18n.coverageThreshold,
-                subtitle: i18n.coverageThresholdSubtitle,
-                value: provider.translationCoverageThreshold.current.toDouble(),
-                min: 0,
-                max: 100,
-                divisions: 20,
-                label: '${provider.translationCoverageThreshold.current}%',
-                valueText: '${provider.translationCoverageThreshold.current}%',
-                onChanged: (value) =>
-                    provider.setTranslationCoverageThreshold(value.toInt()),
-                onReset: provider.translationCoverageThreshold.changed
-                    ? () => provider.setTranslationCoverageThreshold(
-                        provider.translationCoverageThreshold.defaultValue,
-                      )
-                    : null,
-                resetTooltip: i18n.coverageThresholdReset,
-              ),
-              const SizedBox(height: 24),
-              // LLM Configuration
-              LlmConfigurationCard(provider: provider),
-              const SizedBox(height: 8),
-              SettingsSliderCard(
-                title: i18n.llmTtftTitle,
-                subtitle: i18n.llmTtftSubtitle,
-                value: provider.llmTimeToFirstTokenSeconds.current.toDouble(),
-                min: 0,
-                max: 180,
-                divisions: 36,
-                label: provider.llmTimeToFirstTokenSeconds.current == 0
-                    ? i18n.llmLimitOff
-                    : '${provider.llmTimeToFirstTokenSeconds.current}s',
-                valueText: provider.llmTimeToFirstTokenSeconds.current == 0
-                    ? i18n.llmLimitOff
-                    : '${provider.llmTimeToFirstTokenSeconds.current}s',
-                onChanged: (value) =>
-                    provider.setLlmTimeToFirstTokenSeconds(value.round()),
-                onReset: provider.llmTimeToFirstTokenSeconds.changed
-                    ? () => provider.setLlmTimeToFirstTokenSeconds(
-                        provider.llmTimeToFirstTokenSeconds.defaultValue,
-                      )
-                    : null,
-              ),
-              SettingsSliderCard(
-                title: i18n.llmMinTpsTitle,
-                subtitle: i18n.llmMinTpsSubtitle,
-                value: provider.llmMinTokensPerSecond.current,
-                min: 0,
-                max: 10,
-                divisions: 20,
-                label: provider.llmMinTokensPerSecond.current == 0
-                    ? i18n.llmLimitOff
-                    : provider.llmMinTokensPerSecond.current.toStringAsFixed(1),
-                valueText: provider.llmMinTokensPerSecond.current == 0
-                    ? i18n.llmLimitOff
-                    : provider.llmMinTokensPerSecond.current.toStringAsFixed(1),
-                onChanged: provider.setLlmMinTokensPerSecond,
-                onReset: provider.llmMinTokensPerSecond.changed
-                    ? () => provider.setLlmMinTokensPerSecond(
-                        provider.llmMinTokensPerSecond.defaultValue,
-                      )
-                    : null,
-              ),
-            ],
+                if (provider.translationEnabled.current) ...[
+                  // Highlight Only
+                  SettingsToggleCard(
+                    title: i18n.highlightOnly,
+                    subtitle: i18n.highlightOnlySubtitle,
+                    value: provider.translationHighlightOnly.current,
+                    onChanged: (value) =>
+                        provider.setTranslationHighlightOnly(value),
+                  ),
+                  // Target Language
+                  SettingsCardFrame(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          i18n.targetLanguageTitle,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          i18n.targetLanguageDescription,
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          i18n.targetLanguageNoteMusixmatch,
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          i18n.targetLanguageNoteLlm,
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          i18n.targetLanguageNoteCJK,
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          initialValue: provider
+                              .translationTargetLanguages
+                              .current
+                              .join(', '),
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: i18n.targetLanguageHint,
+                            hintStyle: const TextStyle(color: Colors.white24),
+                            filled: true,
+                            fillColor: Colors.black26,
+                          ),
+                          onChanged: (value) {
+                            provider.setTranslationTargetLanguages(
+                              value.isEmpty
+                                  ? []
+                                  : value
+                                        .split(',')
+                                        .map((e) => e.trim())
+                                        .map(
+                                          (e) => e.startsWith('llm:')
+                                              ? 'llm: ${e.substring(4).trim()}' // normalize input with 'llm:' prefix
+                                              : e,
+                                        )
+                                        .toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Bias
+                  SettingsSliderCard(
+                    title: i18n.bias,
+                    subtitle: i18n.biasSubtitle,
+                    value: provider.translationBias.current.toDouble(),
+                    min: 0,
+                    max: 1000,
+                    divisions: 20,
+                    label: '${provider.translationBias.current}ms',
+                    valueText: '${provider.translationBias.current}ms',
+                    onChanged: (value) =>
+                        provider.setTranslationBias(value.toInt()),
+                    onReset: provider.translationBias.changed
+                        ? () => provider.setTranslationBias(
+                            provider.translationBias.defaultValue,
+                          )
+                        : null,
+                    resetTooltip: i18n.biasReset,
+                  ),
+                  // Alignment Threshold
+                  SettingsSliderCard(
+                    title: i18n.alignmentThreshold,
+                    subtitle: i18n.alignmentThresholdSubtitle,
+                    value: provider.translationAlignmentThreshold.current
+                        .toDouble(),
+                    min: 0,
+                    max: 100,
+                    divisions: 20,
+                    label: '${provider.translationAlignmentThreshold.current}%',
+                    valueText:
+                        '${provider.translationAlignmentThreshold.current}%',
+                    onChanged: (value) => provider
+                        .setTranslationAlignmentThreshold(value.toInt()),
+                    onReset: provider.translationAlignmentThreshold.changed
+                        ? () => provider.setTranslationAlignmentThreshold(
+                            provider.translationAlignmentThreshold.defaultValue,
+                          )
+                        : null,
+                    resetTooltip: i18n.alignmentThresholdReset,
+                  ),
+                  // Coverage Threshold (cache validation)
+                  SettingsSliderCard(
+                    title: i18n.coverageThreshold,
+                    subtitle: i18n.coverageThresholdSubtitle,
+                    value: provider.translationCoverageThreshold.current
+                        .toDouble(),
+                    min: 0,
+                    max: 100,
+                    divisions: 20,
+                    label: '${provider.translationCoverageThreshold.current}%',
+                    valueText:
+                        '${provider.translationCoverageThreshold.current}%',
+                    onChanged: (value) =>
+                        provider.setTranslationCoverageThreshold(value.toInt()),
+                    onReset: provider.translationCoverageThreshold.changed
+                        ? () => provider.setTranslationCoverageThreshold(
+                            provider.translationCoverageThreshold.defaultValue,
+                          )
+                        : null,
+                    resetTooltip: i18n.coverageThresholdReset,
+                  ),
+                  // LLM Configuration
+                  LlmConfigurationCard(provider: provider),
+                  SettingsSliderCard(
+                    title: i18n.llmTtftTitle,
+                    subtitle: i18n.llmTtftSubtitle,
+                    value: provider.llmTimeToFirstTokenSeconds.current
+                        .toDouble(),
+                    min: 0,
+                    max: 180,
+                    divisions: 36,
+                    label: provider.llmTimeToFirstTokenSeconds.current == 0
+                        ? i18n.llmLimitOff
+                        : '${provider.llmTimeToFirstTokenSeconds.current}s',
+                    valueText: provider.llmTimeToFirstTokenSeconds.current == 0
+                        ? i18n.llmLimitOff
+                        : '${provider.llmTimeToFirstTokenSeconds.current}s',
+                    onChanged: (value) =>
+                        provider.setLlmTimeToFirstTokenSeconds(value.round()),
+                    onReset: provider.llmTimeToFirstTokenSeconds.changed
+                        ? () => provider.setLlmTimeToFirstTokenSeconds(
+                            provider.llmTimeToFirstTokenSeconds.defaultValue,
+                          )
+                        : null,
+                  ),
+                  SettingsSliderCard(
+                    title: i18n.llmMinTpsTitle,
+                    subtitle: i18n.llmMinTpsSubtitle,
+                    value: provider.llmMinTokensPerSecond.current,
+                    min: 0,
+                    max: 10,
+                    divisions: 20,
+                    label: provider.llmMinTokensPerSecond.current == 0
+                        ? i18n.llmLimitOff
+                        : provider.llmMinTokensPerSecond.current
+                              .toStringAsFixed(1),
+                    valueText: provider.llmMinTokensPerSecond.current == 0
+                        ? i18n.llmLimitOff
+                        : provider.llmMinTokensPerSecond.current
+                              .toStringAsFixed(1),
+                    onChanged: provider.setLlmMinTokensPerSecond,
+                    onReset: provider.llmMinTokensPerSecond.changed
+                        ? () => provider.setLlmMinTokensPerSecond(
+                            provider.llmMinTokensPerSecond.defaultValue,
+                          )
+                        : null,
+                  ),
+                ],
+              ],
+            ),
           ],
         );
       },

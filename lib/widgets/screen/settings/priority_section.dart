@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../settings_card_frame.dart';
+import '../../settings_group.dart';
 import '../../settings_section.dart';
 
 class PrioritySection extends StatelessWidget {
@@ -162,61 +163,80 @@ class PrioritySection extends StatelessWidget {
     final Color color = metadata['color'];
     final String name = type.localizedName(t);
     final String description = type.localizedDescription(t);
+    final segmentStart = isEnabled ? 0 : enabledCount;
+    final segmentCount = isEnabled
+        ? enabledCount
+        : allProviders.length - enabledCount;
+    final position = SettingsGroupPosition.at(
+      index - segmentStart,
+      segmentCount,
+    );
+    final isSegmentEnd =
+        position == SettingsGroupPosition.only ||
+        position == SettingsGroupPosition.last;
 
     return Opacity(
       opacity: isEnabled ? 1.0 : 0.4,
       key: ValueKey(type),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: SettingsCardFrame(
-          padding: EdgeInsets.zero,
-          child: ReorderableDragStartListener(
-            index: index + (index >= enabledCount ? 1 : 0),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 8,
-              ),
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
+        padding: EdgeInsets.only(
+          bottom: isSegmentEnd ? 0 : SettingsGroupMetrics.gap,
+        ),
+        child: SettingsGroupScope(
+          position: position,
+          child: SettingsCardFrame(
+            padding: EdgeInsets.zero,
+            child: ReorderableDragStartListener(
+              index: index + (index >= enabledCount ? 1 : 0),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
                 ),
-                child: Center(
-                  child: isEnabled
-                      ? Text(
-                          (index + 1).toString(),
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.bold,
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: isEnabled
+                        ? Text(
+                            (index + 1).toString(),
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : Icon(
+                            Icons.block,
+                            size: 20,
+                            color: color.withValues(alpha: 0.5),
                           ),
-                        )
-                      : Icon(
-                          Icons.block,
-                          size: 20,
-                          color: color.withValues(alpha: 0.5),
-                        ),
+                  ),
+                ),
+                title: Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                ),
+                subtitle: Text(
+                  description,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.drag_indicator,
+                  color: Colors.white24,
                 ),
               ),
-              title: Text(
-                name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-              subtitle: Text(
-                description,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              trailing: const Icon(Icons.drag_indicator, color: Colors.white24),
             ),
           ),
         ),

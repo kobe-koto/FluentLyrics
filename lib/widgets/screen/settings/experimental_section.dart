@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../settings_section.dart';
+import '../../settings_group.dart';
 import '../../settings_toggle_card.dart';
 
 class ExperimentalSection extends StatelessWidget {
@@ -17,20 +18,25 @@ class ExperimentalSection extends StatelessWidget {
           title: i18n.sectionTitle,
           description: i18n.sectionDescription,
           children: [
-            SettingsToggleCard(
-              title: i18n.richInlineFix,
-              subtitle: i18n.richInlineFixSubtitle,
-              value: provider.experimentalRichInlineFontSizeGlitching.current,
-              onChanged: (value) =>
-                  provider.setExperimentalRichInlineFontSizeGlitching(value),
-            ),
-            const SizedBox(height: 24),
-            SettingsToggleCard(
-              title: i18n.annotationFix,
-              subtitle: i18n.annotationFixSubtitle,
-              value: provider.experimentalAnnotationFontSizeGlitching.current,
-              onChanged: (value) =>
-                  provider.setExperimentalAnnotationFontSizeGlitching(value),
+            SettingsGroup(
+              children: [
+                SettingsToggleCard(
+                  title: i18n.richInlineFix,
+                  subtitle: i18n.richInlineFixSubtitle,
+                  value:
+                      provider.experimentalRichInlineFontSizeGlitching.current,
+                  onChanged: (value) => provider
+                      .setExperimentalRichInlineFontSizeGlitching(value),
+                ),
+                SettingsToggleCard(
+                  title: i18n.annotationFix,
+                  subtitle: i18n.annotationFixSubtitle,
+                  value:
+                      provider.experimentalAnnotationFontSizeGlitching.current,
+                  onChanged: (value) => provider
+                      .setExperimentalAnnotationFontSizeGlitching(value),
+                ),
+              ],
             ),
           ],
         );
