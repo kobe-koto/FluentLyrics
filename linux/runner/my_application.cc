@@ -15,6 +15,28 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
+// A tiled window can be reported with one or more tiled edges. Keep the
+// titlebar out of the tiled layout while preserving it for floating windows.
+static gboolean window_state_cb(GtkWidget* widget,
+                                GdkEventWindowState* event,
+                                gpointer user_data) {
+  GtkWidget* header_bar = GTK_WIDGET(user_data);
+  const GdkWindowState tiled_edges =
+      static_cast<GdkWindowState>(GDK_WINDOW_STATE_TOP_TILED |
+                                  GDK_WINDOW_STATE_RIGHT_TILED |
+                                  GDK_WINDOW_STATE_BOTTOM_TILED |
+                                  GDK_WINDOW_STATE_LEFT_TILED);
+  const gboolean tiled = (event->new_window_state & tiled_edges) != 0;
+
+  if (header_bar != nullptr) {
+    gtk_widget_set_visible(header_bar, !tiled);
+  } else {
+    gtk_window_set_decorated(GTK_WINDOW(widget), !tiled);
+  }
+
+  return FALSE;
+}
+
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
   gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
@@ -58,8 +80,12 @@ static void my_application_activate(GApplication* application) {
     gtk_header_bar_set_title(header_bar, "Fluent Lyrics");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
+    g_signal_connect(window, "window-state-event", G_CALLBACK(window_state_cb),
+                     header_bar);
   } else {
     gtk_window_set_title(window, "Fluent Lyrics");
+    g_signal_connect(window, "window-state-event", G_CALLBACK(window_state_cb),
+                     nullptr);
   }
 
   gtk_window_set_default_size(window, 1280, 720);
