@@ -418,7 +418,7 @@ class Translations$settings$misc$zh_CN extends Translations$settings$misc$en {
 	@override String get sectionTitle => '杂项';
 	@override String get sectionDescription => '杂项选项。';
 	@override String get tray => '系统托盘图标';
-	@override String get traySubtitle => '在系统托盘显示 Fluent Lyrics 图标，提供快速显隐和退出操作。Linux 需要 AppIndicator (如 libayatana-appindicator)。';
+	@override String get traySubtitle => '在系统托盘显示 Fluent Lyrics 图标，提供快速显隐和退出操作。Linux 使用 StatusNotifierItem；GNOME 可能需要 AppIndicator 扩展。';
 	@override String get hideToTray => '关闭时隐藏到托盘';
 	@override String get hideToTraySubtitle => '关闭主窗口时隐藏到托盘而非退出。后台仍会继续获取歌词与翻译;隐藏时 UI 渲染暂停。请使用托盘菜单退出。';
 	@override String get unsupported => '当前平台暂无此类选项 — 系统托盘和歌词输出仅在 Linux 和 macOS 桌面端可用。';

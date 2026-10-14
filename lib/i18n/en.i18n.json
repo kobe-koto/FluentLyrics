@@ -208,7 +208,7 @@
       "sectionTitle": "Misc",
       "sectionDescription": "Miscellaneous options.",
       "tray": "System Tray Icon",
-      "traySubtitle": "Show a Fluent Lyrics icon in the system tray with quick show/hide and quit actions. Requires AppIndicator on Linux (libayatana-appindicator).",
+      "traySubtitle": "Show a Fluent Lyrics icon in the system tray with quick show/hide and quit actions. Linux uses StatusNotifierItem; GNOME may need the AppIndicator extension.",
       "hideToTray": "Hide to Tray on Close",
       "hideToTraySubtitle": "When you close the main window, hide it to the tray instead of quitting. Lyrics and translations keep fetching in the background; UI rendering pauses while hidden. Use the tray menu to quit.",
       "unsupported": "There is nothing here on this platform yet — system tray and lyrics streaming are only available on Linux and macOS desktops.",

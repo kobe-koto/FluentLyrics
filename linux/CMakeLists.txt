@@ -42,10 +42,9 @@ endif()
 function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_features(${TARGET} PUBLIC cxx_std_14)
   target_compile_options(${TARGET} PRIVATE -Wall -Werror)
-  # Do not promote deprecation warnings to errors. Some Flutter plugins (e.g.
-  # tray_manager, which uses libayatana-appindicator's app_indicator_* APIs)
-  # legitimately call APIs that upstream has marked deprecated. The warnings
-  # are still surfaced, just not fatal.
+  # Do not promote deprecation warnings to errors. Some Flutter plugins call
+  # APIs that upstream has marked deprecated. The warnings are still surfaced,
+  # just not fatal.
   target_compile_options(${TARGET} PRIVATE -Wno-error=deprecated-declarations)
   target_compile_options(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-O3>")
   target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")

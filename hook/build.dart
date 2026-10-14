@@ -15,6 +15,11 @@ const String _assetName = 'services/opencc/opencc_bindings.dart';
 /// `flutter test` and local runs); keep the two in sync when bumping OpenCC.
 void main(List<String> args) async {
   await build(args, (input, output) async {
+    // Flutter can invoke a native-assets hook for asset types other than code
+    // assets. The code configuration is intentionally unavailable in those
+    // invocations, so leave them to the other hook phases.
+    if (!input.config.buildCodeAssets) return;
+
     final code = input.config.code;
     if (code.linkModePreference == LinkModePreference.static) {
       throw UnsupportedError(

@@ -4,10 +4,10 @@ Contributor and agent setup for Fluent Lyrics. Product install instructions stay
 
 ## Requirements
 
-- Flutter stable that satisfies `sdk: ^3.12.0` and Flutter `>=3.44.0`. Local development uses Flutter 3.47.5 / Dart 3.13.4.
+- Flutter stable that satisfies `sdk: ^3.13.0` and Flutter `>=3.47.0`. Local development uses Flutter 3.47.5 / Dart 3.13.4.
 - Dart (shipped with Flutter).
 - CMake, Ninja, and a C/C++ toolchain for the vendored OpenCC build.
-- Linux: GTK 3, Ayatana AppIndicator, libsecret, and the usual Flutter Linux deps (`clang`, `ninja`, `pkg-config`, `libgtk-3-dev`, `liblzma-dev`, `libayatana-appindicator3-dev`, `libsecret-1-dev`). Runtime needs `libsecret-1-0` and an unlocked secret service (GNOME Keyring or KWallet) to save an API key or Musixmatch token.
+- Linux: GTK 3, X11/Xi development files, libsecret, and the usual Flutter Linux deps (`clang`, `ninja`, `pkg-config`, `libgtk-3-dev`, `libx11-dev`, `libxi-dev`, `liblzma-dev`, `libsecret-1-dev`). The tray uses a D-Bus StatusNotifierItem backend; GNOME may need its AppIndicator extension to display the icon. Runtime needs `libsecret-1-0` and an unlocked secret service (GNOME Keyring or KWallet) to save an API key or Musixmatch token.
 - Android: SDK, NDK (`flutter.ndkVersion`), Java 17 language level. CI builds with Java 21. `minSdk` is 24, `compileSdk` / `targetSdk` are 36. The wrapper is Gradle 9.3.1 with Android Gradle Plugin 9.1.0 and Kotlin 2.4.0, the versions Flutter 3.47 verifies. Do not move to a newer AGP ahead of that template.
 - macOS: Xcode, plus a prepared MediaRemote adapter. There is no maintainer Mac, so treat macOS changes as untested unless someone ran them.
 

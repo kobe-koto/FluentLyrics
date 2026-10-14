@@ -849,8 +849,8 @@ class Translations$settings$misc$en {
 	/// en: 'System Tray Icon'
 	String get tray => 'System Tray Icon';
 
-	/// en: 'Show a Fluent Lyrics icon in the system tray with quick show/hide and quit actions. Requires AppIndicator on Linux (libayatana-appindicator).'
-	String get traySubtitle => 'Show a Fluent Lyrics icon in the system tray with quick show/hide and quit actions. Requires AppIndicator on Linux (libayatana-appindicator).';
+	/// en: 'Show a Fluent Lyrics icon in the system tray with quick show/hide and quit actions. Linux uses StatusNotifierItem; GNOME may need the AppIndicator extension.'
+	String get traySubtitle => 'Show a Fluent Lyrics icon in the system tray with quick show/hide and quit actions. Linux uses StatusNotifierItem; GNOME may need the AppIndicator extension.';
 
 	/// en: 'Hide to Tray on Close'
 	String get hideToTray => 'Hide to Tray on Close';

@@ -418,7 +418,7 @@ class Translations$settings$misc$zh_TW extends Translations$settings$misc$en {
 	@override String get sectionTitle => '雜項';
 	@override String get sectionDescription => '雜項選項。';
 	@override String get tray => '系統匣圖示';
-	@override String get traySubtitle => '在系統匣顯示 Fluent Lyrics 圖示，提供快速顯隱和結束操作。Linux 需要 AppIndicator (如 libayatana-appindicator)。';
+	@override String get traySubtitle => '在系統匣顯示 Fluent Lyrics 圖示，提供快速顯隱和結束操作。Linux 使用 StatusNotifierItem；GNOME 可能需要 AppIndicator 擴充功能。';
 	@override String get hideToTray => '關閉時隱藏到系統匣';
 	@override String get hideToTraySubtitle => '關閉主視窗時隱藏到系統匣而非結束。背景仍會繼續擷取歌詞與翻譯;隱藏時 UI 繪製暫停。請使用系統匣選單結束。';
 	@override String get unsupported => '目前平台暫無此類選項 — 系統匣和歌詞輸出僅在 Linux 和 macOS 桌面端可用。';
