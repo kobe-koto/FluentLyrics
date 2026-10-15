@@ -1,6 +1,6 @@
 # Architecture
 
-Fluent Lyrics is a single Flutter app. One `LyricsProvider` owns playback state, fetch lifecycle, cache, and the lyrics the UI actually paints. Screens and widgets observe it with `provider`. They do not call music services themselves.
+Fluent Lyrics is a single Flutter app. One `LyricsProvider` owns playback state, fetch lifecycle, cache, and the lyrics the UI actually paints. Screens and widgets observe it via `provider`. They do not call music services themselves.
 
 ## Runtime flow
 
@@ -37,7 +37,7 @@ Locale is restored from `SettingsService.getLocale()` into slang's `LocaleSettin
 | Android | `AndroidMediaService` | `NotificationListenerService` in `MediaSessionListenerService.kt` |
 | macOS | `MacOSMediaService` | `mediaremote-adapter` bundled into the app |
 
-Linux, Android, and macOS files are `part`s of `lib/services/media_service.dart`. They share `MediaMetadata`, `MediaPlaybackStatus`, `MediaControlAbility`, and `MediaController`.
+Linux, Android, and macOS files are `part` files of `lib/services/media_service.dart`. They share `MediaMetadata`, `MediaPlaybackStatus`, `MediaControlAbility`, and `MediaController`.
 
 Android and macOS use the same channel names:
 

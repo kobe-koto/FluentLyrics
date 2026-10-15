@@ -1,19 +1,19 @@
 # FluentLyrics
 
-A desktop lyrics viewer built with Flutter, displays and syncs song lyrics from multiple providers.
+A cross-platform lyrics viewer built with Flutter that displays and synchronizes song lyrics from multiple providers.
 
-## Lyrics Providers 
+## Lyrics Providers
 - Musixmatch
 - Netease Music
 - QQ Music
-- lrclib
+- LRCLIB
 
 ## Features
-- (Rich) Synchronized lyrics support.
+- Synchronized and syllable-synced (rich) lyrics support.
 - Multiple lyrics providers with configurable priority.
 - Local lyrics cache using Isar.
 - Per-track and global lyrics offset support.
-- Lyric translations support, incl LLM translate
+- Lyrics translation support, including LLM-based translation.
 
 ## Screenshots
 
@@ -23,10 +23,7 @@ A desktop lyrics viewer built with Flutter, displays and syncs song lyrics from 
 <img style="height: 85vh;" alt="The settings interface" src="https://raw.githubusercontent.com/kobe-koto/FluentLyrics/main/previews/android/settings_main.png" />
 </div>
 
-
-The main interface.
-
-## Installations
+## Installation
 
 ### Linux
 
@@ -48,7 +45,7 @@ paru -Sy fluent-lyrics-bin
 
 2. Tracking GitHub Releases with Apps like [Obtainium](https://obtainium.imranr.dev/) (Recommended)
 
-3. Custom F-Droid repo (Recommended):
+3. Custom F-Droid repo:
 
    1. [Click to add the Fluent Lyrics custom F-Droid repo](https://kobe-koto.github.io/FluentLyrics/fdroid/repo?fingerprint=5ACD3280EC11CDD98DB5AC85640664B81DFCBFBFBA2F1074163C7B754F6BE799) or scan this QR Code: 
 
@@ -63,31 +60,27 @@ paru -Sy fluent-lyrics-bin
 
 ### Others
 
-see Releases
+Check [GitHub Releases](https://github.com/kobe-koto/FluentLyrics/releases) for other platform builds (such as macOS).
 
 ## Support status
 
 ### Fully Supported
 
 - Linux
-  - retrieve now-playing metadata via the MPRIS D‑Bus interface.
+  - Retrieve now-playing metadata via the MPRIS D-Bus interface.
 - Android
-  - requires Android 7.0 (API 24) or later.
-  - currently tested only on Android 15 and later.
-- macOS
-  - obtain now-playing metadata via the [MediaRemote adapter](https://github.com/ungive/mediaremote-adapter)
+  - Requires Android 7.0 (API 24) or later.
+  - Currently tested primarily on Android 15 and later.
 
 ### Limited Support
 
 - macOS
-
-  HUGE thanks to [@watchdogexd](https://github.com/watchdogexd) for testing and contributing.
-
-  I don't have a macOS device, so I can't test it, expect limited support.
+  - Obtain now-playing metadata via the [MediaRemote adapter](https://github.com/ungive/mediaremote-adapter).
+  - HUGE thanks to [@watchdogexd](https://github.com/watchdogexd) for testing and contributing.
+  - I don't have a macOS device, so I can't test it directly; expect best-effort support.
 
 - Linux arm64
-
-  I don't have a Linux arm64 device, that means I cannot test on this architecture.
+  - I don't have a Linux arm64 device, so I cannot test on this architecture directly.
 
 ### Cannot Support
 
@@ -95,58 +88,33 @@ see Releases
 
   we dun want to :3
 
+  In fact, the project's developers do not have Windows installations, so we do not consider developing for Windows to have a sufficient benefit.
+
 - iOS
 
-  theoretically impossible to obtain now‑playing metadata without jailbreaking.
+  Theoretically impossible to obtain now-playing metadata without jailbreaking.
 
-- Other platforms/architectures not natively supported by Flutter, PRs for them are no-op.
+- Other platforms/architectures
+  Platforms not natively supported by Flutter will not be supported. Pull requests for other Flutter-supported platforms/architectures are welcome if accompanied by tests and feedback.
 
-### PRs are welcome!
+## Development
 
-- Other platforms/architectures that Flutter is natively supported, PRs are welcome if comes with consistent test and feedback.
+For architecture, setup instructions, codegen, and everyday commands, see:
 
-## Quick start (developer)
+- [AGENTS.md](AGENTS.md) — conventions, generated files, and agent rules
+- [docs/architecture.md](docs/architecture.md) — now-playing, fetch, cache, and UI flow
+- [docs/development.md](docs/development.md) — setup, toolchains, tests, and release workflows
 
-Requirements:
-- Flutter SDK
-- Dart
-- Android toolchain (for android)
-- Linux toolchain (for Linux)
-- Xcode tools (for macOS)
-- CMake and a C/C++ toolchain (for the vendored OpenCC)
-
-OpenCC is vendored as a git submodule under `third_party/opencc`, and the
-configs/dictionaries it ships are **generated, not committed** (they live in
-`assets/opencc/`, which is gitignored). Clone with submodules (or fetch them
-afterwards) and sync the generated assets once before building:
+Quick clone with submodules:
 
 ```bash
 git clone --recurse-submodules <repo-url>
-# existing clone:
-git submodule update --init --depth 1
-```
-
-Documentation for contributors and coding agents:
-
-- [AGENTS.md](AGENTS.md) — conventions, generated files, and what not to change
-- [docs/architecture.md](docs/architecture.md) — now-playing, fetch, cache, and UI flow
-- [docs/development.md](docs/development.md) — setup, codegen, tests, and release
-
-Common commands:
-
-```bash
-flutter pub get # get deps
-flutter run -d <device> --[debug|profile|release] # run the app
-dart run build_runner build --build-filter="lib/models/lyric_cache.g.dart"  # after modifying Isar @Collection 
-dart run slang # after modifying i18n datasets
-./tool/prepare_opencc.sh [tag] # fetch/trim the pinned OpenCC submodule, defaults to ver.1.4.2
-./tool/sync_opencc_assets.sh # (re)generate assets/opencc from the pinned OpenCC; required before building or testing
-./tool/build_opencc.sh # build libopencc for the host, so `flutter test` can use it (output: build/opencc/out)
-./tool/macos_prepare_mediaremote_adapter.sh [version] # macOS only, prepared media remote adapter is required before building, defaults to v0.7.6
+./tool/sync_opencc_assets.sh
+flutter run
 ```
 
 ## Disclaimer
 
-this project is vibe coded, I think I only produced the 5% of codebase, so don't expect any quality and experience from this.
+This project is vibe-coded; I think I only produced around 5% of the codebase, so don't expect any quality or polished experience from this.
 
 Non-AI Coded Up To 5%!

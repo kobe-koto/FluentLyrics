@@ -51,8 +51,7 @@ Android release signing reads `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWOR
 
 API secrets are not signing keys. The LLM API key and Musixmatch token go through `FlutterSecureSecretStore`. Android backup is disabled (`android:allowBackup="false"`) so the Keystore-wrapped values are not restored without their key. Do not log those values or copy them into diagnostics.
 
-
-macOS, before the first build on a machine:
+For macOS, prepare the mediaremote adapter before the first build on a machine:
 
 ```bash
 ./tool/macos_prepare_mediaremote_adapter.sh    # default v0.7.6
@@ -119,16 +118,18 @@ Tray and lyric file streaming are desktop-only. Do not start them on Android.
 
 ## Release
 
+Releases are factually identified by their revision number `rN`. In `pubspec.yaml`, this expands into `0.0.N+N`, with matching release tags formatted as `v0.0.N+N`.
+
 Pushing a `v*` tag runs `.github/workflows/release.yml`. Manual dispatch can build without publishing, or publish an unstable prerelease. The workflow:
 
 1. Runs `flutter test` via `.github/workflows/test.yml`. Platform builds wait for it.
-2. Derives `version_name` and `version_code` from the tag (`v0.0.46+46`).
+2. Derives `version_name` and `version_code` from the tag (`v0.0.N+N`).
 3. Rewrites `pubspec.yaml` `version:` in the build job only.
 4. Syncs OpenCC assets.
 5. Builds Linux x64 and arm64, Android, and macOS.
 6. Publishes GitHub Release notes from `tool/generate-release-notes.sh` and `tool/downloads-template.md`.
 
-Do not bump `pubspec.yaml` version on a normal feature commit. Tag releases as `v<name>+<code>`, matching `version:`.
+Do not bump `pubspec.yaml` version on a normal feature commit. Tag releases as `v0.0.N+N` matching the `rN` revision.
 
 F-Droid metadata is `fdroid-config/metadata/cc.koto.fluent_lyrics.yml`. Update it when the user-facing summary or license changes, not for internal refactors.
 
