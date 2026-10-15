@@ -137,7 +137,7 @@ Common commands:
 ```bash
 flutter pub get # get deps
 flutter run -d <device> --[debug|profile|release] # run the app
-dart run build_runner build --delete-conflicting-outputs  # after modifying Isar @Collection 
+dart run build_runner build --build-filter="lib/models/lyric_cache.g.dart"  # after modifying Isar @Collection 
 dart run slang # after modifying i18n datasets
 ./tool/prepare_opencc.sh [tag] # fetch/trim the pinned OpenCC submodule, defaults to ver.1.4.2
 ./tool/sync_opencc_assets.sh # (re)generate assets/opencc from the pinned OpenCC; required before building or testing
