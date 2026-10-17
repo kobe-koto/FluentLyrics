@@ -28,6 +28,12 @@ class LyricsList extends StatefulWidget {
   /// embedder should re-anchor to the current index without animation.
   final VoidCallback? onViewportResized;
 
+  /// Called when the ScrollablePositionedList is mounted: on first build,
+  /// when it replaces the loading or empty state, and in the new layout after
+  /// a portrait/landscape switch. Item positions reported before this call
+  /// describe the previous list.
+  final VoidCallback? onPositionedListMounted;
+
   const LyricsList({
     super.key,
     required this.provider,
@@ -36,6 +42,7 @@ class LyricsList extends StatefulWidget {
     required this.isManualScrolling,
     required this.onUserInteraction,
     this.onViewportResized,
+    this.onPositionedListMounted,
   });
 
   @override
@@ -223,7 +230,7 @@ class _LyricsListState extends State<LyricsList> {
       );
     }
 
-    return NotificationListener<ScrollNotification>(
+    final positionedList = NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification is UserScrollNotification &&
             notification.direction != ScrollDirection.idle) {
@@ -356,6 +363,10 @@ class _LyricsListState extends State<LyricsList> {
           );
         },
       ),
+    );
+    return _MountReporter(
+      onMounted: widget.onPositionedListMounted,
+      child: positionedList,
     );
   }
 
@@ -1031,6 +1042,29 @@ class _RichLineResyncBridgeState extends State<_RichLineResyncBridge> {
           : widget.fallbackPosition,
     );
   }
+}
+
+/// Calls [onMounted] when this subtree is mounted, so a parent can tell a
+/// freshly mounted [child] from one that only rebuilt.
+class _MountReporter extends StatefulWidget {
+  final VoidCallback? onMounted;
+  final Widget child;
+
+  const _MountReporter({required this.onMounted, required this.child});
+
+  @override
+  State<_MountReporter> createState() => _MountReporterState();
+}
+
+class _MountReporterState extends State<_MountReporter> {
+  @override
+  void initState() {
+    super.initState();
+    widget.onMounted?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// ChangeNotifier-backed set of viewport indices that only notifies when the

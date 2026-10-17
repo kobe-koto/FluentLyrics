@@ -69,6 +69,27 @@ class _LyricsScreenState extends State<LyricsScreen> {
   bool? _lastLayoutIsLandscape;
   bool _cacheRebuildDialogVisible = false;
 
+  /// Whether [_itemPositionsListener] holds positions reported by the
+  /// positioned list that is mounted now. The listener outlives the list:
+  /// LyricsList swaps the list out while lyrics load or are empty, and a
+  /// layout switch builds a new one. Until the new list reports, the listener
+  /// still holds the disposed list's rows.
+  bool _positionsFromMountedList = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _itemPositionsListener.itemPositions.addListener(_handlePositionsReported);
+  }
+
+  void _handlePositionsReported() {
+    _positionsFromMountedList = true;
+  }
+
+  void _handlePositionedListMounted() {
+    _positionsFromMountedList = false;
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -126,7 +147,19 @@ class _LyricsScreenState extends State<LyricsScreen> {
   /// and re-entrant: overlapping scrolls can leave it stuck mid-transition,
   /// showing the previous scroll offset (i.e. no visible lyrics) until the
   /// list is rebuilt from scratch.
+  ///
+  /// The worst case is a transition cancelled between the secondary list
+  /// mounting and SPL's post-frame start: the start still points the fade at
+  /// a fresh animation, `_isTransitioning` is already false so nothing resets
+  /// it, and the primary list stays faded out for good.
+  ///
+  /// SPL decides using its own positions, which are reported together with
+  /// ours, so ours only predict its choice when they come from the same list.
+  /// A list that was just remounted has no positions yet while ours still
+  /// describe the disposed one; treat everything as not laid out until it
+  /// reports.
   bool _isIndexLaidOut(int index) {
+    if (!_positionsFromMountedList) return false;
     for (final position in _itemPositionsListener.itemPositions.value) {
       if (position.index == index) return true;
     }
@@ -278,6 +311,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
                           isManualScrolling: _isManualScrolling,
                           onUserInteraction: _handleUserInteraction,
                           onViewportResized: () => _resnapToCurrentIndex(p),
+                          onPositionedListMounted: _handlePositionedListMounted,
                         ),
                       ),
                     ),
@@ -822,6 +856,9 @@ class _LyricsScreenState extends State<LyricsScreen> {
   @override
   void dispose() {
     _autoResumeTimer?.cancel();
+    _itemPositionsListener.itemPositions.removeListener(
+      _handlePositionsReported,
+    );
     _scrollSyncProvider?.removeListener(_handleProviderChanged);
     if (Platform.isAndroid) {
       _wakelockProvider?.removeListener(_handleWakelockSettingChanged);

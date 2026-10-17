@@ -443,6 +443,21 @@ bool _isTextVisible(WidgetTester tester, String text, Size surfaceSize) {
       rect.left < surfaceSize.width;
 }
 
+/// Product of every fade between [text] and the root. Geometry alone cannot
+/// tell a painted row from one inside a list that ScrollablePositionedList
+/// has faded out.
+double _effectiveOpacity(WidgetTester tester, String text) {
+  var opacity = 1.0;
+  final fades = find.ancestor(
+    of: find.text(text).first,
+    matching: find.byType(FadeTransition),
+  );
+  for (final element in fades.evaluate()) {
+    opacity *= (element.widget as FadeTransition).opacity.value;
+  }
+  return opacity;
+}
+
 Future<void> _pumpUntil(
   WidgetTester tester,
   bool Function() condition, {
@@ -564,6 +579,55 @@ void main() {
     );
     expect(_isTextVisible(tester, 'New 0', size), isTrue);
   });
+
+  testWidgets(
+    'lyrics stay painted when a remounted list is re-anchored twice',
+    (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      const size = Size(360, 640);
+      final provider = _MutableTrackLyricsProvider();
+
+      addTearDown(() async {
+        await tester.binding.setSurfaceSize(null);
+        provider.dispose();
+      });
+
+      List<Lyric> track(String prefix) => List.generate(
+        60,
+        (index) => Lyric(
+          startTime: Duration(seconds: index),
+          text: '$prefix $index',
+        ),
+      );
+
+      await tester.binding.setSurfaceSize(size);
+      await tester.pumpWidget(_buildHarness(provider));
+      await tester.pump();
+
+      provider.setTrack(track('Old'), index: 40);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_isTextVisible(tester, 'Old 40', size), isTrue);
+
+      // Track switch: loading disposes the positioned list, so the shared
+      // ItemPositionsListener still holds the old list's rows around 40.
+      provider.beginLoading();
+      await tester.pump();
+      final next = track('New');
+      provider.setTrack(next, index: 40);
+      await tester.pump();
+      // A second content change in the very next frame, as when a translation
+      // or reading lands right after the lyrics. Its re-anchor runs before the
+      // remounted list has reported any positions of its own.
+      provider.setTrack(List.of(next), index: 40);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      expect(_isTextVisible(tester, 'New 40', size), isTrue);
+      expect(_effectiveOpacity(tester, 'New 40'), greaterThan(0.5));
+    },
+  );
 
   testWidgets('landscape leading space follows the user setting', (
     tester,
