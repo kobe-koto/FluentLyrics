@@ -16,7 +16,7 @@ class InterludeIndicator extends StatefulWidget {
 }
 
 class _InterludeIndicatorState extends State<InterludeIndicator>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   /// Progress jump (in ms) above which the dots snap instantly instead
   /// of following the smooth interpolation. This catches actual seeks
   /// while ignoring the normal 250ms media-poll interval.
@@ -26,8 +26,6 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
   /// extrapolating (the media has likely paused or the interlude ended).
   static const Duration _interpolationTimeout = Duration(milliseconds: 500);
 
-  late AnimationController _breathingController;
-  late Animation<double> _breathingAnimation;
   late Ticker _progressTicker;
   bool _snapAnimations = false;
 
@@ -35,28 +33,24 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
   /// Notifier carrying the smoothed progress for this interlude.
   /// Using a ValueNotifier instead of setState in the ticker keeps the
   /// indicator's own widget tree (Transform.scale + Row + dots + shadows)
-  /// from being rebuilt every frame; only the ValueListenableBuilders that
-  /// actually need the value rebuild.
+  /// from being rebuilt every frame; only the ListenableBuilder that
+  /// actually needs the value rebuilds.
   final ValueNotifier<double> _smoothProgress = ValueNotifier<double>(0.0);
   double _lastRealProgress = 0.0;
   final Stopwatch _interpolationWatch = Stopwatch();
   bool _hasRealProgress = false;
 
+  /// Entrance, 0..1, timed from mount on the same ticker. Wall clock rather
+  /// than interlude progress: the row only switches to the indicator on the
+  /// next position tick, up to 250ms into the interlude, and a progress based
+  /// entrance would already be partly skipped by then.
+  final ValueNotifier<double> _enter = ValueNotifier<double>(0.0);
+
+  late final Listenable _frame = Listenable.merge([_smoothProgress, _enter]);
+
   @override
   void initState() {
     super.initState();
-    _breathingController = AnimationController(
-      vsync: this,
-      duration: _effectiveBreathingCycleDuration,
-    )..repeat(reverse: true);
-
-    _breathingAnimation = Tween<double>(begin: 0.96, end: 1.04).animate(
-      CurvedAnimation(
-        parent: _breathingController,
-        curve: Curves.easeInOutSine,
-      ),
-    );
-
     _progressTicker = createTicker(_onProgressTick)..start();
 
     // Seed interpolation from the initial progress so the Ticker can advance
@@ -65,11 +59,16 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     _smoothProgress.value = widget.progress;
     _interpolationWatch.start();
     _hasRealProgress = true;
-
-    _syncBreathingAnimation();
   }
 
   void _onProgressTick(Duration elapsed) {
+    final enterMs = InterludeIndicatorHelper.enterDurationForDuration(
+      widget.duration,
+    ).inMilliseconds;
+    _enter.value = enterMs <= 0
+        ? 1.0
+        : (elapsed.inMilliseconds / enterMs).clamp(0.0, 1.0);
+
     final double next;
     if (widget.duration.inMilliseconds <= 0) {
       next = widget.progress;
@@ -87,11 +86,7 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     } else {
       next = widget.progress;
     }
-    if (_smoothProgress.value != next) {
-      _smoothProgress.value = next;
-      // Update breathing animation state if the phase boundary was crossed.
-      _syncBreathingAnimation();
-    }
+    _smoothProgress.value = next;
   }
 
   @override
@@ -100,38 +95,20 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     if (_shouldSnapForProgressJump(oldWidget)) {
       _enableSnapAnimationsForFrame();
     }
-    if (oldWidget.duration != widget.duration) {
-      _breathingController.duration = _effectiveBreathingCycleDuration;
-    }
     // Re-anchor interpolation on every real position update.
     _lastRealProgress = widget.progress;
     _interpolationWatch
       ..reset()
       ..start();
     _hasRealProgress = true;
-    _syncBreathingAnimation();
   }
 
   @override
   void dispose() {
-    _breathingController.dispose();
     _progressTicker.dispose();
     _smoothProgress.dispose();
+    _enter.dispose();
     super.dispose();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Breathing helpers
-  // ---------------------------------------------------------------------------
-
-  void _syncBreathingAnimation() {
-    if (!_isBreathingPhase) {
-      if (_breathingController.isAnimating) {
-        _breathingController.stop();
-      }
-    } else if (!_breathingController.isAnimating) {
-      _breathingController.repeat(reverse: true);
-    }
   }
 
   bool _shouldSnapForProgressJump(InterludeIndicator oldWidget) {
@@ -157,22 +134,6 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
     });
   }
 
-  Duration get _effectiveBreathingCycleDuration {
-    final duration = InterludeIndicatorHelper.breathingCycleDurationForDuration(
-      widget.duration,
-    );
-    return duration == Duration.zero
-        ? const Duration(milliseconds: 1)
-        : duration;
-  }
-
-  bool get _isBreathingPhase {
-    return InterludeIndicatorHelper.isBreathingPhase(
-      progress: _smoothProgress.value,
-      duration: widget.duration,
-    );
-  }
-
   // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
@@ -183,18 +144,19 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
       return const SizedBox.shrink();
     }
 
-    // The fixed outer footprint (padding + alignment) is set up here once.
-    // Everything inside that depends on smoothProgress is rebuilt by the
-    // inner ValueListenableBuilder, so a position tick only repaints the
-    // dots + the two Transform.scales -- not the surrounding row, padding,
-    // breathing controller, or AnimatedDot SizedBox.
+    // The indicator takes the size it is given (the lyric row it overlays)
+    // and never sizes the row itself. Everything that depends on progress or
+    // the entrance is rebuilt by the inner ListenableBuilder, so a frame only
+    // repaints the dots and the two Transform.scales.
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: ValueListenableBuilder<double>(
-          valueListenable: _smoothProgress,
-          builder: (context, progress, _) {
+        child: ListenableBuilder(
+          listenable: _frame,
+          builder: (context, _) {
+            final progress = _smoothProgress.value;
+            final enter = Curves.easeOutCubic.transform(_enter.value);
             final targetScale = InterludeIndicatorHelper.targetScale(
               progress: progress,
               duration: widget.duration,
@@ -203,25 +165,23 @@ class _InterludeIndicatorState extends State<InterludeIndicator>
               progress: progress,
               duration: widget.duration,
             );
-            final isBreathing = InterludeIndicatorHelper.isBreathingPhase(
+            final breathingScale = InterludeIndicatorHelper.breathingScale(
               progress: progress,
               duration: widget.duration,
             );
 
+            const enterStartScale = InterludeIndicatorHelper.enterStartScale;
+            final enterScale =
+                enterStartScale + (1.0 - enterStartScale) * enter;
+
             return Transform.scale(
-              scale: targetScale,
-              alignment: isBreathing ? Alignment.center : Alignment.centerLeft,
+              scale: targetScale * enterScale,
+              alignment: Alignment.centerLeft,
               child: Opacity(
-                opacity: targetOpacity,
-                child: AnimatedBuilder(
-                  animation: _breathingAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: isBreathing ? _breathingAnimation.value : 1.0,
-                      alignment: Alignment.center,
-                      child: child,
-                    );
-                  },
+                opacity: targetOpacity * enter,
+                child: Transform.scale(
+                  scale: breathingScale,
+                  alignment: Alignment.center,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

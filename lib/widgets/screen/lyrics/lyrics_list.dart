@@ -7,6 +7,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_model.dart';
 import '../../../providers/lyrics_provider.dart';
+import '../../../utils/interlude_indicator_helper.dart';
 import '../../lyric_line.dart';
 import '../../interlude_indicator.dart';
 
@@ -269,70 +270,83 @@ class _LyricsListState extends State<LyricsList> {
                 final distance = (index - currentIndex).toDouble();
                 final hasRichInlineParts =
                     lyric.inlineParts != null && lyric.inlineParts!.isNotEmpty;
+                final isBlankLine = lyric.text.trim().isEmpty;
                 final showInterludeIndicator =
-                    isHighlighted && isInterlude && lyric.text.trim().isEmpty;
+                    isHighlighted &&
+                    isInterlude &&
+                    isBlankLine &&
+                    InterludeIndicatorHelper.shouldDisplay(
+                      provider.interludeDuration,
+                    );
 
-                // Outer shell is always _InViewportBuilder -> GestureDetector
-                // regardless of whether this row is currently rendering an
-                // interlude indicator or a normal LyricLine. Keeping the
-                // outermost runtimeType stable lets Flutter's element
-                // reconciler reuse the same Element when the highlighted row
-                // flips between the two child shapes (e.g. user picks a
-                // different candidate while the current line is an
-                // interlude), so the row's RenderBox + GestureDetector
-                // identity survive across the swap instead of being
-                // unmounted and re-built one frame later. Cosmetic cleanup;
-                // does not by itself fix any user-visible jitter (see the
-                // _jumpToCurrentIndex change in lyrics_screen.dart for the
-                // actual scroll-twitch fix).
+                // Outer shell is always _InViewportBuilder -> GestureDetector,
+                // so the row's RenderBox + GestureDetector identity survive
+                // highlight changes. A blank line always renders as a Stack
+                // with its LyricLine first and the interlude indicator, when
+                // shown, overlaid on top. The indicator then never sizes the
+                // row: entering or leaving an interlude keeps the LyricLine
+                // element, and its padding tweens like any other line instead
+                // of the row snapping between two heights (or collapsing to
+                // zero for an interlude too short to show).
                 return _InViewportBuilder(
                   index: index,
                   notifier: _inViewport,
                   builder: (context, inViewport) {
+                    final line = hasRichInlineParts
+                        ? _RichLineResyncBridge(
+                            listenable: provider.positionResyncNotifier,
+                            subscribeToResync: isHighlighted,
+                            fallbackPosition: provider.currentPosition,
+                            builder: (context, currentPosition) {
+                              return _buildLyricLine(
+                                lyric: lyric,
+                                isHighlighted: isHighlighted,
+                                isPrerendered: isPrerendered,
+                                distance: distance,
+                                inViewport: inViewport,
+                                currentPosition: currentPosition,
+                              );
+                            },
+                          )
+                        : _buildLyricLine(
+                            lyric: lyric,
+                            isHighlighted: isHighlighted,
+                            isPrerendered: isPrerendered,
+                            distance: distance,
+                            inViewport: inViewport,
+                            currentPosition: provider.currentPosition,
+                          );
                     return GestureDetector(
                       onDoubleTap: provider.controlAbility.canSeek
                           ? () => provider.seek(lyric.startTime)
                           : null,
                       behavior: HitTestBehavior.translucent,
-                      child: showInterludeIndicator
-                          ? ValueListenableBuilder<Duration>(
-                              valueListenable: provider.currentPositionNotifier,
-                              builder: (context, currentPosition, _) {
-                                return RepaintBoundary(
-                                  child: InterludeIndicator(
-                                    progress: provider
-                                        .interludeProgressForPosition(
-                                          currentPosition,
-                                        ),
-                                    duration: provider.interludeDuration,
+                      child: isBlankLine
+                          ? Stack(
+                              children: [
+                                line,
+                                if (showInterludeIndicator)
+                                  Positioned.fill(
+                                    child: ValueListenableBuilder<Duration>(
+                                      valueListenable:
+                                          provider.currentPositionNotifier,
+                                      builder: (context, currentPosition, _) {
+                                        return RepaintBoundary(
+                                          child: InterludeIndicator(
+                                            progress: provider
+                                                .interludeProgressForPosition(
+                                                  currentPosition,
+                                                ),
+                                            duration:
+                                                provider.interludeDuration,
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
-                                );
-                              },
+                              ],
                             )
-                          : hasRichInlineParts
-                          ? _RichLineResyncBridge(
-                              listenable: provider.positionResyncNotifier,
-                              subscribeToResync: isHighlighted,
-                              fallbackPosition: provider.currentPosition,
-                              builder: (context, currentPosition) {
-                                return _buildLyricLine(
-                                  lyric: lyric,
-                                  isHighlighted: isHighlighted,
-                                  isPrerendered: isPrerendered,
-                                  distance: distance,
-                                  inViewport: inViewport,
-                                  currentPosition: currentPosition,
-                                );
-                              },
-                            )
-                          : _buildLyricLine(
-                              lyric: lyric,
-                              isHighlighted: isHighlighted,
-                              isPrerendered: isPrerendered,
-                              distance: distance,
-                              inViewport: inViewport,
-                              currentPosition: provider.currentPosition,
-                            ),
+                          : line,
                     );
                   },
                 );

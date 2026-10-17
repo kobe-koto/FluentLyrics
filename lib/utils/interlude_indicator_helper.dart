@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 class InterludeIndicatorHelper {
   const InterludeIndicatorHelper._();
 
@@ -8,6 +10,31 @@ class InterludeIndicatorHelper {
   static const int tailDurationMs = tailSwellDurationMs + tailShrinkDurationMs;
   static const double overlap = 0.45;
   static const double swellScale = 1.2;
+  static const double breathingAmplitude = 0.04;
+
+  /// The quiet gap and tail together take at most this share of the
+  /// interlude. Long interludes keep the fixed timings above; short ones scale
+  /// them down so the dots are not squeezed out entirely.
+  static const double maxTailShare = 0.4;
+
+  /// Interludes shorter than this stay a blank line. The dots cannot enter,
+  /// fill and leave in less without reading as a flash.
+  static const int minDisplayDurationMs = 1000;
+
+  static const int maxEnterDurationMs = 300;
+  static const double enterShare = 0.25;
+  static const double enterStartScale = 0.5;
+
+  static bool shouldDisplay(Duration duration) {
+    return duration.inMilliseconds >= minDisplayDurationMs;
+  }
+
+  /// Fade and scale in from mount, capped to a share of short interludes.
+  static Duration enterDurationForDuration(Duration duration) {
+    if (duration.inMilliseconds <= 0) return Duration.zero;
+    final ms = (duration.inMilliseconds * enterShare).round();
+    return Duration(milliseconds: math.min(ms, maxEnterDurationMs));
+  }
 
   static bool isBreathingPhase({
     required double progress,
@@ -38,16 +65,20 @@ class InterludeIndicatorHelper {
   static double totalDotWindowForDuration(Duration duration) {
     return _progressFromEnd(
       duration: duration,
-      millisecondsFromEnd: quietGapDurationMs + tailDurationMs,
+      millisecondsFromEnd: _scaledTailMs(
+        quietGapDurationMs + tailDurationMs,
+        duration,
+      ),
     );
   }
 
   static Duration breathingWindowForDuration(Duration duration) {
     if (duration.inMilliseconds <= 0) return Duration.zero;
     final breathingWindowMs =
-        duration.inMilliseconds - quietGapDurationMs - tailDurationMs;
+        duration.inMilliseconds -
+        _scaledTailMs(quietGapDurationMs + tailDurationMs, duration);
     return Duration(
-      milliseconds: breathingWindowMs < 0 ? 0 : breathingWindowMs,
+      milliseconds: breathingWindowMs < 0 ? 0 : breathingWindowMs.round(),
     );
   }
 
@@ -61,17 +92,32 @@ class InterludeIndicatorHelper {
     return Duration(milliseconds: (breathingWindowMs / cycleCount).ceil());
   }
 
+  /// Breathing scale at [progress]. Follows the interlude clock, so it is in
+  /// phase however late the indicator mounts. A whole number of half cycles
+  /// fits the window, so it starts and ends at 1.0 and the quiet gap picks up
+  /// without a snap.
+  static double breathingScale({
+    required double progress,
+    required Duration duration,
+  }) {
+    if (!isBreathingPhase(progress: progress, duration: duration)) return 1.0;
+    final cycleMs = breathingCycleDurationForDuration(duration).inMilliseconds;
+    if (cycleMs <= 0) return 1.0;
+    final elapsedMs = progress * duration.inMilliseconds;
+    return 1.0 + breathingAmplitude * math.sin(math.pi * elapsedMs / cycleMs);
+  }
+
   static double tailStartForDuration(Duration duration) {
     return _progressFromEnd(
       duration: duration,
-      millisecondsFromEnd: tailDurationMs,
+      millisecondsFromEnd: _scaledTailMs(tailDurationMs, duration),
     );
   }
 
   static double swellEndForDuration(Duration duration) {
     return _progressFromEnd(
       duration: duration,
-      millisecondsFromEnd: tailShrinkDurationMs,
+      millisecondsFromEnd: _scaledTailMs(tailShrinkDurationMs, duration),
     );
   }
 
@@ -126,12 +172,22 @@ class InterludeIndicatorHelper {
     final totalDotWindow = totalDotWindowForDuration(duration);
     final step = 1 - overlap;
     final d = totalDotWindow / (2 * step + 1);
+    if (d <= 0) return 0.0;
     return ((progress - (dotIndex * step * d)) / d).clamp(0.0, 1.0);
+  }
+
+  /// [ms] scaled so the quiet gap and tail fit [maxTailShare] of [duration].
+  static double _scaledTailMs(int ms, Duration duration) {
+    final durationMs = duration.inMilliseconds;
+    if (durationMs <= 0) return ms.toDouble();
+    const fixedMs = quietGapDurationMs + tailDurationMs;
+    final factor = math.min(1.0, durationMs * maxTailShare / fixedMs);
+    return ms * factor;
   }
 
   static double _progressFromEnd({
     required Duration duration,
-    required int millisecondsFromEnd,
+    required double millisecondsFromEnd,
   }) {
     if (duration.inMilliseconds <= 0) return 0.0;
     return (1 - (millisecondsFromEnd / duration.inMilliseconds)).clamp(

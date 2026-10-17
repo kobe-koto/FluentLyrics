@@ -110,4 +110,95 @@ void main() {
       Duration.zero,
     );
   });
+
+  test('short interludes scale the tail down instead of dropping the dots', () {
+    const short = Duration(milliseconds: 700);
+    final dotWindow = InterludeIndicatorHelper.totalDotWindowForDuration(short);
+
+    // The fixed 450ms gap + tail would leave 250ms; capped at 40% it is 280ms.
+    expect(dotWindow, closeTo(0.6, 1e-9));
+    expect(
+      InterludeIndicatorHelper.tailStartForDuration(short),
+      greaterThan(dotWindow),
+    );
+    expect(
+      InterludeIndicatorHelper.swellEndForDuration(short),
+      greaterThan(InterludeIndicatorHelper.tailStartForDuration(short)),
+    );
+    expect(
+      InterludeIndicatorHelper.dotProgress(
+        progress: 0.0,
+        dotIndex: 2,
+        duration: short,
+      ),
+      0.0,
+    );
+    expect(
+      InterludeIndicatorHelper.dotProgress(
+        progress: dotWindow,
+        dotIndex: 2,
+        duration: short,
+      ),
+      closeTo(1.0, 1e-9),
+    );
+  });
+
+  test('breathing starts and ends at rest and stays within amplitude', () {
+    const amplitude = InterludeIndicatorHelper.breathingAmplitude;
+    final window = InterludeIndicatorHelper.totalDotWindowForDuration(duration);
+
+    expect(
+      InterludeIndicatorHelper.breathingScale(progress: 0, duration: duration),
+      1.0,
+    );
+    expect(
+      InterludeIndicatorHelper.breathingScale(
+        progress: window - 1e-6,
+        duration: duration,
+      ),
+      closeTo(1.0, 0.001),
+    );
+    expect(
+      InterludeIndicatorHelper.breathingScale(
+        progress: window,
+        duration: duration,
+      ),
+      1.0,
+    );
+    for (var p = 0.0; p < window; p += 0.01) {
+      final scale = InterludeIndicatorHelper.breathingScale(
+        progress: p,
+        duration: duration,
+      );
+      expect(scale, inInclusiveRange(1 - amplitude, 1 + amplitude));
+    }
+  });
+
+  test('only interludes long enough to animate are displayed', () {
+    expect(
+      InterludeIndicatorHelper.shouldDisplay(const Duration(milliseconds: 999)),
+      isFalse,
+    );
+    expect(
+      InterludeIndicatorHelper.shouldDisplay(const Duration(seconds: 1)),
+      isTrue,
+    );
+  });
+
+  test('entrance is capped and scales with short interludes', () {
+    expect(
+      InterludeIndicatorHelper.enterDurationForDuration(duration),
+      const Duration(milliseconds: 300),
+    );
+    expect(
+      InterludeIndicatorHelper.enterDurationForDuration(
+        const Duration(seconds: 1),
+      ),
+      const Duration(milliseconds: 250),
+    );
+    expect(
+      InterludeIndicatorHelper.enterDurationForDuration(Duration.zero),
+      Duration.zero,
+    );
+  });
 }

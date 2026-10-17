@@ -256,9 +256,10 @@ class LyricsProvider with ChangeNotifier {
 
   List<LyricsReading> get readingCandidates => _readingCandidates;
 
-  final Duration _interludeOffset = Duration(
-    milliseconds: 500, // auto scroll takes 500ms
-  );
+  // Trimmed off the end of an interlude. The next line's scroll and highlight
+  // only start at its own timestamp, so ending the dots any earlier leaves an
+  // empty row on screen for that long.
+  final Duration _interludeOffset = Duration.zero;
 
   String? get currentCacheId {
     if (_currentMetadata == null) return null;

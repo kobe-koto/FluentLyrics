@@ -96,4 +96,39 @@ void main() {
     // Give a small tolerance for the transient extrapolation before the timeout.
     expect(sizeAfterTimeout.width, lessThan(9.5));
   });
+
+  testWidgets('fades in from mount even when mounted partway through', (
+    tester,
+  ) async {
+    // The list swaps the row in on a position tick, so the first progress it
+    // sees is already past zero. The entrance must still start from nothing.
+    const duration = Duration(seconds: 4);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: InterludeIndicator(progress: 0.2, duration: duration),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    double opacity() => tester
+        .widget<Opacity>(
+          find.descendant(
+            of: find.byType(InterludeIndicator),
+            matching: find.byType(Opacity),
+          ),
+        )
+        .opacity;
+
+    expect(opacity(), 0.0);
+
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(opacity(), greaterThan(0.0));
+    expect(opacity(), lessThan(1.0));
+
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(opacity(), 1.0);
+  });
 }

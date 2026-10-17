@@ -7,6 +7,7 @@ import 'package:fluent_lyrics/services/lyrics_service.dart';
 import 'package:fluent_lyrics/services/media_service.dart';
 import 'package:fluent_lyrics/services/providers/lyrics_cache_service.dart';
 import 'package:fluent_lyrics/services/settings_service.dart';
+import 'package:fluent_lyrics/widgets/interlude_indicator.dart';
 import 'package:fluent_lyrics/widgets/lyric_line.dart';
 import 'package:fluent_lyrics/widgets/screen/lyrics/lyrics_list.dart';
 import 'package:flutter/material.dart';
@@ -380,6 +381,53 @@ ScrollPosition _scrollOffset(WidgetTester tester) {
   return tester.state<ScrollableState>(find.byType(Scrollable)).position;
 }
 
+class _InterludeListProvider extends _TestLyricsProvider {
+  _InterludeListProvider({required this.interludeLength});
+
+  final Duration interludeLength;
+  int index = 0;
+
+  static final List<Lyric> _lines = [
+    Lyric(startTime: Duration.zero, text: 'Before'),
+    Lyric(startTime: const Duration(seconds: 5), text: ''),
+    Lyric(startTime: const Duration(seconds: 10), text: 'After'),
+  ];
+
+  static final LyricsResult _result = LyricsResult(
+    lyrics: _lines,
+    source: '',
+    isSynced: true,
+  );
+
+  @override
+  List<Lyric> get lyrics => _lines;
+
+  @override
+  LyricsResult get lyricsResult => _result;
+
+  @override
+  int get currentIndex => index;
+
+  @override
+  bool get isInterlude => index == 1;
+
+  @override
+  double interludeProgressForPosition(Duration position) => 0.1;
+
+  @override
+  Duration get interludeDuration =>
+      index == 1 ? interludeLength : Duration.zero;
+
+  void moveTo(int next) {
+    index = next;
+    notifyListeners();
+  }
+}
+
+final Finder _blankLine = find.byWidgetPredicate(
+  (widget) => widget is LyricLine && widget.lyric.text.isEmpty,
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -746,4 +794,87 @@ void main() {
       provider.dispose();
     },
   );
+
+  testWidgets(
+    'interlude indicator overlays the blank line without resizing the row',
+    (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      final provider = _InterludeListProvider(
+        interludeLength: const Duration(seconds: 5),
+      );
+
+      await tester.pumpWidget(
+        _buildHarness(
+          provider: provider,
+          width: 320,
+          height: 480,
+          onViewportResized: () {},
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final lineElement = _blankLine.evaluate().single;
+      final restingHeight = tester.getSize(_blankLine).height;
+      expect(find.byType(InterludeIndicator), findsNothing);
+
+      provider.moveTo(1);
+      await tester.pump();
+
+      expect(find.byType(InterludeIndicator), findsOneWidget);
+      expect(identical(_blankLine.evaluate().single, lineElement), isTrue);
+      // Entering the interlude does not snap the row to another height. It
+      // grows only through the LyricLine's own highlight padding tween.
+      expect(tester.getSize(_blankLine).height, closeTo(restingHeight, 0.5));
+
+      await tester.pump(const Duration(milliseconds: 600));
+      final highlightedHeight = tester.getSize(_blankLine).height;
+      expect(highlightedHeight, closeTo(restingHeight + 16, 0.5));
+      expect(
+        tester.getSize(find.byType(InterludeIndicator)).height,
+        closeTo(highlightedHeight, 0.5),
+      );
+
+      provider.moveTo(2);
+      await tester.pump();
+
+      expect(find.byType(InterludeIndicator), findsNothing);
+      expect(identical(_blankLine.evaluate().single, lineElement), isTrue);
+      expect(
+        tester.getSize(_blankLine).height,
+        closeTo(highlightedHeight, 0.5),
+      );
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      provider.dispose();
+    },
+  );
+
+  testWidgets('interludes too short to animate stay a blank line', (
+    tester,
+  ) async {
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    final provider = _InterludeListProvider(
+      interludeLength: const Duration(milliseconds: 600),
+    );
+
+    await tester.pumpWidget(
+      _buildHarness(
+        provider: provider,
+        width: 320,
+        height: 480,
+        onViewportResized: () {},
+      ),
+    );
+    await tester.pumpAndSettle();
+    final restingHeight = tester.getSize(_blankLine).height;
+
+    provider.moveTo(1);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(InterludeIndicator), findsNothing);
+    expect(tester.getSize(_blankLine).height, closeTo(restingHeight + 16, 0.5));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    provider.dispose();
+  });
 }
