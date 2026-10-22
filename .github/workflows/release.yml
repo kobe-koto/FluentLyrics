@@ -136,6 +136,9 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
+      - name: Sync kanji readings
+        run: ./tool/sync_kanji_readings.sh
+
       - name: Build Linux
         env:
           RELEASE_VERSION: ${{ needs.prepare-version.outputs.build_version }}
@@ -221,6 +224,9 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
+      - name: Sync kanji readings
+        run: ./tool/sync_kanji_readings.sh
+
       - name: Build Android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -287,6 +293,9 @@ jobs:
 
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
+
+      - name: Sync kanji readings
+        run: ./tool/sync_kanji_readings.sh
 
       - name: Build macOS
         env:

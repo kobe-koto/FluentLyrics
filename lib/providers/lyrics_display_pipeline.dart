@@ -5,6 +5,7 @@ import '../services/opencc/zh_conversion.dart';
 import '../services/opencc/zh_conversion_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/furigana_helper.dart';
+import '../utils/kanji_reading_splitter.dart';
 import '../utils/lyrics_display_helper.dart';
 import '../utils/lyrics_reading_helper.dart';
 import '../utils/qq_kana_helper.dart';
@@ -32,6 +33,8 @@ class LyricsDisplayPipeline {
   List<Lyric>? _annotatedLyricsSource;
   LyricsReading? _annotatedLyricsReading;
   int? _annotatedLyricsBias;
+  bool? _annotatedLyricsSplit;
+  KanjiReadingSplitter? _annotatedLyricsSplitter;
 
   List<Lyric>? _timestampStrippedLyrics;
   List<Lyric>? _timestampStrippedSource;
@@ -50,6 +53,8 @@ class LyricsDisplayPipeline {
     required bool translationEnabled,
     required bool annotationEnabled,
     required int annotationBias,
+    required bool kanjiReadingSplitEnabled,
+    required KanjiReadingSplitter? kanjiReadingSplitter,
     required String zhConversionTarget,
     required List<String> zhConversionIgnoredLanguages,
     required int translationAlignmentThreshold,
@@ -73,6 +78,8 @@ class LyricsDisplayPipeline {
       reading: reading,
       annotationEnabled: annotationEnabled,
       annotationBias: annotationBias,
+      splitEnabled: kanjiReadingSplitEnabled,
+      splitter: kanjiReadingSplitter,
     );
     return _applyTimestampStrip(annotated, enabled: stripTimestamps);
   }
@@ -127,14 +134,22 @@ class LyricsDisplayPipeline {
     required LyricsReading? reading,
     required bool annotationEnabled,
     required int annotationBias,
+    required bool splitEnabled,
+    required KanjiReadingSplitter? splitter,
   }) {
     if (!annotationEnabled) return lyrics;
     if (reading == null || reading.lines.isEmpty || lyrics.isEmpty) {
       return lyrics;
     }
+    // Splitting only applies to the line-level reading track below; the QQ
+    // kana payload is already per-kanji. An enabled split with no loaded
+    // splitter behaves like disabled.
+    final splitActive = splitEnabled && splitter != null;
     if (identical(_annotatedLyricsSource, lyrics) &&
         identical(_annotatedLyricsReading, reading) &&
-        _annotatedLyricsBias == annotationBias) {
+        _annotatedLyricsBias == annotationBias &&
+        _annotatedLyricsSplit == splitActive &&
+        identical(_annotatedLyricsSplitter, splitter)) {
       return _annotatedLyrics!;
     }
 
@@ -179,6 +194,8 @@ class LyricsDisplayPipeline {
         _annotatedLyricsSource = lyrics;
         _annotatedLyricsReading = reading;
         _annotatedLyricsBias = annotationBias;
+        _annotatedLyricsSplit = splitActive;
+        _annotatedLyricsSplitter = splitter;
         _annotatedLyrics = changed ? annotated : lyrics;
         return _annotatedLyrics!;
       }
@@ -200,12 +217,15 @@ class LyricsDisplayPipeline {
           lyrics[i],
           readings[i],
           reading.lineType,
+          splitter: splitActive ? splitter : null,
           changed: () => changed = true,
         ),
     ];
     _annotatedLyricsSource = lyrics;
     _annotatedLyricsReading = reading;
     _annotatedLyricsBias = annotationBias;
+    _annotatedLyricsSplit = splitActive;
+    _annotatedLyricsSplitter = splitter;
     _annotatedLyrics = changed ? annotated : lyrics;
     return _annotatedLyrics!;
   }
@@ -214,6 +234,7 @@ class LyricsDisplayPipeline {
     Lyric lyric,
     String? reading,
     LyricsReadingType? lineType, {
+    required KanjiReadingSplitter? splitter,
     required void Function() changed,
   }) {
     if (lyric.text.isEmpty || lyric.annotations != null) return lyric;
@@ -233,6 +254,18 @@ class LyricsDisplayPipeline {
           ? annotation.reading
           : RomajiHelper.toKana(annotation.reading);
       if (text == null || text.isEmpty) return lyric;
+      // Split the whole-run reading into per-kanji readings when possible; an
+      // unsplittable or ambiguous run keeps its single annotation.
+      final parts = splitter?.split(
+        text: lyric.text,
+        start: annotation.start,
+        end: annotation.end,
+        reading: text,
+      );
+      if (parts != null) {
+        readings.addAll(parts);
+        continue;
+      }
       readings.add(
         FuriganaAnnotation(
           start: annotation.start,

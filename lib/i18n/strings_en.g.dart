@@ -631,6 +631,12 @@ class Translations$settings$lyricConfig$en {
 	/// en: 'Show the reading of kanji above the line as kana, when the provider ships a reading track (romanized tracks are converted to kana).'
 	String get annotationSubtitle => 'Show the reading of kanji above the line as kana, when the provider ships a reading track (romanized tracks are converted to kana).';
 
+	/// en: 'Per-Kanji Reading Split'
+	String get kanjiReadingSplit => 'Per-Kanji Reading Split';
+
+	/// en: 'Split a compound's reading onto each kanji (勇気 → 勇ゆう, 気き) using a bundled dictionary. Only affects providers with a line-level reading track; a reading that cannot be split cleanly stays on the whole word.'
+	String get kanjiReadingSplitSubtitle => 'Split a compound\'s reading onto each kanji (勇気 → 勇ゆう, 気き) using a bundled dictionary. Only affects providers with a line-level reading track; a reading that cannot be split cleanly stays on the whole word.';
+
 	/// en: 'Annotation Pairing Bias'
 	String get annotationBias => 'Annotation Pairing Bias';
 
@@ -729,6 +735,42 @@ class Translations$settings$cache$en {
 
 	/// en: 'Clear All Artwork Cache'
 	String get clearArtworkCacheButton => 'Clear All Artwork Cache';
+
+	/// en: 'Kanji Reading Dictionary'
+	String get kanjiDictTitle => 'Kanji Reading Dictionary';
+
+	/// en: 'Used by per-kanji reading split. Reload re-extracts the bundled dictionary; clear removes the extracted copy (it is restored on next use).'
+	String get kanjiDictDescription => 'Used by per-kanji reading split. Reload re-extracts the bundled dictionary; clear removes the extracted copy (it is restored on next use).';
+
+	/// en: '{{version}}, {{size}}'
+	String kanjiDictStats({required Object version, required Object size}) => '${version}, ${size}';
+
+	/// en: 'Not installed'
+	String get kanjiDictMissing => 'Not installed';
+
+	/// en: 'Reload Dictionary'
+	String get kanjiDictReloadButton => 'Reload Dictionary';
+
+	/// en: 'Clear Dictionary'
+	String get kanjiDictClearButton => 'Clear Dictionary';
+
+	/// en: 'Download Latest (EDRDG)'
+	String get kanjiDictDownloadButton => 'Download Latest (EDRDG)';
+
+	/// en: 'Dictionary reloaded'
+	String get kanjiDictReloaded => 'Dictionary reloaded';
+
+	/// en: 'Dictionary cleared'
+	String get kanjiDictCleared => 'Dictionary cleared';
+
+	/// en: 'Downloading dictionary…'
+	String get kanjiDictDownloading => 'Downloading dictionary…';
+
+	/// en: 'Dictionary updated to {{version}}'
+	String kanjiDictDownloaded({required Object version}) => 'Dictionary updated to ${version}';
+
+	/// en: 'Download failed; kept the current dictionary'
+	String get kanjiDictDownloadFailed => 'Download failed; kept the current dictionary';
 
 	/// en: 'Lyrics cache could not be opened'
 	String get openFailedTitle => 'Lyrics cache could not be opened';

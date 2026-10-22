@@ -59,6 +59,11 @@ class LyricsProviderSettings {
   set annotationBias(Setting<int> value) =>
       _set(PrefSettings.annotationBias, value);
 
+  Setting<bool> get kanjiReadingSplitEnabled =>
+      _get(PrefSettings.kanjiReadingSplitEnabled);
+  set kanjiReadingSplitEnabled(Setting<bool> value) =>
+      _set(PrefSettings.kanjiReadingSplitEnabled, value);
+
   Setting<String> get zhConversionTarget =>
       _get(PrefSettings.zhConversionTarget);
   set zhConversionTarget(Setting<String> value) =>

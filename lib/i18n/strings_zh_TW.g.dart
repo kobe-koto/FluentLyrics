@@ -321,6 +321,8 @@ class Translations$settings$lyricConfig$zh_TW extends Translations$settings$lyri
 	@override String get richSyncThresholdReset => '重設為 800ms';
 	@override String get annotation => '漢字假名注音';
 	@override String get annotationSubtitle => '在漢字上方以假名顯示讀音（當歌詞源提供讀音軌時；羅馬音軌會轉成假名）。';
+	@override String get kanjiReadingSplit => '逐字拆分讀音';
+	@override String get kanjiReadingSplitSubtitle => '借助內建詞典將詞語讀音拆分到每個漢字（勇気 → 勇ゆう、気き）。僅對提供行級讀音軌的歌詞源生效；無法乾淨拆分的讀音保留在整詞上。';
 	@override String get annotationBias => '注音配對偏移';
 	@override String get annotationBiasSubtitle => '讀音行與歌詞行相差多少毫秒以內仍視為同一行。歌詞源的讀音軌對齊通常不精確，容差大一些會有更多行獲得注音。';
 	@override String get annotationBiasReset => '重設為 500ms';
@@ -360,6 +362,18 @@ class Translations$settings$cache$zh_TW extends Translations$settings$cache$en {
 	@override String get artworkClearDialogContent => '確定要清除所有已快取的封面嗎？';
 	@override String get artworkCleared => '封面快取已清除';
 	@override String get clearArtworkCacheButton => '清除所有封面快取';
+	@override String get kanjiDictTitle => '漢字讀音詞典';
+	@override String get kanjiDictDescription => '供逐字拆分讀音使用。重新載入會從內建詞典重新解壓；清除會刪除已解壓的副本（下次使用時自動恢復）。';
+	@override String kanjiDictStats({required Object version, required Object size}) => '${version}，${size}';
+	@override String get kanjiDictMissing => '未安裝';
+	@override String get kanjiDictReloadButton => '重新載入詞典';
+	@override String get kanjiDictClearButton => '清除詞典';
+	@override String get kanjiDictDownloadButton => '下載最新版（EDRDG）';
+	@override String get kanjiDictReloaded => '詞典已重新載入';
+	@override String get kanjiDictCleared => '詞典已清除';
+	@override String get kanjiDictDownloading => '正在下載詞典……';
+	@override String kanjiDictDownloaded({required Object version}) => '詞典已更新至 ${version}';
+	@override String get kanjiDictDownloadFailed => '下載失敗；已保留目前詞典';
 	@override String get openFailedTitle => '歌詞快取無法開啟';
 	@override String openFailedBody({required Object error}) => '${error}\n\n既有快取沒有被改動。只有在你確定要捨棄已儲存的歌詞時才重建。';
 	@override String get rebuild => '重建快取';

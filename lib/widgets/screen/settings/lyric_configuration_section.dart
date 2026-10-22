@@ -56,6 +56,13 @@ class LyricConfigurationSection extends StatelessWidget {
                   value: provider.annotationEnabled.current,
                   onChanged: (value) => provider.setAnnotationEnabled(value),
                 ),
+                SettingsToggleCard(
+                  title: i18n.kanjiReadingSplit,
+                  subtitle: i18n.kanjiReadingSplitSubtitle,
+                  value: provider.kanjiReadingSplitEnabled.current,
+                  onChanged: (value) =>
+                      provider.setKanjiReadingSplitEnabled(value),
+                ),
                 SettingsSliderCard(
                   title: i18n.annotationBias,
                   subtitle: i18n.annotationBiasSubtitle,

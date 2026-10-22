@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/lyric_model.dart';
 import '../models/setting.dart';
 import '../models/lyric_provider_type.dart';
@@ -11,7 +13,9 @@ import '../services/lyrics_service.dart';
 import '../services/settings_service.dart';
 import '../services/secret_store.dart';
 import '../services/providers/lyrics_cache_service.dart';
+import '../services/kanji_reading_dictionary.dart';
 import '../utils/app_logger.dart';
+import '../utils/kanji_reading_splitter.dart';
 import '../utils/lyrics_candidate_helper.dart';
 import '../utils/lyrics_reading_candidate_helper.dart';
 import '../utils/lyrics_display_helper.dart';
@@ -104,6 +108,10 @@ class LyricsProvider with ChangeNotifier {
 
   final LyricsDisplayPipeline _display = LyricsDisplayPipeline();
 
+  /// Loaded lazily when kanji-reading splitting is first enabled; null until
+  /// then, which makes the pipeline fall back to whole-run readings.
+  KanjiReadingSplitter? _kanjiReadingSplitter;
+
   /// The lyrics as rendered: rich-sync stripping, translation alignment,
   /// Simplified/Traditional conversion, kanji annotation, and the experimental
   /// timestamp strip.
@@ -115,6 +123,8 @@ class LyricsProvider with ChangeNotifier {
     translationEnabled: _settings.translationEnabled.current,
     annotationEnabled: _settings.annotationEnabled.current,
     annotationBias: _settings.annotationBias.current,
+    kanjiReadingSplitEnabled: _settings.kanjiReadingSplitEnabled.current,
+    kanjiReadingSplitter: _kanjiReadingSplitter,
     zhConversionTarget: _settings.zhConversionTarget.current,
     zhConversionIgnoredLanguages:
         _settings.zhConversionIgnoredLanguages.current,
@@ -179,6 +189,8 @@ class LyricsProvider with ChangeNotifier {
   Setting<int> get richSyncThresholdMs => _settings.richSyncThresholdMs;
   Setting<bool> get annotationEnabled => _settings.annotationEnabled;
   Setting<int> get annotationBias => _settings.annotationBias;
+  Setting<bool> get kanjiReadingSplitEnabled =>
+      _settings.kanjiReadingSplitEnabled;
   Setting<String> get zhConversionTarget => _settings.zhConversionTarget;
   Setting<List<String>> get zhConversionIgnoredLanguages =>
       _settings.zhConversionIgnoredLanguages;
@@ -531,6 +543,9 @@ class LyricsProvider with ChangeNotifier {
     if (_settings.experimentalStripTimestampsBeforeRender.current) {
       _updateCurrentIndex();
     }
+    if (_settings.kanjiReadingSplitEnabled.current) {
+      _loadKanjiReadingSplitter();
+    }
 
     notifyListeners();
 
@@ -618,6 +633,73 @@ class LyricsProvider with ChangeNotifier {
       assign: (value) => _settings.annotationBias = value,
       persist: _settingsService.setAnnotationBias,
     );
+  }
+
+  void setKanjiReadingSplitEnabled(bool enabled) {
+    final changed = _setSettingValue(
+      currentSetting: _settings.kanjiReadingSplitEnabled,
+      value: enabled,
+      assign: (value) => _settings.kanjiReadingSplitEnabled = value,
+      persist: _settingsService.setKanjiReadingSplitEnabled,
+    );
+    if (changed && enabled) _loadKanjiReadingSplitter();
+  }
+
+  /// Loads the kanji reading dictionary once and re-renders when it arrives.
+  /// A missing or malformed asset leaves the splitter null, so splitting stays
+  /// off and whole-run readings are shown.
+  void _loadKanjiReadingSplitter() {
+    if (_kanjiReadingSplitter != null) return;
+    unawaited(
+      KanjiReadingDictionary.instance.splitter().then((splitter) {
+        if (_disposed || splitter == null) return;
+        _kanjiReadingSplitter = splitter;
+        notifyListeners();
+      }),
+    );
+  }
+
+  /// Extracted-dictionary stats for the cache screen: the installed version and
+  /// on-disk size, loading the dictionary first so the numbers are populated.
+  Future<Map<String, dynamic>> getKanjiReadingStats() async {
+    await KanjiReadingDictionary.instance.splitter();
+    return {
+      'version': KanjiReadingDictionary.instance.installedVersion,
+      'size': KanjiReadingDictionary.instance.installedSizeBytes ?? 0,
+    };
+  }
+
+  /// Re-extracts the bundled dictionary from the cache screen, replacing the
+  /// extracted copy, and re-renders with the reloaded splitter.
+  Future<void> reloadKanjiReadingDictionary() async {
+    await KanjiReadingDictionary.instance.reloadFromBundle();
+    _kanjiReadingSplitter = null;
+    if (_settings.kanjiReadingSplitEnabled.current) {
+      _loadKanjiReadingSplitter();
+    }
+    if (!_disposed) notifyListeners();
+  }
+
+  /// Downloads the latest KANJIDIC2 from EDRDG, converts it on-device, and
+  /// installs it from the cache screen. Returns the installed version, or null
+  /// on failure (the previous copy is kept). Re-renders on success.
+  Future<String?> downloadKanjiReadingDictionary() async {
+    final version = await KanjiReadingDictionary.instance.downloadFromEdrdg();
+    if (version == null) return null;
+    _kanjiReadingSplitter = null;
+    if (_settings.kanjiReadingSplitEnabled.current) {
+      _loadKanjiReadingSplitter();
+    }
+    if (!_disposed) notifyListeners();
+    return version;
+  }
+
+  /// Deletes the extracted dictionary from the cache screen. It is re-extracted
+  /// from the bundle on next use, so splitting keeps working.
+  Future<void> clearKanjiReadingDictionary() async {
+    await KanjiReadingDictionary.instance.deleteExtracted();
+    _kanjiReadingSplitter = null;
+    if (!_disposed) notifyListeners();
   }
 
   void setZhConversionTarget(String target) {

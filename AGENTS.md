@@ -48,6 +48,7 @@ Do not widen a task into unrelated cleanup. The tree is large and some files (`l
 git submodule update --init --depth 1
 flutter pub get
 ./tool/sync_opencc_assets.sh          # required before build or OpenCC tests
+./tool/sync_kanji_readings.sh         # KANJIDIC2 readings for per-kanji split (optional feature)
 flutter run -d <device>
 flutter test                          # also run by CI
 dart run slang                        # after editing lib/i18n/*.i18n.json
@@ -82,6 +83,7 @@ Do not hand-edit:
 - `lib/i18n/strings.g.dart`, `strings_en.g.dart`, `strings_zh_CN.g.dart`, `strings_zh_TW.g.dart`
 - `lib/models/lyric_cache.g.dart`
 - `assets/opencc/` (gitignored; `./tool/sync_opencc_assets.sh` regenerates it, including `version.txt`)
+- `assets/kanji_readings/` (gitignored; `./tool/sync_kanji_readings.sh` downloads KANJIDIC2 and trims it to `kanji_readings.json` plus `LICENSE`/`NOTICE`/`version.txt`)
 - `third_party/opencc` sources. Bump the pin with `./tool/prepare_opencc.sh <tag>` (default `ver.1.4.2`) and then sync assets.
 - `build/`, `.dart_tool/`, `tmp/`, `release.md`, `dist/`
 

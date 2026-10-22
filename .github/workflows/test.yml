@@ -31,5 +31,8 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
+      - name: Sync kanji readings
+        run: ./tool/sync_kanji_readings.sh
+
       - name: Run tests
         run: flutter test

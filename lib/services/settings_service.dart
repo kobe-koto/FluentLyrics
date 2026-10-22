@@ -149,6 +149,9 @@ class SettingsService {
   Future<void> setAnnotationBias(int ms) =>
       writeSetting(PrefSettings.annotationBias, ms);
 
+  Future<void> setKanjiReadingSplitEnabled(bool enabled) =>
+      writeSetting(PrefSettings.kanjiReadingSplitEnabled, enabled);
+
   Future<Setting<String>> getZhConversionTarget() =>
       readSetting(PrefSettings.zhConversionTarget);
 

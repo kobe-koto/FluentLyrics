@@ -163,6 +163,12 @@ class PrefSettings {
     read: _readInt,
     write: _writeInt,
   );
+  static final kanjiReadingSplitEnabled = PrefSetting<bool>(
+    key: 'kanji_reading_split_enabled',
+    defaultValue: AppDefaults.kanjiReadingSplitEnabled,
+    read: _readBool,
+    write: _writeBool,
+  );
   static final zhConversionTarget = PrefSetting<String>(
     key: 'zh_conversion_target',
     defaultValue: AppDefaults.zhConversionTarget,
@@ -396,6 +402,7 @@ class PrefSettings {
     richSyncThresholdMs,
     annotationEnabled,
     annotationBias,
+    kanjiReadingSplitEnabled,
     zhConversionTarget,
     zhConversionIgnoredLanguages,
     globalOffsetMs,

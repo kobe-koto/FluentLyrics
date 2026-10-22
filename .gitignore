@@ -55,5 +55,8 @@ fdroid-public/
 # Generated OpenCC data for the asset bundle. Run tool/sync_opencc_assets.sh
 # before building (CI does this in each build job).
 /assets/opencc/
+# Trimmed KANJIDIC2 kanji-reading data for the asset bundle. Run
+# tool/sync_kanji_readings.sh before building (CI does this in each build job).
+/assets/kanji_readings/
 /android/build/reports
 /.widget_preview

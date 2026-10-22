@@ -9,6 +9,7 @@ import 'package:window_manager/window_manager.dart';
 import 'i18n/strings.g.dart';
 import 'providers/lyrics_provider.dart';
 import 'screens/lyrics_screen.dart';
+import 'services/kanji_reading_dictionary.dart';
 import 'services/lyrics_stream_writer.dart';
 import 'services/opencc/zh_conversion_service.dart';
 import 'services/settings_service.dart';
@@ -31,6 +32,7 @@ Future<void> main() async {
     yield LicenseEntryWithLineBreaks(<String>['Outfit (font)'], license);
   });
   ZhConversionService.registerLicense();
+  KanjiReadingDictionary.registerLicense();
 
   // Create the provider eagerly so the tray bridge can subscribe to it before
   // any widget mounts. Without this the tray would briefly observe the

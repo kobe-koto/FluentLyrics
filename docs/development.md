@@ -21,11 +21,14 @@ cd FluentLyrics
 git submodule update --init --depth 1   # existing clone
 flutter pub get
 ./tool/sync_opencc_assets.sh            # writes gitignored assets/opencc/
+./tool/sync_kanji_readings.sh           # writes gitignored assets/kanji_readings/
 ```
 
 `third_party/opencc` is a shallow submodule pinned by `./tool/prepare_opencc.sh` (default tag `ver.1.4.2`). That script sparse-checkouts only the sources the app compiles. Do not commit a full OpenCC tree, and do not edit files under `third_party/opencc`.
 
 `assets/opencc/` is generated and gitignored. `flutter test`, `flutter build`, and `hook/build.dart` fail without `assets/opencc/version.txt`. CI syncs it before tests and in every build job. Sync again after changing the OpenCC pin or the asset script.
+
+`assets/kanji_readings/` is generated and gitignored too. `./tool/sync_kanji_readings.sh` downloads KANJIDIC2 (EDRDG, CC BY-SA 4.0) and trims it to a kanji → readings JSON, used by the optional "Per-Kanji Reading Split" setting. CI syncs it alongside OpenCC. Like OpenCC, the bundled copy is extracted into the app support directory and read from there; the cache screen can reload (re-extract), clear it, or download the latest KANJIDIC2 from EDRDG and convert it on-device. The conversion lives in `lib/utils/kanji_readings_converter.dart` and is shared by both paths: `tool/kanji_readings_convert.dart` (run by `sync_kanji_readings.sh`) imports it, so the build-time asset and an in-app download produce byte-identical data. An app update with a newer `version.txt` refreshes the extracted copy on launch. The split setting is off by default and degrades to whole-run readings if the asset is absent, so tests pass without it.
 
 Host tests that load libopencc also need:
 
