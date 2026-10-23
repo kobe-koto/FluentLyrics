@@ -92,7 +92,13 @@ class KanjiReadingSplitter {
     if (reading.length - readingIndex < kanji.length - kanjiIndex) return;
 
     final char = kanji[kanjiIndex].$2;
-    final base = dictionary[char];
+    // 々/〻 repeat the preceding kanji, so they read with its readings (often
+    // voiced: 人々 ひと+びと, 時々 とき+どき). Resolve to the previous kanji's
+    // entry; a mark with nothing before it has no reading.
+    final lookup = (char == '々' || char == '〻')
+        ? (kanjiIndex > 0 ? kanji[kanjiIndex - 1].$2 : null)
+        : char;
+    final base = lookup == null ? null : dictionary[lookup];
     if (base == null || base.isEmpty) return;
 
     // Longest readings first: a greedy-looking order does not change which

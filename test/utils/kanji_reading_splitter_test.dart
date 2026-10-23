@@ -27,6 +27,8 @@ void main() {
     '川': ['セン', 'かわ'],
     '手': ['シュ', 'て', 'た'],
     '紙': ['シ', 'かみ', 'がみ'],
+    '人': ['ジン', 'ニン', 'ひと'],
+    '時': ['ジ', 'とき'],
   });
 
   List<FuriganaAnnotation>? split(String run, String reading) =>
@@ -57,6 +59,24 @@ void main() {
       final parts = split('手紙', 'てがみ');
       expect(parts, isNotNull);
       expect(_render('手紙', 0, parts!), '手[て]紙[がみ]');
+    });
+  });
+
+  group('iteration mark 々 repeats the preceding kanji', () {
+    test('人々 -> 人ひと 々びと (rendaku)', () {
+      final parts = split('人々', 'ひとびと');
+      expect(parts, isNotNull);
+      expect(_render('人々', 0, parts!), '人[ひと]々[びと]');
+    });
+
+    test('時々 -> 時とき 々どき (rendaku)', () {
+      final parts = split('時々', 'ときどき');
+      expect(parts, isNotNull);
+      expect(_render('時々', 0, parts!), '時[とき]々[どき]');
+    });
+
+    test('a leading 々 with nothing before it keeps the whole run', () {
+      expect(split('々気', 'きき'), isNull);
     });
   });
 
