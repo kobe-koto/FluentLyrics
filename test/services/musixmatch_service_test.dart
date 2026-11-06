@@ -348,6 +348,7 @@ class _JsonClient extends http.BaseClient {
       Stream<List<int>>.value(response.bodyBytes),
       response.statusCode,
       request: request,
+      headers: const {'content-type': 'application/json; charset=utf-8'},
     );
   }
 }
