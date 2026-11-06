@@ -357,6 +357,12 @@
     "unknownProvider": "未知",
     "richify": "Richify",
     "syncFailed": "失败",
-    "notUsable": "不可使用"
+    "notUsable": "不可使用",
+    "skipped": "已跳过",
+    "skippedReason": "该来源最多提供{{offered}}，当前结果已是{{current}}。",
+    "skippedReasonNoTranslation": "该来源最多提供{{offered}}，且不附带翻译；当前结果已是{{current}}。",
+    "fetchSkipped": "获取",
+    "fetchingSkipped": "获取中…",
+    "skippedEmpty": "该来源未找到歌词。"
   }
 }

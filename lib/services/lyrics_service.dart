@@ -113,6 +113,11 @@ class LyricsService {
     /// Called once when we would normally break early (good-enough result found).
     /// Awaited: return true to continue fetching remaining providers, false to stop.
     Future<bool> Function()? onPauseForCandidates,
+
+    /// Called for a provider whose declared capabilities cannot improve on
+    /// the current best result. It is not queried; the user can fetch it
+    /// manually through [fetchLyricsFromProvider].
+    void Function(LyricProviderType, LyricsSkipReason)? onSkipped,
   }) async* {
     AppLogger.debug(
       '[LyricsService.fetchLyrics] Fetching lyrics for $title - ${artist.join(', ')}',
@@ -137,19 +142,6 @@ class LyricsService {
         return;
       }
 
-      LyricsResult result = LyricsResult.empty();
-      final shouldTrimMetadata = trimMetadataProviders.contains(provider);
-
-      List<String> accumulatedArtworkUrls = [];
-      void onArtworkUrl(String url) {
-        if (url.isNotEmpty && !accumulatedArtworkUrls.contains(url)) {
-          AppLogger.debug(
-            '[LyricsService.fetchLyrics]     ==> Received new artwork url: $url',
-          );
-          accumulatedArtworkUrls.add(url);
-        }
-      }
-
       final source = _sourceRegistry.sourceFor(provider);
       if (source == null) {
         AppLogger.debug(
@@ -158,45 +150,50 @@ class LyricsService {
         continue;
       }
 
-      LyricsResult onTranslationWrapper(LyricsResult result) {
-        final taggedResult = result.copyWith(sourceProvider: provider);
-        if (translationEnabled &&
-            taggedResult.translation &&
-            taggedResult.rawTranslation!.isNotEmpty) {
-          translationReceived = true;
-          onTranslation?.call(taggedResult);
-        }
-        return taggedResult;
+      if (!source.capabilities.providesLyrics) {
+        AppLogger.debug(
+          '[LyricsService.fetchLyrics]     ==> $provider is not a lyrics catalog, skipping',
+        );
+        continue;
       }
 
-      result = await source.fetchLyrics(
-        LyricsFetchRequest(
-          title: title,
-          artist: artist,
-          album: album,
-          durationSeconds: durationSeconds,
-          shouldTrimMetadata: shouldTrimMetadata,
-          onStatusUpdate: onStatusUpdate,
-          onArtworkUrl: onArtworkUrl,
-          translationBias: translationBias,
-          onTranslation: onTranslationWrapper,
-          scope: scope,
-        ),
+      final skipReason = lyricsSkipReasonFor(
+        best: bestResult,
+        capabilities: source.capabilities,
+        richSyncEnabled: richSyncEnabled,
+        translationEnabled: translationEnabled,
+        translationReceived: translationReceived,
+      );
+      if (skipReason != null) {
+        AppLogger.debug(
+          '[LyricsService.fetchLyrics]     ==> $provider cannot improve on the current result, skipping',
+        );
+        onSkipped?.call(provider, skipReason);
+        continue;
+      }
+
+      final result = await _fetchFromSource(
+        source,
+        title: title,
+        artist: artist,
+        album: album,
+        durationSeconds: durationSeconds,
+        shouldTrimMetadata: trimMetadataProviders.contains(provider),
+        translationBias: translationBias,
+        onStatusUpdate: onStatusUpdate,
+        onTranslation: (taggedResult) {
+          if (translationEnabled &&
+              taggedResult.translation &&
+              taggedResult.rawTranslation!.isNotEmpty) {
+            translationReceived = true;
+            onTranslation?.call(taggedResult);
+          }
+        },
+        scope: scope,
       );
       if (_requestCancelled(scope, isCancelled)) {
         if (bestResult != null) yield bestResult;
         return;
-      }
-
-      result = result.copyWith(
-        sourceProvider: provider == LyricProviderType.cache
-            ? result.sourceProvider ??
-                  lyricProviderTypeFromSource(result.source)
-            : provider,
-      );
-
-      if (accumulatedArtworkUrls.isNotEmpty) {
-        result = result.copyWith(artworkUrls: accumulatedArtworkUrls);
       }
 
       if (result.isFailure) {
@@ -277,6 +274,105 @@ class LyricsService {
       }
     }
     onFetchStatusUpdate?.call(false);
+  }
+
+  /// Queries one provider on demand, e.g. one that [fetchLyrics] skipped.
+  /// The result is returned as-is: not ranked, yielded, or cached.
+  /// Bundled translations are passed to [onTranslation].
+  Future<LyricsResult> fetchLyricsFromProvider({
+    required LyricProviderType provider,
+    required String title,
+    required List<String> artist,
+    required String album,
+    required int durationSeconds,
+    required List<LyricProviderType> trimMetadataProviders,
+    Function(String)? onStatusUpdate,
+    Function(LyricsResult)? onTranslation,
+    LyricsRequestScope? scope,
+  }) async {
+    final source = _sourceRegistry.sourceFor(provider);
+    if (source == null || !source.capabilities.providesLyrics) {
+      return LyricsResult.empty();
+    }
+    final translationEnabled =
+        (await _settingsService.getTranslationEnabled()).current;
+    final translationBias =
+        (await _settingsService.getTranslationBias()).current;
+    return _fetchFromSource(
+      source,
+      title: title,
+      artist: artist,
+      album: album,
+      durationSeconds: durationSeconds,
+      shouldTrimMetadata: trimMetadataProviders.contains(provider),
+      translationBias: translationBias,
+      onStatusUpdate: onStatusUpdate,
+      onTranslation: (taggedResult) {
+        if (translationEnabled &&
+            taggedResult.translation &&
+            taggedResult.rawTranslation!.isNotEmpty) {
+          onTranslation?.call(taggedResult);
+        }
+      },
+      scope: scope,
+    );
+  }
+
+  /// Runs one source and tags the result with its provider and artwork.
+  Future<LyricsResult> _fetchFromSource(
+    LyricsSource source, {
+    required String title,
+    required List<String> artist,
+    required String album,
+    required int durationSeconds,
+    required bool shouldTrimMetadata,
+    required int translationBias,
+    Function(String)? onStatusUpdate,
+    void Function(LyricsResult)? onTranslation,
+    LyricsRequestScope? scope,
+  }) async {
+    final provider = source.type;
+    final accumulatedArtworkUrls = <String>[];
+    void onArtworkUrl(String url) {
+      if (url.isNotEmpty && !accumulatedArtworkUrls.contains(url)) {
+        AppLogger.debug(
+          '[LyricsService.fetchLyrics]     ==> Received new artwork url: $url',
+        );
+        accumulatedArtworkUrls.add(url);
+      }
+    }
+
+    LyricsResult onTranslationWrapper(LyricsResult result) {
+      final taggedResult = result.copyWith(sourceProvider: provider);
+      onTranslation?.call(taggedResult);
+      return taggedResult;
+    }
+
+    var result = await source.fetchLyrics(
+      LyricsFetchRequest(
+        title: title,
+        artist: artist,
+        album: album,
+        durationSeconds: durationSeconds,
+        shouldTrimMetadata: shouldTrimMetadata,
+        onStatusUpdate: onStatusUpdate,
+        onArtworkUrl: onArtworkUrl,
+        translationBias: translationBias,
+        onTranslation: onTranslationWrapper,
+        scope: scope,
+      ),
+    );
+
+    result = result.copyWith(
+      sourceProvider: provider == LyricProviderType.cache
+          ? result.sourceProvider ?? lyricProviderTypeFromSource(result.source)
+          : provider,
+    );
+
+    if (accumulatedArtworkUrls.isNotEmpty) {
+      result = result.copyWith(artworkUrls: accumulatedArtworkUrls);
+    }
+    return result;
   }
 
   Stream<LyricsResult> fetchTranslation({
@@ -459,7 +555,9 @@ class LyricsService {
         if (_requestCancelled(scope, isCancelled)) return;
 
         final source = _sourceRegistry.sourceFor(tProvider);
-        if (source == null || !source.checkTranslationSupport(targetLanguage)) {
+        if (source == null ||
+            !source.capabilities.onDemandTranslation ||
+            !source.checkTranslationSupport(targetLanguage)) {
           // silence it
           // AppLogger.debug(
           //   '[LyricsService.fetchTranslation]     ==> [!] Provider doesn\'t support translation for $targetLanguage',

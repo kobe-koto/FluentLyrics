@@ -1,4 +1,36 @@
 import '../models/lyric_model.dart';
+import '../models/lyric_provider_type.dart';
+import '../services/winner_selector.dart';
+
+enum SkippedLyricsSourceState { skipped, fetching, empty }
+
+/// A provider [LyricsService.fetchLyrics] did not query because its declared
+/// capabilities could not improve on the chosen result. Shown in the
+/// candidate sheet as a non-selectable card with a manual fetch action.
+class SkippedLyricsSource {
+  const SkippedLyricsSource({
+    required this.provider,
+    required this.reason,
+    this.state = SkippedLyricsSourceState.skipped,
+  });
+
+  final LyricProviderType provider;
+  final LyricsSkipReason reason;
+  final SkippedLyricsSourceState state;
+
+  SkippedLyricsSource withState(SkippedLyricsSourceState state) =>
+      SkippedLyricsSource(provider: provider, reason: reason, state: state);
+}
+
+/// Adds or replaces the entry for [entry.provider], keeping list order.
+List<SkippedLyricsSource> upsertSkippedSource(
+  List<SkippedLyricsSource> entries,
+  SkippedLyricsSource entry,
+) {
+  final index = entries.indexWhere((e) => e.provider == entry.provider);
+  if (index < 0) return List.unmodifiable([...entries, entry]);
+  return List.unmodifiable([...entries]..[index] = entry);
+}
 
 bool matchesTranslationTargetLanguage(
   List<String> targetLanguages,

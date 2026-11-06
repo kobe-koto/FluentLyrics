@@ -348,6 +348,24 @@ class Translations$candidateSheet$en {
 
 	/// en: 'Not usable'
 	String get notUsable => 'Not usable';
+
+	/// en: 'Skipped'
+	String get skipped => 'Skipped';
+
+	/// en: 'Offers up to {{offered}}; the current result is already {{current}}.'
+	String skippedReason({required Object offered, required Object current}) => 'Offers up to ${offered}; the current result is already ${current}.';
+
+	/// en: 'Offers up to {{offered}} and no bundled translation; the current result is already {{current}}.'
+	String skippedReasonNoTranslation({required Object offered, required Object current}) => 'Offers up to ${offered} and no bundled translation; the current result is already ${current}.';
+
+	/// en: 'Fetch'
+	String get fetchSkipped => 'Fetch';
+
+	/// en: 'Fetching…'
+	String get fetchingSkipped => 'Fetching…';
+
+	/// en: 'No lyrics found from this provider.'
+	String get skippedEmpty => 'No lyrics found from this provider.';
 }
 
 // Path: settings.language

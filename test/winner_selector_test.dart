@@ -1,4 +1,5 @@
 import 'package:fluent_lyrics/models/lyric_model.dart';
+import 'package:fluent_lyrics/services/lyrics_source_registry.dart';
 import 'package:fluent_lyrics/services/winner_selector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -150,4 +151,76 @@ void main() {
       expect(hasGoodEnoughLyricsResult(failure, true, false, false), isFalse);
     },
   );
+
+  group('lyricsSkipReasonFor', () {
+    const lineOnly = LyricsSourceCapabilities(
+      syncLevels: {LyricsSyncLevel.plain, LyricsSyncLevel.line},
+    );
+    const inlineWithTranslation = LyricsSourceCapabilities(
+      syncLevels: {LyricsSyncLevel.line, LyricsSyncLevel.inline},
+      bundledTranslation: true,
+    );
+    final rich = result(source: 'rich', lyrics: [lyric('a', 1000, rich: true)]);
+    final synced = result(source: 'synced', lyrics: [lyric('a', 1000)]);
+
+    LyricsSkipReason? reason(
+      LyricsResult? best,
+      LyricsSourceCapabilities caps, {
+      bool richSyncEnabled = true,
+      bool translationEnabled = false,
+      bool translationReceived = false,
+    }) => lyricsSkipReasonFor(
+      best: best,
+      capabilities: caps,
+      richSyncEnabled: richSyncEnabled,
+      translationEnabled: translationEnabled,
+      translationReceived: translationReceived,
+    );
+
+    test('never skips before a result with lyrics exists', () {
+      expect(reason(null, lineOnly), isNull);
+      expect(reason(result(source: 'empty'), lineOnly), isNull);
+    });
+
+    test('skips a line-only source once rich lyrics are chosen', () {
+      final skip = reason(rich, lineOnly);
+      expect(skip, isNotNull);
+      expect(skip!.offered, LyricsSyncLevel.line);
+      expect(skip.current, LyricsSyncLevel.inline);
+      expect(skip.translationMissing, isFalse);
+    });
+
+    test('queries a source that can upgrade line sync to rich sync', () {
+      expect(reason(synced, inlineWithTranslation), isNull);
+    });
+
+    test('inline capability counts as line when rich sync is disabled', () {
+      final skip = reason(
+        synced,
+        const LyricsSourceCapabilities(
+          syncLevels: {LyricsSyncLevel.line, LyricsSyncLevel.inline},
+        ),
+        richSyncEnabled: false,
+      );
+      expect(skip?.offered, LyricsSyncLevel.line);
+    });
+
+    test('keeps a source that bundles a still-missing translation', () {
+      expect(reason(rich, inlineWithTranslation), isNotNull);
+      expect(
+        reason(rich, inlineWithTranslation, translationEnabled: true),
+        isNull,
+      );
+      final skip = reason(rich, lineOnly, translationEnabled: true);
+      expect(skip?.translationMissing, isTrue);
+    });
+
+    test('never skips unknown capabilities or non-catalog sources', () {
+      expect(reason(rich, LyricsSourceCapabilities.unknown), isNull);
+      expect(
+        reason(rich, const LyricsSourceCapabilities(onDemandTranslation: true)),
+        isNull,
+      );
+    });
+  });
 }

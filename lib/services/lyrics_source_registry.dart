@@ -51,8 +51,74 @@ class LyricsTranslationRequest {
   final LyricsRequestScope? scope;
 }
 
+/// Timing granularity a source can return. Word- and syllable-level timing
+/// both parse into `Lyric.inlineParts`, so they share [inline].
+enum LyricsSyncLevel { plain, line, inline }
+
+/// What a source can return at best. Declared per source and used to skip
+/// sources that cannot improve on the current result. A declaration means
+/// "may return", not "always returns": a source that supports [inline] can
+/// still answer with plain lyrics for a given track.
+class LyricsSourceCapabilities {
+  const LyricsSourceCapabilities({
+    this.syncLevels = const {},
+    this.bundledTranslation = false,
+    this.onDemandTranslation = false,
+    this.readings = const {},
+  }) : isKnown = true;
+
+  const LyricsSourceCapabilities._unknown()
+    : syncLevels = const {
+        LyricsSyncLevel.plain,
+        LyricsSyncLevel.line,
+        LyricsSyncLevel.inline,
+      },
+      bundledTranslation = true,
+      onDemandTranslation = true,
+      readings = const {LyricsReadingType.kana, LyricsReadingType.romaji},
+      isKnown = false;
+
+  /// Content depends on what was stored (cache) or is undeclared (fakes).
+  /// Such a source is never skipped.
+  static const unknown = LyricsSourceCapabilities._unknown();
+
+  /// Empty means the source is not a lyrics catalog (e.g. `llm`).
+  final Set<LyricsSyncLevel> syncLevels;
+
+  /// Translation delivered through `LyricsFetchRequest.onTranslation`.
+  final bool bundledTranslation;
+
+  /// Translation fetched separately through [LyricsSource.fetchTranslation].
+  /// Language support is still decided by
+  /// [LyricsSource.checkTranslationSupport].
+  final bool onDemandTranslation;
+
+  /// Reading tracks (furigana / romanization) shipped next to the lyrics.
+  final Set<LyricsReadingType> readings;
+
+  final bool isKnown;
+
+  bool get providesLyrics => syncLevels.isNotEmpty;
+
+  /// Best level this source can contribute under the current settings.
+  /// Inline timing only counts as better than line timing when rich sync is
+  /// enabled, matching `selectBetterCandidate`.
+  LyricsSyncLevel? maxSyncLevel({required bool richSyncEnabled}) {
+    if (syncLevels.contains(LyricsSyncLevel.inline)) {
+      return richSyncEnabled ? LyricsSyncLevel.inline : LyricsSyncLevel.line;
+    }
+    if (syncLevels.contains(LyricsSyncLevel.line)) return LyricsSyncLevel.line;
+    if (syncLevels.contains(LyricsSyncLevel.plain)) {
+      return LyricsSyncLevel.plain;
+    }
+    return null;
+  }
+}
+
 abstract class LyricsSource {
   LyricProviderType get type;
+
+  LyricsSourceCapabilities get capabilities => LyricsSourceCapabilities.unknown;
 
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request);
 
@@ -106,6 +172,10 @@ class CacheLyricsSource extends LyricsSource {
   @override
   LyricProviderType get type => LyricProviderType.cache;
 
+  /// Cached rows can hold any provider's payload.
+  @override
+  LyricsSourceCapabilities get capabilities => LyricsSourceCapabilities.unknown;
+
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
     return _service.fetchLyrics(
@@ -124,6 +194,11 @@ class LrclibLyricsSource extends LyricsSource {
 
   @override
   LyricProviderType get type => LyricProviderType.lrclib;
+
+  @override
+  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
+    syncLevels: {LyricsSyncLevel.plain, LyricsSyncLevel.line},
+  );
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -146,6 +221,12 @@ class MusixmatchLyricsSource extends LyricsSource {
 
   @override
   LyricProviderType get type => LyricProviderType.musixmatch;
+
+  @override
+  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
+    syncLevels: {LyricsSyncLevel.line, LyricsSyncLevel.inline},
+    onDemandTranslation: true,
+  );
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -181,6 +262,18 @@ class NeteaseLyricsSource extends LyricsSource {
 
   @override
   LyricProviderType get type => LyricProviderType.netease;
+
+  @override
+  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
+    syncLevels: {
+      LyricsSyncLevel.plain,
+      LyricsSyncLevel.line,
+      LyricsSyncLevel.inline,
+    },
+    bundledTranslation: true,
+    onDemandTranslation: true,
+    readings: {LyricsReadingType.kana, LyricsReadingType.romaji},
+  );
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -221,6 +314,18 @@ class QQMusicLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.qqmusic;
 
   @override
+  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
+    syncLevels: {
+      LyricsSyncLevel.plain,
+      LyricsSyncLevel.line,
+      LyricsSyncLevel.inline,
+    },
+    bundledTranslation: true,
+    onDemandTranslation: true,
+    readings: {LyricsReadingType.kana, LyricsReadingType.romaji},
+  );
+
+  @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
     return _service.fetchLyrics(
       title: request.title,
@@ -259,6 +364,15 @@ class KugouLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.kugou;
 
   @override
+  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
+    syncLevels: {
+      LyricsSyncLevel.plain,
+      LyricsSyncLevel.line,
+      LyricsSyncLevel.inline,
+    },
+  );
+
+  @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
     return _service.fetchLyrics(
       title: request.title,
@@ -280,6 +394,11 @@ class YoutubeMusicLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.youtubeMusic;
 
   @override
+  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
+    syncLevels: {LyricsSyncLevel.plain, LyricsSyncLevel.line},
+  );
+
+  @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
     return _service.fetchLyrics(
       title: request.title,
@@ -298,6 +417,10 @@ class LlmLyricsSource extends LyricsSource {
 
   @override
   LyricProviderType get type => LyricProviderType.llm;
+
+  @override
+  LyricsSourceCapabilities get capabilities =>
+      const LyricsSourceCapabilities(onDemandTranslation: true);
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) async {

@@ -70,6 +70,10 @@ class LyricsProvider with ChangeNotifier {
   bool _candidateSheetOpenedEarly = false;
   bool _isCandidateSheetOpen = false;
 
+  // Providers skipped by capability, and their manual fetch scopes.
+  List<SkippedLyricsSource> _skippedSources = const [];
+  final Map<LyricProviderType, LyricsRequestScope> _manualFetchScopes = {};
+
   // Translation candidates
   List<LyricsResult> _translationCandidates = [];
   int _translationRequestVersion = 0;
@@ -249,6 +253,7 @@ class LyricsProvider with ChangeNotifier {
 
   // Candidates getters
   List<LyricsResult> get candidates => _candidates;
+  List<SkippedLyricsSource> get skippedSources => _skippedSources;
   bool get isPausedForCandidates => _isPausedForCandidates;
   List<LyricsResult> get translationCandidates => _translationCandidates;
 
@@ -481,6 +486,19 @@ class LyricsProvider with ChangeNotifier {
     return targets;
   }
 
+  void _resetSkippedSources() {
+    for (final scope in _manualFetchScopes.values) {
+      scope.cancel();
+    }
+    _manualFetchScopes.clear();
+    _skippedSources = const [];
+  }
+
+  /// Queries a provider that the fetch skipped. The result joins the
+  /// candidate list; the user still picks it explicitly.
+  Future<void> fetchSkippedSource(LyricProviderType provider) =>
+      _fetchSkippedSource(provider);
+
   bool _appendCandidateIfNeeded(LyricsResult candidate) {
     final nextCandidates = appendCandidateIfNeeded(_candidates, candidate);
     if (identical(nextCandidates, _candidates)) return false;
@@ -499,6 +517,7 @@ class LyricsProvider with ChangeNotifier {
     _lyricsResult = LyricsResult.empty();
     _invalidateTranslationRequests();
     _candidates = [];
+    _resetSkippedSources();
     _isPausedForCandidates = false;
     _candidateSheetOpenedEarly = false;
     _candidatePauseCompleter?.complete(false);
@@ -1195,6 +1214,7 @@ class LyricsProvider with ChangeNotifier {
       _isPausedForCandidates = false;
       _candidateSheetOpenedEarly = false;
       _candidates = [];
+      _resetSkippedSources();
       _clearReadingState();
       _invalidateLyricsRequests();
       _invalidateTranslationRequests();
@@ -1637,6 +1657,9 @@ class LyricsProvider with ChangeNotifier {
     _disposed = true;
     _lyricsScope?.cancel();
     _translationScope?.cancel();
+    for (final scope in _manualFetchScopes.values) {
+      scope.cancel();
+    }
     LyricsCacheService.removeListener(_onCacheDatabaseChanged);
     _permissionTimer?.cancel();
     mediaService.removeListener(_onMediaChanged);

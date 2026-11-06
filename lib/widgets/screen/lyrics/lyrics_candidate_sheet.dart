@@ -1,10 +1,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
 import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_model.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../../providers/lyrics_provider.dart';
+import '../../../services/lyrics_source_registry.dart';
 import '../../../theme/monospace_text_style.dart';
+import '../../../utils/lyrics_candidate_helper.dart';
 import '../../../utils/translation_helper.dart';
 
 /// Shows a modal bottom sheet that lists all lyric candidates and translation
@@ -339,6 +342,7 @@ class _LyricsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final candidates = provider.candidates;
+    final skipped = provider.skippedSources;
     final current = provider.lyricsResult;
 
     // All rich-sync candidates that could be used as Richify sources.
@@ -346,7 +350,7 @@ class _LyricsTab extends StatelessWidget {
         .where((c) => c.isRichSync)
         .toList(growable: false);
 
-    if (candidates.isEmpty) {
+    if (candidates.isEmpty && skipped.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -406,9 +410,17 @@ class _LyricsTab extends StatelessWidget {
     return ListView.builder(
       controller: scrollController,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
-      itemCount: candidates.length + 1,
+      itemCount: candidates.length + skipped.length + 1,
       itemBuilder: (context, index) {
-        if (index == candidates.length) {
+        if (index >= candidates.length &&
+            index < candidates.length + skipped.length) {
+          final entry = skipped[index - candidates.length];
+          return _SkippedSourceTile(
+            entry: entry,
+            onFetch: () => provider.fetchSkippedSource(entry.provider),
+          );
+        }
+        if (index == candidates.length + skipped.length) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -840,7 +852,7 @@ class _CandidateTile extends StatelessWidget {
                   // Richify button — only on synced, non-rich tiles
                   if (richSources.isNotEmpty && onRichify != null) ...[
                     _RichifyButton(onTap: () => _handleRichify(context)),
-                    const SizedBox(width: 8),
+                    if (isActive) const SizedBox(width: 8),
                   ],
                   if (isActive)
                     Icon(
@@ -877,6 +889,88 @@ class _CandidateTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Skipped provider tile
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SkippedSourceTile extends StatelessWidget {
+  final SkippedLyricsSource entry;
+  final VoidCallback onFetch;
+
+  const _SkippedSourceTile({required this.entry, required this.onFetch});
+
+  static String _levelLabel(LyricsSyncLevel level) => switch (level) {
+    LyricsSyncLevel.inline => t.candidateSheet.syncRich,
+    LyricsSyncLevel.line => t.candidateSheet.syncSynced,
+    LyricsSyncLevel.plain => t.candidateSheet.syncPlain,
+  };
+
+  String _detail() {
+    if (entry.state == SkippedLyricsSourceState.empty) {
+      return t.candidateSheet.skippedEmpty;
+    }
+    final offered = _levelLabel(entry.reason.offered);
+    final current = _levelLabel(entry.reason.current);
+    return entry.reason.translationMissing
+        ? t.candidateSheet.skippedReasonNoTranslation(
+            offered: offered,
+            current: current,
+          )
+        : t.candidateSheet.skippedReason(offered: offered, current: current);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = entry.provider.metadata['color'] as Color;
+    final isFetching = entry.state == SkippedLyricsSourceState.fetching;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.02),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _Badge(
+                  label: entry.provider.localizedName(t),
+                  color: color.withValues(alpha: 0.6),
+                ),
+                const SizedBox(width: 6),
+                _Badge(
+                  label: t.candidateSheet.skipped,
+                  icon: Icons.skip_next_rounded,
+                  color: Colors.grey,
+                ),
+                const Spacer(),
+                _FetchSkippedButton(
+                  isFetching: isFetching,
+                  onTap: isFetching ? null : onFetch,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _detail(),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1107,39 +1201,98 @@ class _RichifyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.amber.withValues(alpha: 0.25),
-              Colors.orange.withValues(alpha: 0.18),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.amber.withValues(alpha: 0.25),
+                Colors.orange.withValues(alpha: 0.18),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.auto_awesome_rounded,
+                size: 11,
+                color: Colors.amber.withValues(alpha: 0.9),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                t.candidateSheet.richify,
+                style: TextStyle(
+                  color: Colors.amber.withValues(alpha: 0.9),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.auto_awesome_rounded,
-              size: 11,
-              color: Colors.amber.withValues(alpha: 0.9),
+      ),
+    );
+  }
+}
+
+/// Pill action matching [_RichifyButton], tinted for a fetch.
+class _FetchSkippedButton extends StatelessWidget {
+  final bool isFetching;
+  final VoidCallback? onTap;
+  const _FetchSkippedButton({required this.isFetching, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Colors.lightBlue.withValues(alpha: isFetching ? 0.6 : 0.9);
+    return MouseRegion(
+      cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.lightBlue.withValues(alpha: isFetching ? 0.08 : 0.16),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.lightBlue.withValues(alpha: isFetching ? 0.2 : 0.4),
             ),
-            const SizedBox(width: 4),
-            Text(
-              t.candidateSheet.richify,
-              style: TextStyle(
-                color: Colors.amber.withValues(alpha: 0.9),
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isFetching)
+                SizedBox(
+                  width: 10,
+                  height: 10,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    color: color,
+                  ),
+                )
+              else
+                Icon(Icons.download_rounded, size: 11, color: color),
+              const SizedBox(width: 4),
+              Text(
+                isFetching
+                    ? t.candidateSheet.fetchingSkipped
+                    : t.candidateSheet.fetchSkipped,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

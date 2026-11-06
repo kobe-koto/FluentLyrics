@@ -6,6 +6,7 @@ import 'package:fluent_lyrics/services/lyrics_service.dart';
 import 'package:fluent_lyrics/services/lyrics_source_registry.dart';
 import 'package:fluent_lyrics/services/providers/lyrics_cache_service.dart';
 import 'package:fluent_lyrics/services/settings_service.dart';
+import 'package:fluent_lyrics/services/winner_selector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeSettingsService extends SettingsService {
@@ -358,62 +359,59 @@ void main() {
     },
   );
 
-  test(
-    'fetchTranslation reuses non-invalidatable cached translation without coverage check',
-    () async {
-      final cacheService = _FakeLyricsCacheService({
-        'zht': LyricsResult(
-          lyrics: const [],
-          source: 'Cache',
-          translation: true,
-          language: 'zht',
-          translationProvider: 'Cache',
-          rawTranslation: const [
-            {'original': 'different lyrics', 'translated': '你好'},
-          ],
-        ),
-      });
-      final onlineRequestedLanguages = <String>[];
-      final service = LyricsService(
-        settingsService: _FakeSettingsService(
-          cacheEnabled: true,
-          translationCoverageThreshold: 100,
-          priority: const [LyricProviderType.musixmatch],
-        ),
-        cacheService: cacheService,
-        sourceRegistry: LyricsSourceRegistry(
-          sources: [
-            _FakeTranslationSource(
-              LyricProviderType.musixmatch,
-              'Musixmatch',
-              requestedLanguages: onlineRequestedLanguages,
-            ),
-          ],
-        ),
-      );
+  test('fetchTranslation reuses non-invalidatable cached translation without coverage check', () async {
+    final cacheService = _FakeLyricsCacheService({
+      'zht': LyricsResult(
+        lyrics: const [],
+        source: 'Cache',
+        translation: true,
+        language: 'zht',
+        translationProvider: 'Cache',
+        rawTranslation: const [
+          {'original': 'different lyrics', 'translated': '你好'},
+        ],
+      ),
+    });
+    final onlineRequestedLanguages = <String>[];
+    final service = LyricsService(
+      settingsService: _FakeSettingsService(
+        cacheEnabled: true,
+        translationCoverageThreshold: 100,
+        priority: const [LyricProviderType.musixmatch],
+      ),
+      cacheService: cacheService,
+      sourceRegistry: LyricsSourceRegistry(
+        sources: [
+          _FakeTranslationSource(
+            LyricProviderType.musixmatch,
+            'Musixmatch',
+            requestedLanguages: onlineRequestedLanguages,
+          ),
+        ],
+      ),
+    );
 
-      final results = await service
-          .fetchTranslation(
-            bestResult: LyricsResult(
-              lyrics: [lyric('hello', 1), lyric('world', 2)],
-              source: 'lyrics',
-            ),
-            title: 'Song',
-            artist: const ['Artist'],
-            album: 'Album',
-            durationSeconds: 120,
-          )
-          .toList();
+    final results = await service
+        .fetchTranslation(
+          bestResult: LyricsResult(
+            lyrics: [lyric('hello', 1), lyric('world', 2)],
+            source: 'lyrics',
+          ),
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          durationSeconds: 120,
+        )
+        .toList();
 
-      expect(cacheService.requestedCacheIds, [
-        LyricsCacheService.manualTranslationSkipLanguage,
-        'zht',
-      ]);
-      expect(onlineRequestedLanguages, isEmpty);
-      expect(results, hasLength(1));
-      expect(results.single.translationProvider, 'Cache (cached)');
-    },
-  );
+    expect(cacheService.requestedCacheIds, [
+      LyricsCacheService.manualTranslationSkipLanguage,
+      'zht',
+    ]);
+    expect(onlineRequestedLanguages, isEmpty);
+    expect(results, hasLength(1));
+    expect(results.single.translationProvider, 'Cache (cached)');
+  });
 
   test('fetchTranslation uses manual skip cache before providers', () async {
     final cacheService = _FakeLyricsCacheService({
@@ -644,6 +642,137 @@ void main() {
       expect(cache.writes, 1);
     },
   );
+
+  test(
+    'fetchLyrics skips sources that cannot beat the current result',
+    () async {
+      final lineOnly = _CapabilitySource(
+        LyricProviderType.lrclib,
+        const LyricsSourceCapabilities(
+          syncLevels: {LyricsSyncLevel.plain, LyricsSyncLevel.line},
+        ),
+      );
+      final llm = _CapabilitySource(
+        LyricProviderType.llm,
+        const LyricsSourceCapabilities(onDemandTranslation: true),
+      );
+      final skipped = <LyricProviderType, LyricsSkipReason>{};
+      final service = LyricsService(
+        settingsService: _FakeSettingsService(
+          priority: const [
+            LyricProviderType.kugou,
+            LyricProviderType.llm,
+            LyricProviderType.lrclib,
+          ],
+        ),
+        cacheService: _RecordingCache(),
+        sourceRegistry: LyricsSourceRegistry(
+          sources: [_RichSource(LyricProviderType.kugou), llm, lineOnly],
+        ),
+      );
+
+      final results = await service
+          .fetchLyrics(
+            title: 'Song',
+            artist: const ['Artist'],
+            album: 'Album',
+            durationSeconds: 120,
+            trimMetadataProviders: const [],
+            richSyncEnabled: true,
+            onPauseForCandidates: () async => true,
+            onSkipped: (provider, reason) => skipped[provider] = reason,
+          )
+          .toList();
+
+      expect(results.single.isRichSync, isTrue);
+      expect(llm.calls, 0);
+      expect(lineOnly.calls, 0);
+      expect(skipped.keys, [LyricProviderType.lrclib]);
+      expect(skipped[LyricProviderType.lrclib]!.offered, LyricsSyncLevel.line);
+      expect(
+        skipped[LyricProviderType.lrclib]!.current,
+        LyricsSyncLevel.inline,
+      );
+    },
+  );
+
+  test('fetchLyrics still queries sources that can upgrade sync', () async {
+    final rich = _CapabilitySource(
+      LyricProviderType.kugou,
+      const LyricsSourceCapabilities(
+        syncLevels: {LyricsSyncLevel.line, LyricsSyncLevel.inline},
+      ),
+      rich: true,
+    );
+    final skipped = <LyricProviderType>[];
+    final service = LyricsService(
+      settingsService: _FakeSettingsService(
+        priority: const [LyricProviderType.lrclib, LyricProviderType.kugou],
+      ),
+      cacheService: _RecordingCache(),
+      sourceRegistry: LyricsSourceRegistry(
+        sources: [_SyncedSource(LyricProviderType.lrclib), rich],
+      ),
+    );
+
+    final results = await service
+        .fetchLyrics(
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          durationSeconds: 120,
+          trimMetadataProviders: const [],
+          richSyncEnabled: true,
+          onSkipped: (provider, _) => skipped.add(provider),
+        )
+        .toList();
+
+    expect(rich.calls, 1);
+    expect(skipped, isEmpty);
+    expect(results.last.isRichSync, isTrue);
+  });
+
+  test('fetchLyricsFromProvider queries one provider and tags it', () async {
+    final lineOnly = _CapabilitySource(
+      LyricProviderType.lrclib,
+      const LyricsSourceCapabilities(syncLevels: {LyricsSyncLevel.line}),
+    );
+    final service = LyricsService(
+      settingsService: _FakeSettingsService(),
+      cacheService: _RecordingCache(),
+      sourceRegistry: LyricsSourceRegistry(
+        sources: [
+          lineOnly,
+          _CapabilitySource(
+            LyricProviderType.llm,
+            const LyricsSourceCapabilities(onDemandTranslation: true),
+          ),
+        ],
+      ),
+    );
+
+    final result = await service.fetchLyricsFromProvider(
+      provider: LyricProviderType.lrclib,
+      title: 'Song',
+      artist: const ['Artist'],
+      album: 'Album',
+      durationSeconds: 120,
+      trimMetadataProviders: const [],
+    );
+    final llmResult = await service.fetchLyricsFromProvider(
+      provider: LyricProviderType.llm,
+      title: 'Song',
+      artist: const ['Artist'],
+      album: 'Album',
+      durationSeconds: 120,
+      trimMetadataProviders: const [],
+    );
+
+    expect(lineOnly.calls, 1);
+    expect(result.lyrics, isNotEmpty);
+    expect(result.sourceProvider, LyricProviderType.lrclib);
+    expect(llmResult.lyrics, isEmpty);
+  });
 }
 
 class _FailingSource extends LyricsSource {
@@ -704,5 +833,61 @@ class _CancellingFailureSource extends LyricsSource {
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) async {
     scope.cancel();
     return LyricsResult.failure(source: type.name, message: 'HTTP 500');
+  }
+}
+
+class _RichSource extends LyricsSource {
+  _RichSource(this.type);
+
+  @override
+  final LyricProviderType type;
+
+  @override
+  Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) async {
+    return _richResult(type.name);
+  }
+}
+
+LyricsResult _richResult(String source) {
+  return LyricsResult(
+    lyrics: [
+      Lyric(
+        startTime: const Duration(seconds: 1),
+        text: 'hello',
+        inlineParts: [
+          LyricInlinePart(
+            startTime: const Duration(seconds: 1),
+            endTime: const Duration(milliseconds: 1500),
+            text: 'hello',
+          ),
+        ],
+      ),
+    ],
+    source: source,
+    isSynced: true,
+  );
+}
+
+class _CapabilitySource extends LyricsSource {
+  _CapabilitySource(this.type, this.capabilities, {this.rich = false});
+
+  @override
+  final LyricProviderType type;
+
+  @override
+  final LyricsSourceCapabilities capabilities;
+
+  final bool rich;
+  int calls = 0;
+
+  @override
+  Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) async {
+    calls += 1;
+    if (rich) return _richResult(type.name);
+    return LyricsResult(
+      lyrics: [Lyric(startTime: const Duration(seconds: 1), text: 'line')],
+      source: type.name,
+      isSynced: true,
+    );
   }
 }

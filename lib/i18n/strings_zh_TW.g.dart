@@ -193,6 +193,12 @@ class Translations$candidateSheet$zh_TW extends Translations$candidateSheet$en {
 	@override String get richify => 'Richify';
 	@override String get syncFailed => '失敗';
 	@override String get notUsable => '不可使用';
+	@override String get skipped => '已略過';
+	@override String skippedReason({required Object offered, required Object current}) => '此來源最多提供${offered}，目前結果已是${current}。';
+	@override String skippedReasonNoTranslation({required Object offered, required Object current}) => '此來源最多提供${offered}，且不附帶翻譯；目前結果已是${current}。';
+	@override String get fetchSkipped => '取得';
+	@override String get fetchingSkipped => '取得中…';
+	@override String get skippedEmpty => '此來源未找到歌詞。';
 }
 
 // Path: settings.language

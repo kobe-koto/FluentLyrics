@@ -8,9 +8,12 @@ import 'package:fluent_lyrics/providers/lyrics_provider.dart';
 import 'package:fluent_lyrics/services/lyrics_request_scope.dart';
 import 'package:fluent_lyrics/services/pref_setting.dart';
 import 'package:fluent_lyrics/services/lyrics_service.dart';
+import 'package:fluent_lyrics/services/lyrics_source_registry.dart';
 import 'package:fluent_lyrics/services/media_service.dart';
 import 'package:fluent_lyrics/services/providers/lyrics_cache_service.dart';
 import 'package:fluent_lyrics/services/settings_service.dart';
+import 'package:fluent_lyrics/services/winner_selector.dart';
+import 'package:fluent_lyrics/utils/lyrics_candidate_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -384,6 +387,7 @@ class _FakeLyricsService extends LyricsService {
     Function(LyricsResult)? onTranslation,
     void Function(LyricsResult)? onCandidate,
     Future<bool> Function()? onPauseForCandidates,
+    void Function(LyricProviderType, LyricsSkipReason)? onSkipped,
   }) async* {
     final result = LyricsResult(
       lyrics: [lyric('old line', 1)],
@@ -493,6 +497,7 @@ class _StaleLyricsService extends LyricsService {
     Function(LyricsResult)? onTranslation,
     void Function(LyricsResult)? onCandidate,
     Future<bool> Function()? onPauseForCandidates,
+    void Function(LyricProviderType, LyricsSkipReason)? onSkipped,
   }) async* {
     final initial = LyricsResult(
       lyrics: [lyric('initial line', 1)],
@@ -533,6 +538,7 @@ class _StaleTranslationLyricsService extends LyricsService {
     Function(LyricsResult)? onTranslation,
     void Function(LyricsResult)? onCandidate,
     Future<bool> Function()? onPauseForCandidates,
+    void Function(LyricProviderType, LyricsSkipReason)? onSkipped,
   }) async* {
     final base = LyricsResult(lyrics: [lyric('base line', 1)], source: 'Base');
     yield base;
@@ -599,6 +605,7 @@ class _PausedCandidateLyricsService extends LyricsService {
     Function(LyricsResult)? onTranslation,
     void Function(LyricsResult)? onCandidate,
     Future<bool> Function()? onPauseForCandidates,
+    void Function(LyricProviderType, LyricsSkipReason)? onSkipped,
   }) async* {
     final initial = LyricsResult(
       lyrics: [lyric('first line', 1)],
@@ -646,6 +653,56 @@ void main() {
       );
 
   test(
+    'skipped provider shows as a card and can be fetched manually',
+    () async {
+      final lyricsService = _SkippingLyricsService();
+      final mediaService = _FakeMediaService(
+        MediaMetadata(
+          title: 'Song',
+          artist: const ['Artist'],
+          album: 'Album',
+          duration: const Duration(seconds: 120),
+          artUrl: 'fallback',
+        ),
+      );
+      final provider = LyricsProvider(
+        mediaService: mediaService,
+        lyricsService: lyricsService,
+        settingsService: _FakeSettingsService(translationEnabled: false),
+        cacheService: _FakeLyricsCacheService(),
+      );
+
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      mediaService.emitChange();
+      for (var i = 0; i < 5; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      expect(provider.candidates.map((c) => c.source), ['Rich']);
+      expect(provider.skippedSources.single.provider, LyricProviderType.lrclib);
+      expect(
+        provider.skippedSources.single.state,
+        SkippedLyricsSourceState.skipped,
+      );
+
+      final fetch = provider.fetchSkippedSource(LyricProviderType.lrclib);
+      expect(
+        provider.skippedSources.single.state,
+        SkippedLyricsSourceState.fetching,
+      );
+      await fetch;
+
+      expect(lyricsService.manualFetches, [LyricProviderType.lrclib]);
+      expect(provider.skippedSources, isEmpty);
+      expect(provider.candidates.map((c) => c.source), ['Rich', 'lrclib']);
+      expect(provider.lyricsResult.source, 'Rich');
+
+      provider.dispose();
+    },
+  );
+
+  test(
     'selectCandidate prevents stale lyrics fetch from overwriting it',
     () async {
       final lyricsService = _StaleLyricsService();
@@ -685,101 +742,95 @@ void main() {
     },
   );
 
-  test(
-    'open candidate sheet early keeps fetch flowing when pause point is reached later',
-    () async {
-      final lyricsService = _PausedCandidateLyricsService();
-      final mediaService = _FakeMediaService(
-        MediaMetadata(
-          title: 'Song',
-          artist: const ['Artist'],
-          album: 'Album',
-          duration: const Duration(seconds: 120),
-          artUrl: 'fallback',
-        ),
-      );
-      final provider = LyricsProvider(
-        mediaService: mediaService,
-        lyricsService: lyricsService,
-        settingsService: _FakeSettingsService(translationEnabled: false),
-        cacheService: _FakeLyricsCacheService(),
-      );
+  test('open candidate sheet early keeps fetch flowing when pause point is reached later', () async {
+    final lyricsService = _PausedCandidateLyricsService();
+    final mediaService = _FakeMediaService(
+      MediaMetadata(
+        title: 'Song',
+        artist: const ['Artist'],
+        album: 'Album',
+        duration: const Duration(seconds: 120),
+        artUrl: 'fallback',
+      ),
+    );
+    final provider = LyricsProvider(
+      mediaService: mediaService,
+      lyricsService: lyricsService,
+      settingsService: _FakeSettingsService(translationEnabled: false),
+      cacheService: _FakeLyricsCacheService(),
+    );
 
-      provider.setCandidateSheetOpen(true);
+    provider.setCandidateSheetOpen(true);
 
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
-      mediaService.emitChange();
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    mediaService.emitChange();
 
-      await lyricsService.pauseReached.future;
-      await lyricsService.resumed.future;
-      await Future<void>.delayed(Duration.zero);
+    await lyricsService.pauseReached.future;
+    await lyricsService.resumed.future;
+    await Future<void>.delayed(Duration.zero);
 
-      expect(provider.candidates.map((item) => item.source), [
-        'Initial',
-        'Resumed',
-      ]);
-      expect(provider.lyricsResult.source, 'Resumed');
+    expect(provider.candidates.map((item) => item.source), [
+      'Initial',
+      'Resumed',
+    ]);
+    expect(provider.lyricsResult.source, 'Resumed');
 
-      provider.setCandidateSheetOpen(false);
-      provider.dispose();
-    },
-  );
+    provider.setCandidateSheetOpen(false);
+    provider.dispose();
+  });
 
-  test(
-    'selectTranslationCandidate prevents stale translation fetch from overwriting it',
-    () async {
-      final lyricsService = _StaleTranslationLyricsService();
-      final mediaService = _FakeMediaService(
-        MediaMetadata(
-          title: 'Song',
-          artist: const ['Artist'],
-          album: 'Album',
-          duration: const Duration(seconds: 120),
-          artUrl: 'fallback',
-        ),
-      );
-      final provider = LyricsProvider(
-        mediaService: mediaService,
-        lyricsService: lyricsService,
-        settingsService: _FakeSettingsService(),
-        cacheService: _FakeLyricsCacheService(),
-      );
+  test('selectTranslationCandidate prevents stale translation fetch from overwriting it', () async {
+    final lyricsService = _StaleTranslationLyricsService();
+    final mediaService = _FakeMediaService(
+      MediaMetadata(
+        title: 'Song',
+        artist: const ['Artist'],
+        album: 'Album',
+        duration: const Duration(seconds: 120),
+        artUrl: 'fallback',
+      ),
+    );
+    final provider = LyricsProvider(
+      mediaService: mediaService,
+      lyricsService: lyricsService,
+      settingsService: _FakeSettingsService(),
+      cacheService: _FakeLyricsCacheService(),
+    );
 
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
-      mediaService.emitChange();
-      await lyricsService.firstTranslationYielded.future;
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    mediaService.emitChange();
+    await lyricsService.firstTranslationYielded.future;
 
-      await provider.selectTranslationCandidate(
-        LyricsResult(
-          lyrics: const [],
-          source: 'Manual Translation',
-          translation: true,
-          language: 'zht',
-          translationProvider: 'Manual Translation',
-          rawTranslation: const [
-            {'original': 'base line', 'translated': '手动'},
-          ],
-        ),
-      );
+    await provider.selectTranslationCandidate(
+      LyricsResult(
+        lyrics: const [],
+        source: 'Manual Translation',
+        translation: true,
+        language: 'zht',
+        translationProvider: 'Manual Translation',
+        rawTranslation: const [
+          {'original': 'base line', 'translated': '手动'},
+        ],
+      ),
+    );
 
-      lyricsService.releaseStaleTranslation.complete();
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
+    lyricsService.releaseStaleTranslation.complete();
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
 
-      expect(
-        provider.translationResult?.translationProvider,
-        'Manual Translation',
-      );
-      expect(
-        provider.translationResult?.rawTranslation?.first['translated'],
-        '手动',
-      );
+    expect(
+      provider.translationResult?.translationProvider,
+      'Manual Translation',
+    );
+    expect(
+      provider.translationResult?.rawTranslation?.first['translated'],
+      '手动',
+    );
 
-      provider.dispose();
-    },
-  );
+    provider.dispose();
+  });
 
   test(
     'selectCandidate keeps invalidated translation and refetches its provider',
@@ -1124,4 +1175,66 @@ void main() {
       provider.dispose();
     },
   );
+}
+
+class _SkippingLyricsService extends LyricsService {
+  _SkippingLyricsService();
+
+  final List<LyricProviderType> manualFetches = [];
+
+  @override
+  Stream<LyricsResult> fetchLyrics({
+    required String title,
+    required List<String> artist,
+    required String album,
+    required int durationSeconds,
+    Function(String)? onStatusUpdate,
+    Function(bool)? onFetchStatusUpdate,
+    bool Function()? isCancelled,
+    LyricsRequestScope? scope,
+    required List<LyricProviderType> trimMetadataProviders,
+    required bool richSyncEnabled,
+    Function(LyricsResult)? onTranslation,
+    void Function(LyricsResult)? onCandidate,
+    Future<bool> Function()? onPauseForCandidates,
+    void Function(LyricProviderType, LyricsSkipReason)? onSkipped,
+  }) async* {
+    final result = LyricsResult(
+      lyrics: [lyric('rich line', 1)],
+      source: 'Rich',
+      isSynced: true,
+      isRichSync: true,
+    );
+    onCandidate?.call(result);
+    yield result;
+    onSkipped?.call(
+      LyricProviderType.lrclib,
+      const LyricsSkipReason(
+        offered: LyricsSyncLevel.line,
+        current: LyricsSyncLevel.inline,
+        translationMissing: false,
+      ),
+    );
+  }
+
+  @override
+  Future<LyricsResult> fetchLyricsFromProvider({
+    required LyricProviderType provider,
+    required String title,
+    required List<String> artist,
+    required String album,
+    required int durationSeconds,
+    required List<LyricProviderType> trimMetadataProviders,
+    Function(String)? onStatusUpdate,
+    Function(LyricsResult)? onTranslation,
+    LyricsRequestScope? scope,
+  }) async {
+    manualFetches.add(provider);
+    return LyricsResult(
+      lyrics: [lyric('line', 1)],
+      source: provider.name,
+      isSynced: true,
+      sourceProvider: provider,
+    );
+  }
 }

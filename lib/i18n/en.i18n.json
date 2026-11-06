@@ -357,6 +357,12 @@
     "unknownProvider": "Unknown",
     "richify": "Richify",
     "syncFailed": "Failed",
-    "notUsable": "Not usable"
+    "notUsable": "Not usable",
+    "skipped": "Skipped",
+    "skippedReason": "Offers up to {{offered}}; the current result is already {{current}}.",
+    "skippedReasonNoTranslation": "Offers up to {{offered}} and no bundled translation; the current result is already {{current}}.",
+    "fetchSkipped": "Fetch",
+    "fetchingSkipped": "Fetching…",
+    "skippedEmpty": "No lyrics found from this provider."
   }
 }

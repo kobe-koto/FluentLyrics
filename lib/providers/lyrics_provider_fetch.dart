@@ -129,6 +129,14 @@ extension LyricsProviderFetch on LyricsProvider {
             _notify();
           }
         },
+        onSkipped: (provider, reason) {
+          if (!_canAcceptLyricsResult(metadata, requestVersion)) return;
+          _skippedSources = upsertSkippedSource(
+            _skippedSources,
+            SkippedLyricsSource(provider: provider, reason: reason),
+          );
+          _notify();
+        },
         onPauseForCandidates: () async {
           if (!_canAcceptLyricsResult(metadata, requestVersion)) return false;
           if (_isCandidateSheetOpen) {
@@ -188,5 +196,76 @@ extension LyricsProviderFetch on LyricsProvider {
     } finally {
       _finishLyricsFetchState(metadata, requestVersion);
     }
+  }
+
+  Future<void> _fetchSkippedSource(LyricProviderType provider) async {
+    final metadata = _currentMetadata;
+    if (metadata == null) return;
+    final index = _skippedSources.indexWhere((e) => e.provider == provider);
+    if (index < 0 ||
+        _skippedSources[index].state == SkippedLyricsSourceState.fetching) {
+      return;
+    }
+
+    _manualFetchScopes.remove(provider)?.cancel();
+    final scope = LyricsRequestScope();
+    _manualFetchScopes[provider] = scope;
+    _skippedSources = upsertSkippedSource(
+      _skippedSources,
+      _skippedSources[index].withState(SkippedLyricsSourceState.fetching),
+    );
+    _notify();
+
+    // Accept only while this exact fetch is still the live one for the track.
+    bool canAccept() =>
+        !scope.isCancelled &&
+        identical(_manualFetchScopes[provider], scope) &&
+        metadata.isSameTrack(_currentMetadata);
+
+    LyricsResult result;
+    try {
+      result = await _lyricsService.fetchLyricsFromProvider(
+        provider: provider,
+        title: metadata.title,
+        artist: metadata.artist,
+        album: metadata.album,
+        durationSeconds: metadata.duration.inSeconds,
+        trimMetadataProviders: _settings.trimMetadataProviders.current,
+        scope: scope,
+        onTranslation: (trans) {
+          if (!canAccept() ||
+              trans.language == null ||
+              !_matchesTranslationTargetLanguage(trans.language!)) {
+            return;
+          }
+          if (_appendTranslationCandidateIfNeeded(trans)) _notify();
+        },
+      );
+    } catch (e) {
+      result = failureUnlessCancelled(
+        e,
+        scope: scope,
+        source: provider.metadata['name'] as String,
+      );
+    }
+    if (!canAccept()) return;
+    _manualFetchScopes.remove(provider);
+
+    final hasContent = result.lyrics.isNotEmpty || result.isPureMusic;
+    if (hasContent || result.isFailure) {
+      _skippedSources = List.unmodifiable(
+        _skippedSources.where((e) => e.provider != provider),
+      );
+      _appendCandidateIfNeeded(result);
+    } else {
+      final current = _skippedSources.indexWhere((e) => e.provider == provider);
+      if (current >= 0) {
+        _skippedSources = upsertSkippedSource(
+          _skippedSources,
+          _skippedSources[current].withState(SkippedLyricsSourceState.empty),
+        );
+      }
+    }
+    _notify();
   }
 }

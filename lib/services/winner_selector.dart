@@ -1,4 +1,5 @@
 import '../models/lyric_model.dart';
+import 'lyrics_source_registry.dart';
 
 LyricsResult? selectBetterCandidate(
   LyricsResult candidate,
@@ -68,4 +69,58 @@ bool hasGoodEnoughLyricsResult(
               ((best.isRichSync && richSyncEnabled) ||
                   (!richSyncEnabled && best.isSynced)))) &&
       ((translationEnabled && translationReceived) || !translationEnabled);
+}
+
+/// Effective sync level of [result] under the rich-sync setting.
+LyricsSyncLevel effectiveSyncLevel(LyricsResult result, bool richSyncEnabled) {
+  if (result.isRichSync && richSyncEnabled) return LyricsSyncLevel.inline;
+  if (result.isSynced) return LyricsSyncLevel.line;
+  return LyricsSyncLevel.plain;
+}
+
+/// Why a lyrics source was not queried.
+class LyricsSkipReason {
+  const LyricsSkipReason({
+    required this.offered,
+    required this.current,
+    required this.translationMissing,
+  });
+
+  /// Best level the skipped source can return under current settings.
+  final LyricsSyncLevel offered;
+
+  /// Effective level of the result that was already chosen.
+  final LyricsSyncLevel current;
+
+  /// A translation is still wanted, but the source does not bundle one.
+  final bool translationMissing;
+}
+
+/// Returns a reason when [capabilities] cannot beat [best] under the rules of
+/// [selectBetterCandidate] and cannot supply a translation that the
+/// early-stop check ([hasGoodEnoughLyricsResult]) is still waiting for.
+/// Returns null when the source should be queried.
+LyricsSkipReason? lyricsSkipReasonFor({
+  required LyricsResult? best,
+  required LyricsSourceCapabilities capabilities,
+  required bool richSyncEnabled,
+  required bool translationEnabled,
+  required bool translationReceived,
+}) {
+  if (!capabilities.isKnown) return null;
+  final offered = capabilities.maxSyncLevel(richSyncEnabled: richSyncEnabled);
+  if (offered == null) return null;
+  if (best == null || best.isFailure || best.lyrics.isEmpty) return null;
+
+  final current = effectiveSyncLevel(best, richSyncEnabled);
+  if (offered.index > current.index) return null;
+
+  final translationMissing = translationEnabled && !translationReceived;
+  if (translationMissing && capabilities.bundledTranslation) return null;
+
+  return LyricsSkipReason(
+    offered: offered,
+    current: current,
+    translationMissing: translationMissing,
+  );
 }

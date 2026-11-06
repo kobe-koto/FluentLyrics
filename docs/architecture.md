@@ -60,6 +60,12 @@ Android needs the notification-listener permission. `LyricsProvider` polls it on
 4. Synced lyrics beat unsynced lyrics.
 5. Otherwise the current best stays.
 
+Each `LyricsSource` declares `LyricsSourceCapabilities`: the sync levels it can return (`plain`, `line`, `inline`; word- and syllable-level timing both parse into `inlineParts`, so they share `inline`), whether it bundles a translation with the lyrics or fetches one on demand, and which reading tracks it ships. A declaration means "may return", not "always returns". An empty `syncLevels` marks a source that is not a lyrics catalog (`llm`); the lyrics walk never queries it. `cache` and undeclared sources use `LyricsSourceCapabilities.unknown` and are never skipped.
+
+Before querying a source, `lyricsSkipReasonFor` (in `winner_selector.dart`) checks whether its best declared level can beat the current best under the rules above, or whether it can bundle a translation that is still missing. If neither holds, the source is not queried and `onSkipped` reports it. The candidate sheet shows it as a non-selectable card with the reason and a Fetch action. `LyricsProvider.fetchSkippedSource` calls `LyricsService.fetchLyricsFromProvider`, which queries that one source without ranking or caching; a result joins the candidate list for the user to pick. Priority order is never changed.
+
+The translation pass also skips sources without `onDemandTranslation` before calling `checkTranslationSupport`.
+
 `hasGoodEnoughLyricsResult` is the early-stop check: pure music, or non-empty rich/synced lyrics matching the rich-sync setting, plus a translation if translation is enabled. The provider can pause there and keep fetching the rest after the user looks at candidates.
 
 `LyricsService.fetchTranslation` is a separate pass. It can reuse a translation bundled with the lyrics result, consult cache, or call a source that implements `fetchTranslation`. `LlmTranslationService` is OpenAI-compatible and is not a lyrics catalog. Alignment uses `translationAlignmentThreshold` and `translationCoverageThreshold` (default 80).
