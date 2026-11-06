@@ -83,9 +83,8 @@ class InterludeIndicatorHelper {
   }
 
   static Duration breathingCycleDurationForDuration(Duration duration) {
-    final breathingWindowMs = breathingWindowForDuration(
-      duration,
-    ).inMilliseconds;
+    final breathingWindowMs = breathingWindowForDuration(duration)
+        .inMilliseconds;
     if (breathingWindowMs <= 0) return Duration.zero;
 
     final cycleCount = (breathingWindowMs / maxBreathingCycleDurationMs).ceil();

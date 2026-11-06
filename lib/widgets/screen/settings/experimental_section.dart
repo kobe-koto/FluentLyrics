@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../i18n/strings.g.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../settings_section.dart';

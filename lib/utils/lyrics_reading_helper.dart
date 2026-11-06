@@ -72,9 +72,10 @@ class LyricsReadingHelper {
     return _parseLrc(content);
   }
 
-  static List<Lyric> _parseLrc(String content) => LrcParser.parse(
-    content,
-  ).lyrics.where((l) => l.text.trim().isNotEmpty).toList();
+  static List<Lyric> _parseLrc(String content) =>
+      LrcParser.parse(content).lyrics
+          .where((l) => l.text.trim().isNotEmpty)
+          .toList();
 
   /// Pairs [lyrics] with the provider's [readingLines].
   ///

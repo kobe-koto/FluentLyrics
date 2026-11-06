@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+
 import '../utils/interlude_indicator_helper.dart';
 
 class InterludeIndicator extends StatefulWidget {

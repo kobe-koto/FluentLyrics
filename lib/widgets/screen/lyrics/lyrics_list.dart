@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
 import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_model.dart';
 import '../../../providers/lyrics_provider.dart';
@@ -258,9 +259,8 @@ class _LyricsListState extends State<LyricsList> {
             bottom: viewportHeight / 3,
           );
           return ScrollConfiguration(
-            behavior: ScrollConfiguration.of(
-              context,
-            ).copyWith(scrollbars: false),
+            behavior: ScrollConfiguration.of(context)
+                .copyWith(scrollbars: false),
             child: ScrollablePositionedList.builder(
               itemCount: lyrics.length + 1,
               itemScrollController: widget.itemScrollController,
@@ -824,9 +824,8 @@ class _UnsyncedLyricsViewState extends State<_UnsyncedLyricsView>
           onPointerUp: (_) => _endTouch(),
           onPointerCancel: (_) => _endTouch(),
           child: ScrollConfiguration(
-            behavior: ScrollConfiguration.of(
-              context,
-            ).copyWith(scrollbars: false),
+            behavior: ScrollConfiguration.of(context)
+                .copyWith(scrollbars: false),
             child: ListView(
               controller: _controller,
               scrollCacheExtent: const ScrollCacheExtent.pixels(_cacheExtent),

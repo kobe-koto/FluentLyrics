@@ -57,8 +57,7 @@ void main() {
   test('a missing count does not discard richsync', () async {
     final result = await _fetch(
       _macro(
-        richsyncBody:
-            '[{"ts": 1.0, "te": 2.0, "x": "rich", "l": [{"c": "rich", "o": 0.0}]}]',
+        richsyncBody: '[{"ts": 1.0, "te": 2.0, "x": "rich", "l": [{"c": "rich", "o": 0.0}]}]',
       ),
     );
 
@@ -73,9 +72,8 @@ void main() {
       (_) => http.Response(_tokenBody('0' * 56), 200),
     );
 
-    final token = await _service(
-      store,
-    ).fetchNewToken(scope: LyricsRequestScope(client: client));
+    final token = await _service(store)
+        .fetchNewToken(scope: LyricsRequestScope(client: client));
 
     expect(token, isNull);
     expect(store.values, isEmpty);
@@ -95,9 +93,8 @@ void main() {
       ),
     );
 
-    final token = await _service(
-      store,
-    ).fetchNewToken(scope: LyricsRequestScope(client: client));
+    final token = await _service(store)
+        .fetchNewToken(scope: LyricsRequestScope(client: client));
 
     expect(token, isNull);
     expect(store.values, isEmpty);

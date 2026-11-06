@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
+
 import '../lyrics_request_scope.dart';
+
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_pkg;
+
 import '../../models/lyric_model.dart';
 import '../../models/general_translation_request_data.dart';
 import '../../utils/lrc_parser.dart';
@@ -118,8 +121,7 @@ class NeteaseService {
 
   static const Map<String, String> _headers = {
     'Referer': 'https://music.163.com/',
-    'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
   };
 
   Future<List<ProcessedSong>> _searchSongs({

@@ -78,9 +78,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: ScrollConfiguration(
-                      behavior: ScrollConfiguration.of(
-                        context,
-                      ).copyWith(scrollbars: false),
+                      behavior: ScrollConfiguration.of(context)
+                          .copyWith(scrollbars: false),
                       child: ListView.separated(
                         itemCount: _SettingsDestination.values.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 12),

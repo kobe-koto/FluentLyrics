@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:crypto/crypto.dart';
 import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
+
 import '../../models/lyric_model.dart';
 import '../../models/lyric_cache.dart';
 import '../../utils/app_logger.dart';

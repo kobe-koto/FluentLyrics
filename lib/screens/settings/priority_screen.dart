@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../i18n/strings.g.dart';
 import '../../models/lyric_provider_type.dart';
 import '../../services/settings_service.dart';

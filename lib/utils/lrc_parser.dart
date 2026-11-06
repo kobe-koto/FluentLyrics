@@ -1,7 +1,10 @@
 import 'dart:math';
+
 import '../models/lyric_model.dart';
 import '../../utils/string_similarity.dart';
+
 import 'package:html_unescape/html_unescape.dart';
+
 import 'app_logger.dart';
 
 /// Result of parsing LRC content with optional metadata trimming.

@@ -273,8 +273,7 @@ class _ScreenTestLyricsProvider extends LyricsProvider {
     artist: const ['Test Artist'],
     album: 'Test Album',
     duration: const Duration(minutes: 3),
-    artUrl:
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9p2Xc6sAAAAASUVORK5CYII=',
+    artUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9p2Xc6sAAAAASUVORK5CYII=',
   );
 
   @override

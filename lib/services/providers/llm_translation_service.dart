@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+
 import 'llm_stream_reader.dart';
 import '../../models/lyric_model.dart';
 import '../../models/general_translation_request_data.dart';
@@ -46,9 +48,9 @@ class LlmTranslationService {
           (await _settingsService.getLlmReasoningEffort()).current;
 
       // Parse original content to get non-empty lines
-      final contentfulOriginalLyrics = LrcParser.parse(
-        data.content,
-      ).lyrics.where((e) => e.text.trim().isNotEmpty).toList();
+      final contentfulOriginalLyrics = LrcParser.parse(data.content).lyrics
+          .where((e) => e.text.trim().isNotEmpty)
+          .toList();
 
       if (contentfulOriginalLyrics.isEmpty) {
         return LyricsResult.empty();

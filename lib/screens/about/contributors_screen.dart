@@ -68,9 +68,8 @@ class _AboutContributorsScreenState extends State<AboutContributorsScreen> {
   Future<void> _openProfile(Uri uri) async {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(t.about.linkUnavailable)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(t.about.linkUnavailable)));
     }
   }
 

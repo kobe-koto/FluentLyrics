@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../../models/lyric_model.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/lrc_parser.dart';
@@ -33,9 +35,8 @@ class LrclibService {
         'duration': durationSeconds.toString(),
       };
 
-      final uri = Uri.parse(
-        _baseSearchUrl,
-      ).replace(queryParameters: queryParams);
+      final uri = Uri.parse(_baseSearchUrl)
+          .replace(queryParameters: queryParams);
 
       onStatusUpdate?.call('[LRCLIB] Searching lyrics...');
 

@@ -70,32 +70,33 @@ void main() {
     expect(sizeAfterInterpolation.width, lessThan(14.0));
   });
 
-  testWidgets('stops extrapolating after timeout if no progress update arrives', (
-    tester,
-  ) async {
-    const duration = Duration(seconds: 4);
+  testWidgets(
+    'stops extrapolating after timeout if no progress update arrives',
+    (tester) async {
+      const duration = Duration(seconds: 4);
 
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: InterludeIndicator(progress: 0.0, duration: duration),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: InterludeIndicator(progress: 0.0, duration: duration),
+          ),
         ),
-      ),
-    );
+      );
 
-    // Let more than _interpolationTimeout (500ms) pass without a new widget.
-    await tester.pump(const Duration(milliseconds: 600));
+      // Let more than _interpolationTimeout (500ms) pass without a new widget.
+      await tester.pump(const Duration(milliseconds: 600));
 
-    final sizeAfterTimeout = tester.getSize(
-      find.byKey(const ValueKey('dot_container')).first,
-    );
-    // Should have stopped advancing and held at the last real progress.
-    // The extrapolated progress would be 0.0 + 600/4000 = 0.15,
-    // giving a size of 8 + 6*0.15 = 8.9px.
-    // But the timeout kicks in, so it should stay at ~8px.
-    // Give a small tolerance for the transient extrapolation before the timeout.
-    expect(sizeAfterTimeout.width, lessThan(9.5));
-  });
+      final sizeAfterTimeout = tester.getSize(
+        find.byKey(const ValueKey('dot_container')).first,
+      );
+      // Should have stopped advancing and held at the last real progress.
+      // The extrapolated progress would be 0.0 + 600/4000 = 0.15,
+      // giving a size of 8 + 6*0.15 = 8.9px.
+      // But the timeout kicks in, so it should stay at ~8px.
+      // Give a small tolerance for the transient extrapolation before the timeout.
+      expect(sizeAfterTimeout.width, lessThan(9.5));
+    },
+  );
 
   testWidgets('fades in from mount even when mounted partway through', (
     tester,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../widgets/settings_scaffold.dart';
 import '../../widgets/screen/settings/language_section.dart';
 import '../../i18n/strings.g.dart';

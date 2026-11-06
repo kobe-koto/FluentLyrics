@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../i18n/strings.g.dart';
 import '../../../utils/app_logger.dart';
 import '../../../providers/lyrics_provider.dart';

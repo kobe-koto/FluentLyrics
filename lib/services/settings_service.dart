@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/setting.dart';
 import '../models/lyric_provider_type.dart';
 import '../constants/app_defaults.dart';

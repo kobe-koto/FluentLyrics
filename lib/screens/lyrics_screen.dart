@@ -2,15 +2,18 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:palette_generator_plus/palette_generator_plus.dart';
+
 import '../models/lyric_model.dart';
 import '../i18n/strings.g.dart';
 import '../providers/lyrics_provider.dart';
 import '../services/media_service.dart';
+
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../widgets/screen/lyrics/lyrics_background.dart';
@@ -603,9 +606,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
           final minSize = context.read<LyricsProvider>().artworkMinSize.current;
           if (minSize > 0 && url.startsWith('data:')) {
-            final size = await _resolveImageSize(
-              provider,
-            ).catchError((_) => Size.zero);
+            final size = await _resolveImageSize(provider)
+                .catchError((_) => Size.zero);
             if (!mounted ||
                 generation != _artLoadGeneration ||
                 _lastArtUrl != url) {
@@ -728,9 +730,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
     ImageProvider provider,
     String url,
   ) async {
-    final intrinsicSize = await _resolveImageSize(
-      provider,
-    ).catchError((_) => Size.zero);
+    final intrinsicSize = await _resolveImageSize(provider)
+        .catchError((_) => Size.zero);
     if (!mounted || _lastArtUrl != url || intrinsicSize == Size.zero) return;
 
     for (final resizedProvider

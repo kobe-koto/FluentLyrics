@@ -50,18 +50,16 @@ typedef OpenccOpenDart = Pointer<Void> Function(Pointer<Utf8> configFileName);
 typedef OpenccCloseNative = Int32 Function(Pointer<Void> opencc);
 typedef OpenccCloseDart = int Function(Pointer<Void> opencc);
 
-typedef OpenccConvertUtf8Native =
-    Pointer<Utf8> Function(
-      Pointer<Void> opencc,
-      Pointer<Utf8> input,
-      IntPtr length,
-    );
-typedef OpenccConvertUtf8Dart =
-    Pointer<Utf8> Function(
-      Pointer<Void> opencc,
-      Pointer<Utf8> input,
-      int length,
-    );
+typedef OpenccConvertUtf8Native = Pointer<Utf8> Function(
+  Pointer<Void> opencc,
+  Pointer<Utf8> input,
+  IntPtr length,
+);
+typedef OpenccConvertUtf8Dart = Pointer<Utf8> Function(
+  Pointer<Void> opencc,
+  Pointer<Utf8> input,
+  int length,
+);
 
 typedef OpenccConvertUtf8FreeNative = Void Function(Pointer<Utf8> str);
 typedef OpenccConvertUtf8FreeDart = void Function(Pointer<Utf8> str);

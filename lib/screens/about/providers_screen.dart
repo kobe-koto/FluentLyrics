@@ -37,9 +37,8 @@ class AboutProvidersScreen extends StatelessWidget {
       mode: LaunchMode.externalApplication,
     );
     if (!opened && context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(t.about.linkUnavailable)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(t.about.linkUnavailable)));
     }
   }
 

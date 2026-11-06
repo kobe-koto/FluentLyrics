@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../i18n/strings.g.dart';
 import 'settings_card_frame.dart';
 

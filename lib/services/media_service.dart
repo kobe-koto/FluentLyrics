@@ -1,8 +1,11 @@
 import 'package:dbus/dbus.dart';
 import 'package:flutter/services.dart';
+
 import 'dart:io';
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+
 import '../utils/app_logger.dart';
 
 part 'media_service_platforms/media_service_linux.dart';

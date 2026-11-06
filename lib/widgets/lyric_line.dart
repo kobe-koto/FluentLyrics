@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+
 import '../constants/app_defaults.dart';
 import '../models/lyric_model.dart';
 import '../utils/furigana_helper.dart';

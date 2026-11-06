@@ -1,4 +1,5 @@
 import 'package:isar_community/isar.dart';
+
 import 'lyric_model.dart';
 import 'lyric_provider_type.dart';
 

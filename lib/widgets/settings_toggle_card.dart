@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'settings_card_frame.dart';
 
 class SettingsToggleCard extends StatelessWidget {

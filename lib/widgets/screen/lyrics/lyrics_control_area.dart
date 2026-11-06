@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../providers/lyrics_provider.dart';
 
 class LyricsControlArea extends StatelessWidget {
