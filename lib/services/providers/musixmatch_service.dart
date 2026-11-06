@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+
 import '../lyrics_request_scope.dart';
 import '../../models/lyric_model.dart';
 import '../../models/general_translation_request_data.dart';
@@ -319,7 +320,7 @@ class MusixmatchService {
       }
 
       final trackUrl = _apiUri('matcher.track.get', {
-        'q_artist': data.artist,
+        'q_artist': data.artist.join(', '),
         'q_track': data.title,
         'usertoken': token,
       });
