@@ -43,54 +43,21 @@ extension LyricProviderTypeMetadata on LyricProviderType {
   Map<String, dynamic> get metadata {
     switch (this) {
       case LyricProviderType.lrclib:
-        return {
-          'color': Colors.blue,
-          'name': 'LRCLIB',
-          'description': 'Open-source lyrics database',
-        };
+        return {'color': Colors.blue, 'name': 'LRCLIB'};
       case LyricProviderType.musixmatch:
-        return {
-          'color': Colors.orange,
-          'name': 'Musixmatch',
-          'description': 'World\'s largest lyrics catalog',
-        };
+        return {'color': Colors.orange, 'name': 'Musixmatch'};
       case LyricProviderType.netease:
-        return {
-          'color': Colors.red,
-          'name': 'Netease Music',
-          'description':
-              'Chinese music service, community driven lyrics catalog',
-        };
+        return {'color': Colors.red, 'name': 'Netease Music'};
       case LyricProviderType.qqmusic:
-        return {
-          'color': Colors.green,
-          'name': 'QQ Music',
-          'description': 'Chinese music streaming service by Tencent',
-        };
+        return {'color': Colors.green, 'name': 'QQ Music'};
       case LyricProviderType.kugou:
-        return {
-          'color': const Color(0xFF0062FF),
-          'name': 'Kugou Music',
-          'description': 'Chinese music service and lyrics catalog',
-        };
+        return {'color': const Color(0xFF0062FF), 'name': 'Kugou Music'};
       case LyricProviderType.youtubeMusic:
-        return {
-          'color': Colors.red,
-          'name': 'YouTube Music',
-          'description': 'YouTube Music timed lyrics',
-        };
+        return {'color': Colors.red, 'name': 'YouTube Music'};
       case LyricProviderType.llm:
-        return {
-          'color': Colors.purple,
-          'name': 'LLM Translation',
-          'description': 'OpenAI compatible LLM API',
-        };
+        return {'color': Colors.purple, 'name': 'LLM Translation'};
       case LyricProviderType.cache:
-        return {
-          'color': Colors.grey,
-          'name': 'Cache',
-          'description': 'Cached lyrics',
-        };
+        return {'color': Colors.grey, 'name': 'Cache'};
     }
   }
 
@@ -116,29 +83,6 @@ extension LyricProviderTypeMetadata on LyricProviderType {
         return p.llmName;
       case LyricProviderType.cache:
         return p.cacheName;
-    }
-  }
-
-  /// Localized one-line description of the provider.
-  String localizedDescription(Translations i18n) {
-    final p = i18n.settings.priority.providers;
-    switch (this) {
-      case LyricProviderType.lrclib:
-        return p.lrclibDescription;
-      case LyricProviderType.musixmatch:
-        return p.musixmatchDescription;
-      case LyricProviderType.netease:
-        return p.neteaseDescription;
-      case LyricProviderType.qqmusic:
-        return p.qqmusicDescription;
-      case LyricProviderType.kugou:
-        return p.kugouDescription;
-      case LyricProviderType.youtubeMusic:
-        return p.youtubeMusicDescription;
-      case LyricProviderType.llm:
-        return p.llmDescription;
-      case LyricProviderType.cache:
-        return p.cacheDescription;
     }
   }
 }

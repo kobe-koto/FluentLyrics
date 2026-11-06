@@ -198,21 +198,22 @@
       "cacheDisabled": "缓存已禁用",
       "providers": {
         "lrclibName": "LRCLIB",
-        "lrclibDescription": "开源歌词数据库",
         "musixmatchName": "Musixmatch",
-        "musixmatchDescription": "全球最大的歌词目录",
         "neteaseName": "网易云音乐",
-        "neteaseDescription": "中国音乐服务,社区驱动的歌词目录",
         "qqmusicName": "QQ 音乐",
-        "qqmusicDescription": "腾讯旗下的中国音乐流媒体服务",
         "kugouName": "酷狗音乐",
-        "kugouDescription": "中国音乐服务与歌词目录",
         "youtubeMusicName": "YouTube Music",
-        "youtubeMusicDescription": "YouTube Music 同步歌词",
         "llmName": "LLM 翻译",
-        "llmDescription": "OpenAI 兼容的 LLM API",
-        "cacheName": "缓存",
-        "cacheDescription": "已缓存的歌词"
+        "cacheName": "缓存"
+      },
+      "capabilities": {
+        "plain": "纯文本",
+        "line": "已同步",
+        "inline": "Rich Sync",
+        "translation": "翻译",
+        "kana": "假名",
+        "romaji": "罗马音",
+        "cached": "已缓存的结果"
       },
       "musixmatchTitle": "Musixmatch Token",
       "musixmatchSubtitle": "Musixmatch 源所必需。",

@@ -419,6 +419,7 @@ class Translations$settings$priority$zh_TW extends Translations$settings$priorit
 	@override String get cacheEnabled => '快取已啟用';
 	@override String get cacheDisabled => '快取已停用';
 	@override late final Translations$settings$priority$providers$zh_TW providers = Translations$settings$priority$providers$zh_TW.internal(_root);
+	@override late final Translations$settings$priority$capabilities$zh_TW capabilities = Translations$settings$priority$capabilities$zh_TW.internal(_root);
 	@override String get musixmatchTitle => 'Musixmatch Token';
 	@override String get musixmatchSubtitle => 'Musixmatch 來源所必需。';
 	@override String get musixmatchHint => '輸入你的 User Token';
@@ -602,21 +603,29 @@ class Translations$settings$priority$providers$zh_TW extends Translations$settin
 
 	// Translations
 	@override String get lrclibName => 'LRCLIB';
-	@override String get lrclibDescription => '開源歌詞資料庫';
 	@override String get musixmatchName => 'Musixmatch';
-	@override String get musixmatchDescription => '全球最大的歌詞目錄';
 	@override String get neteaseName => '網易雲音樂';
-	@override String get neteaseDescription => '中國音樂服務,社群驅動的歌詞目錄';
 	@override String get qqmusicName => 'QQ 音樂';
-	@override String get qqmusicDescription => '騰訊旗下的中國音樂串流服務';
 	@override String get kugouName => '酷狗音樂';
-	@override String get kugouDescription => '中國音樂服務與歌詞目錄';
 	@override String get youtubeMusicName => 'YouTube Music';
-	@override String get youtubeMusicDescription => 'YouTube Music 同步歌詞';
 	@override String get llmName => 'LLM 翻譯';
-	@override String get llmDescription => 'OpenAI 相容的 LLM API';
 	@override String get cacheName => '快取';
-	@override String get cacheDescription => '已快取的歌詞';
+}
+
+// Path: settings.priority.capabilities
+class Translations$settings$priority$capabilities$zh_TW extends Translations$settings$priority$capabilities$en {
+	Translations$settings$priority$capabilities$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
+
+	final TranslationsZhTw _root; // ignore: unused_field
+
+	// Translations
+	@override String get plain => '純文字';
+	@override String get line => '已同步';
+	@override String get inline => 'Rich Sync';
+	@override String get translation => '翻譯';
+	@override String get kana => '假名';
+	@override String get romaji => '羅馬音';
+	@override String get cached => '已快取的結果';
 }
 
 // Path: about.providers.musixmatch

@@ -115,6 +115,56 @@ class LyricsSourceCapabilities {
   }
 }
 
+/// Declared capabilities per provider. Exhaustive so a new
+/// [LyricProviderType] must declare what it can return. Readable without a
+/// service instance, e.g. by settings UI.
+LyricsSourceCapabilities declaredCapabilitiesFor(LyricProviderType type) {
+  return switch (type) {
+    LyricProviderType.lrclib => const LyricsSourceCapabilities(
+      syncLevels: {LyricsSyncLevel.plain, LyricsSyncLevel.line},
+    ),
+    LyricProviderType.musixmatch => const LyricsSourceCapabilities(
+      syncLevels: {LyricsSyncLevel.line, LyricsSyncLevel.inline},
+      onDemandTranslation: true,
+    ),
+    LyricProviderType.netease => const LyricsSourceCapabilities(
+      syncLevels: {
+        LyricsSyncLevel.plain,
+        LyricsSyncLevel.line,
+        LyricsSyncLevel.inline,
+      },
+      bundledTranslation: true,
+      onDemandTranslation: true,
+      readings: {LyricsReadingType.kana, LyricsReadingType.romaji},
+    ),
+    LyricProviderType.qqmusic => const LyricsSourceCapabilities(
+      syncLevels: {
+        LyricsSyncLevel.plain,
+        LyricsSyncLevel.line,
+        LyricsSyncLevel.inline,
+      },
+      bundledTranslation: true,
+      onDemandTranslation: true,
+      readings: {LyricsReadingType.kana, LyricsReadingType.romaji},
+    ),
+    LyricProviderType.kugou => const LyricsSourceCapabilities(
+      syncLevels: {
+        LyricsSyncLevel.plain,
+        LyricsSyncLevel.line,
+        LyricsSyncLevel.inline,
+      },
+    ),
+    LyricProviderType.youtubeMusic => const LyricsSourceCapabilities(
+      syncLevels: {LyricsSyncLevel.plain, LyricsSyncLevel.line},
+    ),
+    // Cached rows can hold any provider's payload.
+    LyricProviderType.cache => LyricsSourceCapabilities.unknown,
+    LyricProviderType.llm => const LyricsSourceCapabilities(
+      onDemandTranslation: true,
+    ),
+  };
+}
+
 abstract class LyricsSource {
   LyricProviderType get type;
 
@@ -172,9 +222,8 @@ class CacheLyricsSource extends LyricsSource {
   @override
   LyricProviderType get type => LyricProviderType.cache;
 
-  /// Cached rows can hold any provider's payload.
   @override
-  LyricsSourceCapabilities get capabilities => LyricsSourceCapabilities.unknown;
+  LyricsSourceCapabilities get capabilities => declaredCapabilitiesFor(type);
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -196,9 +245,7 @@ class LrclibLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.lrclib;
 
   @override
-  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
-    syncLevels: {LyricsSyncLevel.plain, LyricsSyncLevel.line},
-  );
+  LyricsSourceCapabilities get capabilities => declaredCapabilitiesFor(type);
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -223,10 +270,7 @@ class MusixmatchLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.musixmatch;
 
   @override
-  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
-    syncLevels: {LyricsSyncLevel.line, LyricsSyncLevel.inline},
-    onDemandTranslation: true,
-  );
+  LyricsSourceCapabilities get capabilities => declaredCapabilitiesFor(type);
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -264,16 +308,7 @@ class NeteaseLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.netease;
 
   @override
-  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
-    syncLevels: {
-      LyricsSyncLevel.plain,
-      LyricsSyncLevel.line,
-      LyricsSyncLevel.inline,
-    },
-    bundledTranslation: true,
-    onDemandTranslation: true,
-    readings: {LyricsReadingType.kana, LyricsReadingType.romaji},
-  );
+  LyricsSourceCapabilities get capabilities => declaredCapabilitiesFor(type);
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -314,16 +349,7 @@ class QQMusicLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.qqmusic;
 
   @override
-  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
-    syncLevels: {
-      LyricsSyncLevel.plain,
-      LyricsSyncLevel.line,
-      LyricsSyncLevel.inline,
-    },
-    bundledTranslation: true,
-    onDemandTranslation: true,
-    readings: {LyricsReadingType.kana, LyricsReadingType.romaji},
-  );
+  LyricsSourceCapabilities get capabilities => declaredCapabilitiesFor(type);
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -364,13 +390,7 @@ class KugouLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.kugou;
 
   @override
-  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
-    syncLevels: {
-      LyricsSyncLevel.plain,
-      LyricsSyncLevel.line,
-      LyricsSyncLevel.inline,
-    },
-  );
+  LyricsSourceCapabilities get capabilities => declaredCapabilitiesFor(type);
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -394,9 +414,7 @@ class YoutubeMusicLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.youtubeMusic;
 
   @override
-  LyricsSourceCapabilities get capabilities => const LyricsSourceCapabilities(
-    syncLevels: {LyricsSyncLevel.plain, LyricsSyncLevel.line},
-  );
+  LyricsSourceCapabilities get capabilities => declaredCapabilitiesFor(type);
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
@@ -419,8 +437,7 @@ class LlmLyricsSource extends LyricsSource {
   LyricProviderType get type => LyricProviderType.llm;
 
   @override
-  LyricsSourceCapabilities get capabilities =>
-      const LyricsSourceCapabilities(onDemandTranslation: true);
+  LyricsSourceCapabilities get capabilities => declaredCapabilitiesFor(type);
 
   @override
   Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) async {

@@ -198,21 +198,22 @@
       "cacheDisabled": "快取已停用",
       "providers": {
         "lrclibName": "LRCLIB",
-        "lrclibDescription": "開源歌詞資料庫",
         "musixmatchName": "Musixmatch",
-        "musixmatchDescription": "全球最大的歌詞目錄",
         "neteaseName": "網易雲音樂",
-        "neteaseDescription": "中國音樂服務,社群驅動的歌詞目錄",
         "qqmusicName": "QQ 音樂",
-        "qqmusicDescription": "騰訊旗下的中國音樂串流服務",
         "kugouName": "酷狗音樂",
-        "kugouDescription": "中國音樂服務與歌詞目錄",
         "youtubeMusicName": "YouTube Music",
-        "youtubeMusicDescription": "YouTube Music 同步歌詞",
         "llmName": "LLM 翻譯",
-        "llmDescription": "OpenAI 相容的 LLM API",
-        "cacheName": "快取",
-        "cacheDescription": "已快取的歌詞"
+        "cacheName": "快取"
+      },
+      "capabilities": {
+        "plain": "純文字",
+        "line": "已同步",
+        "inline": "Rich Sync",
+        "translation": "翻譯",
+        "kana": "假名",
+        "romaji": "羅馬音",
+        "cached": "已快取的結果"
       },
       "musixmatchTitle": "Musixmatch Token",
       "musixmatchSubtitle": "Musixmatch 來源所必需。",

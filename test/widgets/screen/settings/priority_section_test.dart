@@ -49,6 +49,32 @@ void main() {
 
     expect(reorders, 1);
   });
+
+  testWidgets('cards show capability tags instead of descriptions', (
+    tester,
+  ) async {
+    await _pumpPriority(
+      tester,
+      providers: const [LyricProviderType.musixmatch],
+      enabledCount: 1,
+    );
+
+    final card = find.ancestor(
+      of: find.text('Musixmatch'),
+      matching: find.byType(ListTile),
+    );
+    String? tagIn(String label) =>
+        find.descendant(of: card, matching: find.text(label)).evaluate().isEmpty
+        ? null
+        : label;
+
+    expect(tagIn('Synced'), 'Synced');
+    expect(tagIn('Rich Sync'), 'Rich Sync');
+    expect(tagIn('Translation'), 'Translation');
+    expect(tagIn('Plain'), isNull);
+    expect(tagIn('Kana'), isNull);
+    expect(find.text("World's largest lyrics catalog"), findsNothing);
+  });
 }
 
 Future<void> _pumpPriority(

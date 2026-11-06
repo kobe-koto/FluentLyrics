@@ -869,6 +869,7 @@ class Translations$settings$priority$en {
 	String get cacheDisabled => 'Cache disabled';
 
 	late final Translations$settings$priority$providers$en providers = Translations$settings$priority$providers$en.internal(_root);
+	late final Translations$settings$priority$capabilities$en capabilities = Translations$settings$priority$capabilities$en.internal(_root);
 
 	/// en: 'Musixmatch Token'
 	String get musixmatchTitle => 'Musixmatch Token';
@@ -1157,50 +1158,56 @@ class Translations$settings$priority$providers$en {
 	/// en: 'LRCLIB'
 	String get lrclibName => 'LRCLIB';
 
-	/// en: 'Open-source lyrics database'
-	String get lrclibDescription => 'Open-source lyrics database';
-
 	/// en: 'Musixmatch'
 	String get musixmatchName => 'Musixmatch';
-
-	/// en: 'World's largest lyrics catalog'
-	String get musixmatchDescription => 'World\'s largest lyrics catalog';
 
 	/// en: 'Netease Music'
 	String get neteaseName => 'Netease Music';
 
-	/// en: 'Chinese music service, community driven lyrics catalog'
-	String get neteaseDescription => 'Chinese music service, community driven lyrics catalog';
-
 	/// en: 'QQ Music'
 	String get qqmusicName => 'QQ Music';
-
-	/// en: 'Chinese music streaming service by Tencent'
-	String get qqmusicDescription => 'Chinese music streaming service by Tencent';
 
 	/// en: 'Kugou Music'
 	String get kugouName => 'Kugou Music';
 
-	/// en: 'Chinese music service and lyrics catalog'
-	String get kugouDescription => 'Chinese music service and lyrics catalog';
-
 	/// en: 'YouTube Music'
 	String get youtubeMusicName => 'YouTube Music';
-
-	/// en: 'YouTube Music timed lyrics'
-	String get youtubeMusicDescription => 'YouTube Music timed lyrics';
 
 	/// en: 'LLM Translation'
 	String get llmName => 'LLM Translation';
 
-	/// en: 'OpenAI compatible LLM API'
-	String get llmDescription => 'OpenAI compatible LLM API';
-
 	/// en: 'Cache'
 	String get cacheName => 'Cache';
+}
 
-	/// en: 'Cached lyrics'
-	String get cacheDescription => 'Cached lyrics';
+// Path: settings.priority.capabilities
+class Translations$settings$priority$capabilities$en {
+	Translations$settings$priority$capabilities$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Plain'
+	String get plain => 'Plain';
+
+	/// en: 'Synced'
+	String get line => 'Synced';
+
+	/// en: 'Rich Sync'
+	String get inline => 'Rich Sync';
+
+	/// en: 'Translation'
+	String get translation => 'Translation';
+
+	/// en: 'Kana'
+	String get kana => 'Kana';
+
+	/// en: 'Romaji'
+	String get romaji => 'Romaji';
+
+	/// en: 'Cached results'
+	String get cached => 'Cached results';
 }
 
 // Path: about.providers.musixmatch

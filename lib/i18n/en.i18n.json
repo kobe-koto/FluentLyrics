@@ -198,21 +198,22 @@
       "cacheDisabled": "Cache disabled",
       "providers": {
         "lrclibName": "LRCLIB",
-        "lrclibDescription": "Open-source lyrics database",
         "musixmatchName": "Musixmatch",
-        "musixmatchDescription": "World's largest lyrics catalog",
         "neteaseName": "Netease Music",
-        "neteaseDescription": "Chinese music service, community driven lyrics catalog",
         "qqmusicName": "QQ Music",
-        "qqmusicDescription": "Chinese music streaming service by Tencent",
         "kugouName": "Kugou Music",
-        "kugouDescription": "Chinese music service and lyrics catalog",
         "youtubeMusicName": "YouTube Music",
-        "youtubeMusicDescription": "YouTube Music timed lyrics",
         "llmName": "LLM Translation",
-        "llmDescription": "OpenAI compatible LLM API",
-        "cacheName": "Cache",
-        "cacheDescription": "Cached lyrics"
+        "cacheName": "Cache"
+      },
+      "capabilities": {
+        "plain": "Plain",
+        "line": "Synced",
+        "inline": "Rich Sync",
+        "translation": "Translation",
+        "kana": "Kana",
+        "romaji": "Romaji",
+        "cached": "Cached results"
       },
       "musixmatchTitle": "Musixmatch Token",
       "musixmatchSubtitle": "Required for Musixmatch provider.",
