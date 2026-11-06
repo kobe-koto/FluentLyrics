@@ -1166,6 +1166,12 @@ class Translations$settings$priority$providers$en {
 	/// en: 'Chinese music service and lyrics catalog'
 	String get kugouDescription => 'Chinese music service and lyrics catalog';
 
+	/// en: 'YouTube Music'
+	String get youtubeMusicName => 'YouTube Music';
+
+	/// en: 'YouTube Music timed lyrics'
+	String get youtubeMusicDescription => 'YouTube Music timed lyrics';
+
 	/// en: 'LLM Translation'
 	String get llmName => 'LLM Translation';
 

@@ -9,6 +9,7 @@ import 'providers/musixmatch_service.dart';
 import 'providers/netease_service.dart';
 import 'providers/qqmusic_service.dart';
 import 'providers/kugou_service.dart';
+import 'providers/youtube_music_service.dart';
 
 class LyricsFetchRequest {
   const LyricsFetchRequest({
@@ -74,6 +75,7 @@ class LyricsSourceRegistry {
     required NeteaseService neteaseService,
     required QQMusicService qqMusicService,
     required KugouService kugouService,
+    required YoutubeMusicService youtubeMusicService,
     required LlmTranslationService llmService,
     required LyricsCacheService cacheService,
   }) {
@@ -85,6 +87,7 @@ class LyricsSourceRegistry {
         NeteaseLyricsSource(neteaseService),
         QQMusicLyricsSource(qqMusicService),
         KugouLyricsSource(kugouService),
+        YoutubeMusicLyricsSource(youtubeMusicService),
         LlmLyricsSource(llmService),
       ],
     );
@@ -263,6 +266,26 @@ class KugouLyricsSource extends LyricsSource {
       durationSeconds: request.durationSeconds,
       onStatusUpdate: request.onStatusUpdate,
       onArtworkUrl: request.onArtworkUrl,
+      scope: request.scope,
+    );
+  }
+}
+
+class YoutubeMusicLyricsSource extends LyricsSource {
+  YoutubeMusicLyricsSource(this._service);
+
+  final YoutubeMusicService _service;
+
+  @override
+  LyricProviderType get type => LyricProviderType.youtubeMusic;
+
+  @override
+  Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
+    return _service.fetchLyrics(
+      title: request.title,
+      artist: request.artist,
+      durationSeconds: request.durationSeconds,
+      onStatusUpdate: request.onStatusUpdate,
       scope: request.scope,
     );
   }

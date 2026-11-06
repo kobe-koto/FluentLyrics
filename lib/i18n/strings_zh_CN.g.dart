@@ -605,6 +605,8 @@ class Translations$settings$priority$providers$zh_CN extends Translations$settin
 	@override String get qqmusicDescription => '腾讯旗下的中国音乐流媒体服务';
 	@override String get kugouName => '酷狗音乐';
 	@override String get kugouDescription => '中国音乐服务与歌词目录';
+	@override String get youtubeMusicName => 'YouTube Music';
+	@override String get youtubeMusicDescription => 'YouTube Music 同步歌词';
 	@override String get llmName => 'LLM 翻译';
 	@override String get llmDescription => 'OpenAI 兼容的 LLM API';
 	@override String get cacheName => '缓存';

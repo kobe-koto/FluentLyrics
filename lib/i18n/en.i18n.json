@@ -207,6 +207,8 @@
         "qqmusicDescription": "Chinese music streaming service by Tencent",
         "kugouName": "Kugou Music",
         "kugouDescription": "Chinese music service and lyrics catalog",
+        "youtubeMusicName": "YouTube Music",
+        "youtubeMusicDescription": "YouTube Music timed lyrics",
         "llmName": "LLM Translation",
         "llmDescription": "OpenAI compatible LLM API",
         "cacheName": "Cache",

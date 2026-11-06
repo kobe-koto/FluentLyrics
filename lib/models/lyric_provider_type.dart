@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../i18n/strings.g.dart';
 
 enum LyricProviderType {
@@ -7,6 +8,7 @@ enum LyricProviderType {
   netease,
   qqmusic,
   kugou,
+  youtubeMusic,
   cache,
   llm,
 }
@@ -30,6 +32,7 @@ LyricProviderType? lyricProviderTypeFromSource(String? source) {
     'netease music' => LyricProviderType.netease,
     'qq music' => LyricProviderType.qqmusic,
     'kugou music' => LyricProviderType.kugou,
+    'youtube music' => LyricProviderType.youtubeMusic,
     'cache' => LyricProviderType.cache,
     'llm translation' => LyricProviderType.llm,
     _ => null,
@@ -70,6 +73,12 @@ extension LyricProviderTypeMetadata on LyricProviderType {
           'name': 'Kugou Music',
           'description': 'Chinese music service and lyrics catalog',
         };
+      case LyricProviderType.youtubeMusic:
+        return {
+          'color': Colors.red,
+          'name': 'YouTube Music',
+          'description': 'YouTube Music timed lyrics',
+        };
       case LyricProviderType.llm:
         return {
           'color': Colors.purple,
@@ -101,6 +110,8 @@ extension LyricProviderTypeMetadata on LyricProviderType {
         return p.qqmusicName;
       case LyricProviderType.kugou:
         return p.kugouName;
+      case LyricProviderType.youtubeMusic:
+        return p.youtubeMusicName;
       case LyricProviderType.llm:
         return p.llmName;
       case LyricProviderType.cache:
@@ -122,6 +133,8 @@ extension LyricProviderTypeMetadata on LyricProviderType {
         return p.qqmusicDescription;
       case LyricProviderType.kugou:
         return p.kugouDescription;
+      case LyricProviderType.youtubeMusic:
+        return p.youtubeMusicDescription;
       case LyricProviderType.llm:
         return p.llmDescription;
       case LyricProviderType.cache:

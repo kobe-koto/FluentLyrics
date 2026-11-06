@@ -25,6 +25,7 @@ class AppDefaults {
     LyricProviderType.qqmusic,
     LyricProviderType.lrclib,
     LyricProviderType.kugou,
+    LyricProviderType.youtubeMusic,
     LyricProviderType.llm,
   ];
   static const int enabledProviderCount = 3;

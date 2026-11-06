@@ -207,6 +207,8 @@
         "qqmusicDescription": "騰訊旗下的中國音樂串流服務",
         "kugouName": "酷狗音樂",
         "kugouDescription": "中國音樂服務與歌詞目錄",
+        "youtubeMusicName": "YouTube Music",
+        "youtubeMusicDescription": "YouTube Music 同步歌詞",
         "llmName": "LLM 翻譯",
         "llmDescription": "OpenAI 相容的 LLM API",
         "cacheName": "快取",
