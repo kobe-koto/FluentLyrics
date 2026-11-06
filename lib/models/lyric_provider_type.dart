@@ -61,6 +61,19 @@ extension LyricProviderTypeMetadata on LyricProviderType {
     }
   }
 
+  /// Official website, or null for local / self-configured sources.
+  String? get websiteUrl {
+    return switch (this) {
+      LyricProviderType.lrclib => 'https://lrclib.net/',
+      LyricProviderType.musixmatch => 'https://www.musixmatch.com/',
+      LyricProviderType.netease => 'https://music.163.com/',
+      LyricProviderType.qqmusic => 'https://y.qq.com/',
+      LyricProviderType.kugou => 'https://www.kugou.com/',
+      LyricProviderType.youtubeMusic => 'https://music.youtube.com/',
+      LyricProviderType.cache || LyricProviderType.llm => null,
+    };
+  }
+
   /// Localized display name for the provider. Brand names (LRCLIB,
   /// Musixmatch) stay constant across locales; generic names (Cache,
   /// LLM Translation, Netease Music, QQ Music) are translated.

@@ -50,6 +50,30 @@ void main() {
     expect(reorders, 1);
   });
 
+  testWidgets('website button sits left of the drag handle, clear of it', (
+    tester,
+  ) async {
+    await _pumpPriority(tester, providers: providers, enabledCount: 2);
+
+    final buttons = find.byIcon(Icons.open_in_new_rounded);
+    expect(buttons, findsNWidgets(providers.length));
+
+    final button = tester.getRect(
+      find.ancestor(of: buttons.first, matching: find.byType(IconButton)),
+    );
+    final handle = tester.getRect(_listener(LyricProviderType.musixmatch));
+    expect(button.right, lessThanOrEqualTo(handle.left));
+  });
+
+  testWidgets('no website button for local sources', (tester) async {
+    await _pumpPriority(
+      tester,
+      providers: const [LyricProviderType.llm],
+      enabledCount: 1,
+    );
+    expect(find.byIcon(Icons.open_in_new_rounded), findsNothing);
+  });
+
   testWidgets('cards show capability tags instead of descriptions', (
     tester,
   ) async {

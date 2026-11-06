@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../i18n/strings.g.dart';
 import '../../../models/lyric_model.dart';
@@ -271,6 +272,7 @@ class _ProviderPriorityCardState extends State<_ProviderPriorityCard> {
     final Color color = metadata['color'];
     final name = widget.type.localizedName(t);
     final tags = _capabilityTags(declaredCapabilitiesFor(widget.type));
+    final website = widget.type.websiteUrl;
     final reorderIndex =
         widget.index + (widget.index >= widget.enabledCount ? 1 : 0);
 
@@ -329,10 +331,21 @@ class _ProviderPriorityCardState extends State<_ProviderPriorityCard> {
                       ],
                     ),
                   ),
-            trailing: Icon(
-              Icons.drag_indicator,
-              key: _iconKey,
-              color: Colors.white24,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (website != null) ...[
+                  _WebsiteButton(url: website),
+                  // Keeps the button clear of the drag overlay, which spans
+                  // the icon and the same width again on its left.
+                  const SizedBox(width: 24),
+                ],
+                Icon(
+                  Icons.drag_indicator,
+                  key: _iconKey,
+                  color: Colors.white24,
+                ),
+              ],
             ),
           ),
         ),
@@ -388,6 +401,40 @@ class _CapabilityTag extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+}
+
+class _WebsiteButton extends StatelessWidget {
+  final String url;
+
+  const _WebsiteButton({required this.url});
+
+  Future<void> _open(BuildContext context) async {
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(t.about.linkUnavailable)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () => _open(context),
+      tooltip: t.settings.priority.openWebsite,
+      icon: const Icon(Icons.open_in_new_rounded, size: 18),
+      style: IconButton.styleFrom(
+        foregroundColor: Colors.white38,
+        hoverColor: Colors.white10,
+        padding: const EdgeInsets.all(7),
+        minimumSize: const Size.square(32),
+        fixedSize: const Size.square(32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }

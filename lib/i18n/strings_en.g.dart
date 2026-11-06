@@ -871,6 +871,9 @@ class Translations$settings$priority$en {
 	late final Translations$settings$priority$providers$en providers = Translations$settings$priority$providers$en.internal(_root);
 	late final Translations$settings$priority$capabilities$en capabilities = Translations$settings$priority$capabilities$en.internal(_root);
 
+	/// en: 'Open website'
+	String get openWebsite => 'Open website';
+
 	/// en: 'Musixmatch Token'
 	String get musixmatchTitle => 'Musixmatch Token';
 

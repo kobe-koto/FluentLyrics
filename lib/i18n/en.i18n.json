@@ -215,6 +215,7 @@
         "romaji": "Romaji",
         "cached": "Cached results"
       },
+      "openWebsite": "Open website",
       "musixmatchTitle": "Musixmatch Token",
       "musixmatchSubtitle": "Required for Musixmatch provider.",
       "musixmatchHint": "Enter your User Token",

@@ -215,6 +215,7 @@
         "romaji": "罗马音",
         "cached": "已缓存的结果"
       },
+      "openWebsite": "打开官网",
       "musixmatchTitle": "Musixmatch Token",
       "musixmatchSubtitle": "Musixmatch 源所必需。",
       "musixmatchHint": "输入你的 User Token",

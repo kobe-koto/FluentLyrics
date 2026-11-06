@@ -420,6 +420,7 @@ class Translations$settings$priority$zh_TW extends Translations$settings$priorit
 	@override String get cacheDisabled => '快取已停用';
 	@override late final Translations$settings$priority$providers$zh_TW providers = Translations$settings$priority$providers$zh_TW.internal(_root);
 	@override late final Translations$settings$priority$capabilities$zh_TW capabilities = Translations$settings$priority$capabilities$zh_TW.internal(_root);
+	@override String get openWebsite => '開啟官網';
 	@override String get musixmatchTitle => 'Musixmatch Token';
 	@override String get musixmatchSubtitle => 'Musixmatch 來源所必需。';
 	@override String get musixmatchHint => '輸入你的 User Token';
