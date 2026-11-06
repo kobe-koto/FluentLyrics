@@ -205,6 +205,8 @@
         "neteaseDescription": "Chinese music service, community driven lyrics catalog",
         "qqmusicName": "QQ Music",
         "qqmusicDescription": "Chinese music streaming service by Tencent",
+        "kugouName": "Kugou Music",
+        "kugouDescription": "Chinese music service and lyrics catalog",
         "llmName": "LLM Translation",
         "llmDescription": "OpenAI compatible LLM API",
         "cacheName": "Cache",

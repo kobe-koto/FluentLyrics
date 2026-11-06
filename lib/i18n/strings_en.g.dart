@@ -1160,6 +1160,12 @@ class Translations$settings$priority$providers$en {
 	/// en: 'Chinese music streaming service by Tencent'
 	String get qqmusicDescription => 'Chinese music streaming service by Tencent';
 
+	/// en: 'Kugou Music'
+	String get kugouName => 'Kugou Music';
+
+	/// en: 'Chinese music service and lyrics catalog'
+	String get kugouDescription => 'Chinese music service and lyrics catalog';
+
 	/// en: 'LLM Translation'
 	String get llmName => 'LLM Translation';
 

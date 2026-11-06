@@ -683,7 +683,8 @@ class _CandidateTile extends StatelessWidget {
     if (src.contains('lrclib')) return LyricProviderType.lrclib;
     if (src.contains('musixmatch')) return LyricProviderType.musixmatch;
     if (src.contains('netease')) return LyricProviderType.netease;
-    if (src.contains('qq')) return LyricProviderType.qqmusic;
+    if (src.contains('qq music')) return LyricProviderType.qqmusic;
+    if (src.contains('kugou music')) return LyricProviderType.kugou;
     if (src.contains('cache')) return LyricProviderType.cache;
     return null;
   }

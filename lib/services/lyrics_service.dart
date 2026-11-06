@@ -6,6 +6,7 @@ import 'providers/lrclib_service.dart';
 import 'providers/musixmatch_service.dart';
 import 'providers/netease_service.dart';
 import 'providers/qqmusic_service.dart';
+import 'providers/kugou_service.dart';
 import 'providers/lyrics_cache_service.dart';
 import 'providers/llm_translation_service.dart';
 import '../utils/app_logger.dart';
@@ -21,6 +22,7 @@ class LyricsService {
   final MusixmatchService _musixmatchService;
   final NeteaseService _neteaseService;
   final QQMusicService _qqMusicService;
+  final KugouService _kugouService;
   final LlmTranslationService _llmService;
   final LyricsCacheService _cacheService;
   final LyricsSourceRegistry? _sourceRegistryOverride;
@@ -31,6 +33,7 @@ class LyricsService {
         musixmatchService: _musixmatchService,
         neteaseService: _neteaseService,
         qqMusicService: _qqMusicService,
+        kugouService: _kugouService,
         llmService: _llmService,
         cacheService: _cacheService,
       );
@@ -41,6 +44,7 @@ class LyricsService {
     MusixmatchService? musixmatchService,
     NeteaseService? neteaseService,
     QQMusicService? qqMusicService,
+    KugouService? kugouService,
     LlmTranslationService? llmService,
     LyricsCacheService? cacheService,
     LyricsSourceRegistry? sourceRegistry,
@@ -50,6 +54,7 @@ class LyricsService {
          musixmatchService: musixmatchService,
          neteaseService: neteaseService,
          qqMusicService: qqMusicService,
+         kugouService: kugouService,
          llmService: llmService,
          cacheService: cacheService,
          sourceRegistry: sourceRegistry,
@@ -61,6 +66,7 @@ class LyricsService {
     MusixmatchService? musixmatchService,
     NeteaseService? neteaseService,
     QQMusicService? qqMusicService,
+    KugouService? kugouService,
     LlmTranslationService? llmService,
     LyricsCacheService? cacheService,
     LyricsSourceRegistry? sourceRegistry,
@@ -69,6 +75,7 @@ class LyricsService {
        _musixmatchService = musixmatchService ?? MusixmatchService(),
        _neteaseService = neteaseService ?? NeteaseService(),
        _qqMusicService = qqMusicService ?? QQMusicService(),
+       _kugouService = kugouService ?? KugouService(),
        _llmService = llmService ?? LlmTranslationService(settingsService),
        _cacheService = cacheService ?? LyricsCacheService(),
        _sourceRegistryOverride = sourceRegistry;

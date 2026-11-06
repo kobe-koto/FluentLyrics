@@ -8,6 +8,7 @@ import 'providers/lyrics_cache_service.dart';
 import 'providers/musixmatch_service.dart';
 import 'providers/netease_service.dart';
 import 'providers/qqmusic_service.dart';
+import 'providers/kugou_service.dart';
 
 class LyricsFetchRequest {
   const LyricsFetchRequest({
@@ -72,6 +73,7 @@ class LyricsSourceRegistry {
     required MusixmatchService musixmatchService,
     required NeteaseService neteaseService,
     required QQMusicService qqMusicService,
+    required KugouService kugouService,
     required LlmTranslationService llmService,
     required LyricsCacheService cacheService,
   }) {
@@ -82,6 +84,7 @@ class LyricsSourceRegistry {
         MusixmatchLyricsSource(musixmatchService),
         NeteaseLyricsSource(neteaseService),
         QQMusicLyricsSource(qqMusicService),
+        KugouLyricsSource(kugouService),
         LlmLyricsSource(llmService),
       ],
     );
@@ -239,6 +242,27 @@ class QQMusicLyricsSource extends LyricsSource {
     return _service.fetchTranslation(
       request.data,
       translationBias: request.translationBias,
+      scope: request.scope,
+    );
+  }
+}
+
+class KugouLyricsSource extends LyricsSource {
+  KugouLyricsSource(this._service);
+
+  final KugouService _service;
+
+  @override
+  LyricProviderType get type => LyricProviderType.kugou;
+
+  @override
+  Future<LyricsResult> fetchLyrics(LyricsFetchRequest request) {
+    return _service.fetchLyrics(
+      title: request.title,
+      artist: request.artist,
+      durationSeconds: request.durationSeconds,
+      onStatusUpdate: request.onStatusUpdate,
+      onArtworkUrl: request.onArtworkUrl,
       scope: request.scope,
     );
   }

@@ -603,6 +603,8 @@ class Translations$settings$priority$providers$zh_TW extends Translations$settin
 	@override String get neteaseDescription => '中國音樂服務,社群驅動的歌詞目錄';
 	@override String get qqmusicName => 'QQ 音樂';
 	@override String get qqmusicDescription => '騰訊旗下的中國音樂串流服務';
+	@override String get kugouName => '酷狗音樂';
+	@override String get kugouDescription => '中國音樂服務與歌詞目錄';
 	@override String get llmName => 'LLM 翻譯';
 	@override String get llmDescription => 'OpenAI 相容的 LLM API';
 	@override String get cacheName => '快取';

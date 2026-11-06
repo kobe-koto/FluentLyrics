@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import '../i18n/strings.g.dart';
 
-enum LyricProviderType { lrclib, musixmatch, netease, qqmusic, cache, llm }
+enum LyricProviderType {
+  lrclib,
+  musixmatch,
+  netease,
+  qqmusic,
+  kugou,
+  cache,
+  llm,
+}
 
 LyricProviderType? lyricProviderTypeFromName(String? name) {
   if (name == null) return null;
@@ -21,6 +29,7 @@ LyricProviderType? lyricProviderTypeFromSource(String? source) {
     'musixmatch' => LyricProviderType.musixmatch,
     'netease music' => LyricProviderType.netease,
     'qq music' => LyricProviderType.qqmusic,
+    'kugou music' => LyricProviderType.kugou,
     'cache' => LyricProviderType.cache,
     'llm translation' => LyricProviderType.llm,
     _ => null,
@@ -55,6 +64,12 @@ extension LyricProviderTypeMetadata on LyricProviderType {
           'name': 'QQ Music',
           'description': 'Chinese music streaming service by Tencent',
         };
+      case LyricProviderType.kugou:
+        return {
+          'color': const Color(0xFF0062FF),
+          'name': 'Kugou Music',
+          'description': 'Chinese music service and lyrics catalog',
+        };
       case LyricProviderType.llm:
         return {
           'color': Colors.purple,
@@ -84,6 +99,8 @@ extension LyricProviderTypeMetadata on LyricProviderType {
         return p.neteaseName;
       case LyricProviderType.qqmusic:
         return p.qqmusicName;
+      case LyricProviderType.kugou:
+        return p.kugouName;
       case LyricProviderType.llm:
         return p.llmName;
       case LyricProviderType.cache:
@@ -103,6 +120,8 @@ extension LyricProviderTypeMetadata on LyricProviderType {
         return p.neteaseDescription;
       case LyricProviderType.qqmusic:
         return p.qqmusicDescription;
+      case LyricProviderType.kugou:
+        return p.kugouDescription;
       case LyricProviderType.llm:
         return p.llmDescription;
       case LyricProviderType.cache:

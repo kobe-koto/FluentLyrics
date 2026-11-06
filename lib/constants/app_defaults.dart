@@ -24,6 +24,7 @@ class AppDefaults {
     LyricProviderType.netease,
     LyricProviderType.qqmusic,
     LyricProviderType.lrclib,
+    LyricProviderType.kugou,
     LyricProviderType.llm,
   ];
   static const int enabledProviderCount = 3;
