@@ -21,6 +21,7 @@ class KugouService {
     required int durationSeconds,
     Function(String)? onStatusUpdate,
     Function(String)? onArtworkUrl,
+    bool trimMetadata = false,
     LyricsRequestScope? scope,
   }) async {
     try {
@@ -46,7 +47,13 @@ class KugouService {
         if (scope?.isCancelled == true) return LyricsResult.empty();
         onStatusUpdate?.call('[Kugou] Downloading lyrics...');
 
-        final result = await _downloadCandidate(candidate, scope);
+        final result = await _downloadCandidate(
+          candidate,
+          scope,
+          trimMetadata: trimMetadata,
+          title: title,
+          artist: artist,
+        );
         if (result.lyrics.isNotEmpty) return result;
       }
       return LyricsResult.empty();
@@ -179,8 +186,11 @@ class KugouService {
 
   Future<LyricsResult> _downloadCandidate(
     Map<String, dynamic> candidate,
-    LyricsRequestScope? scope,
-  ) async {
+    LyricsRequestScope? scope, {
+    required bool trimMetadata,
+    required String title,
+    required List<String> artist,
+  }) async {
     for (final format in ['krc', 'lrc']) {
       final uri = Uri.parse(_lyricsDownloadUrl).replace(
         queryParameters: {
@@ -201,9 +211,18 @@ class KugouService {
       final encoded = data is Map ? data['content']?.toString() : null;
       if (encoded == null || encoded.isEmpty) continue;
 
-      final lyrics = format == 'krc'
+      var lyrics = format == 'krc'
           ? KrcParser.parse(encoded)
           : _parseLrc(encoded);
+      var trimmedMetadata = const <String, String>{};
+      if (trimMetadata && lyrics.isNotEmpty) {
+        final trimResult = LrcParser.trimMetadataLines(
+          lyrics,
+          lrcMetadata: {'title': title, 'artist': artist.join(', ')},
+        );
+        lyrics = trimResult.lyrics;
+        trimmedMetadata = trimResult.trimmedMetadata;
+      }
       if (lyrics.isNotEmpty) {
         return LyricsResult(
           lyrics: lyrics,
@@ -212,6 +231,17 @@ class KugouService {
           isRichSync: lyrics.any(
             (line) => line.inlineParts?.isNotEmpty ?? false,
           ),
+          writtenBy:
+              trimmedMetadata['词'] ??
+              trimmedMetadata['作词'] ??
+              trimmedMetadata['作詞'] ??
+              trimmedMetadata['Lyrics by'],
+          composer:
+              trimmedMetadata['曲'] ??
+              trimmedMetadata['作曲'] ??
+              trimmedMetadata['Composer'] ??
+              trimmedMetadata['Composed by'],
+          metadata: trimmedMetadata,
         );
       }
     }

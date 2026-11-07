@@ -16,6 +16,7 @@ class AppDefaults {
   static const List<LyricProviderType> trimMetadataProviders = [
     LyricProviderType.netease,
     LyricProviderType.qqmusic,
+    LyricProviderType.kugou,
   ];
   static const double fontSize = 36.0;
   static const double inactiveScale = 0.85;

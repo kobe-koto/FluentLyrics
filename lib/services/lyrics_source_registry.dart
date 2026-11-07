@@ -400,6 +400,7 @@ class KugouLyricsSource extends LyricsSource {
       durationSeconds: request.durationSeconds,
       onStatusUpdate: request.onStatusUpdate,
       onArtworkUrl: request.onArtworkUrl,
+      trimMetadata: request.shouldTrimMetadata,
       scope: request.scope,
     );
   }
