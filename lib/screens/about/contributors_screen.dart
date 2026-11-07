@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../widgets/settings_scaffold.dart';
+import '../../theme/settings_colors.dart';
 
 class AboutContributorsScreen extends StatefulWidget {
   const AboutContributorsScreen({super.key});
@@ -148,13 +149,13 @@ class _ContributorsMessage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 42, color: Colors.white.withValues(alpha: 0.45)),
+            Icon(icon, size: 42, color: context.settingsColors.fg(0.45)),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.65),
+                color: context.settingsColors.fg(0.65),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -195,7 +196,7 @@ class _ContributorRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: context.settingsColors.fg(0.9),
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -204,7 +205,7 @@ class _ContributorRow extends StatelessWidget {
                 Text(
                   contributionsLabel,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.42),
+                    color: context.settingsColors.fg(0.42),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -216,7 +217,7 @@ class _ContributorRow extends StatelessWidget {
           Icon(
             Icons.open_in_new_rounded,
             size: 18,
-            color: Colors.white.withValues(alpha: 0.32),
+            color: context.settingsColors.fg(0.32),
           ),
         ],
       ),
@@ -224,9 +225,9 @@ class _ContributorRow extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.045),
+        color: context.settingsColors.fg(0.045),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.settingsColors.fg(0.05)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -250,7 +251,7 @@ class _ContributorAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: 25,
-      backgroundColor: Colors.white.withValues(alpha: 0.08),
+      backgroundColor: context.settingsColors.fg(0.08),
       child: ClipOval(
         child: Image.network(
           contributor.avatarUrl,
@@ -259,8 +260,8 @@ class _ContributorAvatar extends StatelessWidget {
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => Text(
             contributor.login.characters.first.toUpperCase(),
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: context.settingsColors.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.w700,
             ),

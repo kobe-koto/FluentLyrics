@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'settings_group.dart';
+import '../theme/settings_colors.dart';
 
 class SettingsCardFrame extends StatelessWidget {
   static const defaultPadding = EdgeInsets.all(20);
@@ -27,10 +28,10 @@ class SettingsCardFrame extends StatelessWidget {
         : padding;
     return Container(
       decoration: BoxDecoration(
-        color: color ?? Colors.white.withValues(alpha: 0.05),
+        color: color ?? context.settingsColors.card,
         borderRadius: radius,
         border: Border.all(
-          color: borderColor ?? Colors.white.withValues(alpha: 0.05),
+          color: borderColor ?? context.settingsColors.cardBorder,
         ),
       ),
       child: Material(

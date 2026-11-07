@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../i18n/strings.g.dart';
+import '../../../theme/settings_colors.dart';
 
 class SettingsAppBar extends StatelessWidget {
   final VoidCallback onBackPressed;
@@ -14,9 +15,9 @@ class SettingsAppBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new,
-              color: Colors.white,
+              color: context.settingsColors.onSurface,
               size: 20,
             ),
             onPressed: onBackPressed,
@@ -24,8 +25,8 @@ class SettingsAppBar extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             t.settings.appBar.lyricsConfiguration,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: context.settingsColors.onSurface,
               fontSize: 24,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,

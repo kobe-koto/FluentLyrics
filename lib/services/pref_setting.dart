@@ -376,6 +376,18 @@ class PrefSettings {
     read: _readInt,
     write: _writeInt,
   );
+  static final settingsThemeMode = PrefSetting<String>(
+    key: 'settings_theme_mode',
+    defaultValue: AppDefaults.settingsThemeMode,
+    read: _readString,
+    write: _writeString,
+  );
+  static final settingsPureBlack = PrefSetting<bool>(
+    key: 'settings_pure_black',
+    defaultValue: AppDefaults.settingsPureBlack,
+    read: _readBool,
+    write: _writeBool,
+  );
   static final musixmatchToken = PrefSetting<String?>(
     key: 'musixmatch_token',
     defaultValue: AppDefaults.musixmatchToken,

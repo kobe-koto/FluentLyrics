@@ -5,6 +5,7 @@ import '../../models/lyric_provider_type.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings_scaffold.dart';
 import '../../widgets/screen/settings/priority_section.dart';
+import '../../theme/settings_colors.dart';
 
 class PriorityScreen extends StatefulWidget {
   const PriorityScreen({super.key});
@@ -79,10 +80,13 @@ class _PrioritySettingsContentState extends State<PrioritySettingsContent> {
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
+        content: Text(
+          message,
+          style: TextStyle(color: context.settingsColors.onSurface),
+        ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        backgroundColor: Colors.white24,
+        backgroundColor: context.settingsColors.fg(0.24),
       ),
     );
   }
@@ -90,7 +94,11 @@ class _PrioritySettingsContentState extends State<PrioritySettingsContent> {
   @override
   Widget build(BuildContext context) {
     return _isLoading
-        ? const Center(child: CircularProgressIndicator(color: Colors.white))
+        ? Center(
+            child: CircularProgressIndicator(
+              color: context.settingsColors.onSurface,
+            ),
+          )
         : SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: PrioritySection(

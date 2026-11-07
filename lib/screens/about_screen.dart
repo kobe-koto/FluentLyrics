@@ -8,6 +8,7 @@ import '../widgets/settings_scaffold.dart';
 import 'about/contributors_screen.dart';
 import 'about/diagnostics_screen.dart';
 import 'about/providers_screen.dart';
+import '../theme/settings_colors.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -175,7 +176,7 @@ class _AboutContentState extends State<AboutContent> {
               Text(
                 about.builtWith,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.28),
+                  color: context.settingsColors.fg(0.28),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -199,10 +200,10 @@ class _AboutContentState extends State<AboutContent> {
           ),
         ),
         const SizedBox(height: 18),
-        const Text(
+        Text(
           'Fluent Lyrics',
           style: TextStyle(
-            color: Colors.white,
+            color: context.settingsColors.onSurface,
             fontSize: 30,
             fontWeight: FontWeight.w800,
           ),
@@ -212,7 +213,7 @@ class _AboutContentState extends State<AboutContent> {
           t.about.tagline,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.48),
+            color: context.settingsColors.fg(0.48),
             fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
@@ -221,13 +222,13 @@ class _AboutContentState extends State<AboutContent> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: context.settingsColors.fg(0.06),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             version,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.38),
+              color: context.settingsColors.fg(0.38),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -251,8 +252,8 @@ class _AboutSection extends StatelessWidget {
       children: [
         Text(
           title.toUpperCase(),
-          style: const TextStyle(
-            color: Colors.white54,
+          style: TextStyle(
+            color: context.settingsColors.fg(0.54),
             fontSize: 12,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.5,
@@ -291,7 +292,7 @@ class _AboutActionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return _AboutRowSurface(
       onTap: onTap,
-      leading: Icon(icon, color: Colors.white.withValues(alpha: 0.72)),
+      leading: Icon(icon, color: context.settingsColors.fg(0.72)),
       title: title,
       subtitle: subtitle,
       trailing: onTap == null
@@ -299,7 +300,7 @@ class _AboutActionRow extends StatelessWidget {
           : Icon(
               Icons.open_in_new_rounded,
               size: 18,
-              color: Colors.white.withValues(alpha: 0.32),
+              color: context.settingsColors.fg(0.32),
             ),
     );
   }
@@ -337,7 +338,7 @@ class _AboutRowSurface extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.88),
+                    color: context.settingsColors.fg(0.88),
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -348,7 +349,7 @@ class _AboutRowSurface extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: context.settingsColors.fg(0.4),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -363,9 +364,9 @@ class _AboutRowSurface extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.045),
+        color: context.settingsColors.fg(0.045),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.settingsColors.fg(0.05)),
       ),
       child: onTap == null
           ? content

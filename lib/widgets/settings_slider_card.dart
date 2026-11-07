@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../i18n/strings.g.dart';
 import 'settings_card_frame.dart';
+import '../theme/settings_colors.dart';
 
 class SettingsSliderCard extends StatelessWidget {
   final String title;
@@ -42,8 +43,8 @@ class SettingsSliderCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white70,
+                style: TextStyle(
+                  color: context.settingsColors.fg(0.70),
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
@@ -79,8 +80,8 @@ class SettingsSliderCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: Colors.white38,
+            style: TextStyle(
+              color: context.settingsColors.fg(0.38),
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -89,7 +90,7 @@ class SettingsSliderCard extends StatelessWidget {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: Colors.blue,
-              inactiveTrackColor: Colors.white10,
+              inactiveTrackColor: context.settingsColors.fg(0.10),
               thumbColor: Colors.blue,
               overlayColor: Colors.blue.withValues(alpha: 0.2),
               showValueIndicator: ShowValueIndicator.onDrag,

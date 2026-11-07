@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/settings_scaffold.dart';
 import '../../widgets/screen/settings/cache_section.dart';
+import '../../theme/settings_colors.dart';
 
 class CacheScreen extends StatelessWidget {
   const CacheScreen({super.key});
@@ -30,13 +31,13 @@ class CacheSettingsContent extends StatelessWidget {
             SnackBar(
               content: Text(
                 message,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: context.settingsColors.onSurface),
               ),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              backgroundColor: Colors.white24,
+              backgroundColor: context.settingsColors.fg(0.24),
             ),
           );
         },

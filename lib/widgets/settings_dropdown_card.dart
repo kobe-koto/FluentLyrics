@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../i18n/strings.g.dart';
 import 'settings_card_frame.dart';
+import '../theme/settings_colors.dart';
 
 /// Settings card with a title, subtitle and a value picked from [options].
 class SettingsDropdownCard<T> extends StatelessWidget {
@@ -36,8 +37,8 @@ class SettingsDropdownCard<T> extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: context.settingsColors.fg(0.70),
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
@@ -61,33 +62,37 @@ class SettingsDropdownCard<T> extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: Colors.white38,
+            style: TextStyle(
+              color: context.settingsColors.fg(0.38),
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 12),
-          DropdownButton<T>(
-            value: value,
-            isExpanded: true,
-            dropdownColor: const Color(0xFF1E1E1E),
-            underline: Container(height: 1, color: Colors.white12),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+          SettingsDropdownFrame(
+            child: DropdownButton<T>(
+              value: value,
+              isExpanded: true,
+              dropdownColor: context.settingsColors.dialog,
+              borderRadius: BorderRadius.circular(10),
+              // DropdownButton replaces the inherited text style, so start
+              // from the theme to keep the Outfit family.
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                color: context.settingsColors.onSurface,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              items: [
+                for (final option in options)
+                  DropdownMenuItem<T>(
+                    value: option.value,
+                    child: Text(option.label),
+                  ),
+              ],
+              onChanged: (next) {
+                if (next != null) onChanged(next);
+              },
             ),
-            items: [
-              for (final option in options)
-                DropdownMenuItem<T>(
-                  value: option.value,
-                  child: Text(option.label),
-                ),
-            ],
-            onChanged: (next) {
-              if (next != null) onChanged(next);
-            },
           ),
         ],
       ),
@@ -100,4 +105,22 @@ class SettingsDropdownOption<T> {
   final String label;
 
   const SettingsDropdownOption({required this.value, required this.label});
+}
+
+/// Wraps a [DropdownButton] in the settings input field shape so dropdowns
+/// match text fields (fill, rounded outline) instead of a bare underline.
+class SettingsDropdownFrame extends StatelessWidget {
+  const SettingsDropdownFrame({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      decoration: const InputDecoration(
+        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+      ),
+      child: DropdownButtonHideUnderline(child: child),
+    );
+  }
 }

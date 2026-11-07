@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'i18n/strings.g.dart';
+import 'providers/appearance_controller.dart';
 import 'providers/lyrics_provider.dart';
 import 'screens/lyrics_screen.dart';
 import 'services/kanji_reading_dictionary.dart';
@@ -16,6 +17,7 @@ import 'services/lyrics_stream_writer.dart';
 import 'services/opencc/zh_conversion_service.dart';
 import 'services/settings_service.dart';
 import 'services/tray_service.dart';
+import 'theme/app_theme.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -106,11 +108,17 @@ Future<void> main() async {
     }
   }
 
+  final appearanceController = AppearanceController();
+  await appearanceController.load();
+
   runApp(
     TranslationProvider(
-      child: MultiProvider(
-        providers: [ChangeNotifierProvider.value(value: lyricsProvider)],
-        child: const MyApp(),
+      child: AppearanceScope(
+        controller: appearanceController,
+        child: MultiProvider(
+          providers: [ChangeNotifierProvider.value(value: lyricsProvider)],
+          child: const MyApp(),
+        ),
       ),
     ),
   );
@@ -230,22 +238,7 @@ class MyApp extends StatelessWidget {
       locale: TranslationProvider.of(context).flutterLocale,
       supportedLocales: AppLocaleUtils.supportedLocales,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        fontFamily: 'Outfit',
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontVariations: <FontVariation>[FontVariation('wght', 500)],
-          ),
-          bodyLarge: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontVariations: <FontVariation>[FontVariation('wght', 500)],
-          ),
-        ),
-        fontFamilyFallback: const ['sans-serif'],
-      ),
+      theme: buildAppTheme(),
       home: const LyricsScreen(),
     );
   }

@@ -21,6 +21,16 @@
       "subtitle": "Choose the interface language",
       "system": "Follow system"
     },
+    "appearance": {
+      "title": "Appearance",
+      "subtitle": "Light, dark, or pure black theme",
+      "description": "Applies to settings and about pages. The lyrics view always stays dark.",
+      "system": "Follow system",
+      "light": "Light",
+      "dark": "Dark",
+      "pureBlack": "Pure black",
+      "pureBlackDescription": "Use a pure black background in dark mode, for OLED screens"
+    },
     "destinations": {
       "priority": {
         "title": "Providers",

@@ -5,6 +5,7 @@ import '../../../services/settings_service.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_group.dart';
 import '../../settings_section.dart';
+import '../../../theme/settings_colors.dart';
 
 class LanguageSection extends StatefulWidget {
   const LanguageSection({super.key});
@@ -121,8 +122,8 @@ class _LanguageTile extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.settingsColors.onSurface,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -132,7 +133,7 @@ class _LanguageTile extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: context.settingsColors.fg(0.4),
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),

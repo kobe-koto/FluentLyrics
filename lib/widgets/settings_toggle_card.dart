@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'settings_card_frame.dart';
+import '../theme/settings_colors.dart';
 
 class SettingsToggleCard extends StatelessWidget {
   final String title;
@@ -28,8 +29,8 @@ class SettingsToggleCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: context.settingsColors.fg(0.70),
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
@@ -37,8 +38,8 @@ class SettingsToggleCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: Colors.white38,
+                  style: TextStyle(
+                    color: context.settingsColors.fg(0.38),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),

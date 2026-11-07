@@ -15,6 +15,7 @@ import '../../services/settings_service.dart';
 import '../../theme/monospace_text_style.dart';
 import '../../widgets/settings_card_frame.dart';
 import '../../widgets/settings_scaffold.dart';
+import '../../theme/settings_colors.dart';
 
 class AboutDiagnosticsScreen extends StatefulWidget {
   const AboutDiagnosticsScreen({super.key});
@@ -219,8 +220,8 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
           children: [
             SettingsCardFrame(
               padding: EdgeInsets.zero,
-              color: Colors.white.withValues(alpha: 0.045),
-              borderColor: Colors.white.withValues(alpha: 0.08),
+              color: context.settingsColors.fg(0.045),
+              borderColor: context.settingsColors.fg(0.08),
               child: SwitchListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 18,
@@ -229,7 +230,7 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
                 title: Text(
                   diagnostics.includeConfiguration,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.88),
+                    color: context.settingsColors.fg(0.88),
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -237,7 +238,7 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
                 subtitle: Text(
                   diagnostics.includeConfigurationSubtitle,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.42),
+                    color: context.settingsColors.fg(0.42),
                     fontSize: 12,
                   ),
                 ),
@@ -256,30 +257,30 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
                 maxLines: null,
                 textAlignVertical: TextAlignVertical.top,
                 style: monospaceTextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: context.settingsColors.fg(0.8),
                   fontSize: 12,
                   height: 1.6,
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.045),
+                  fillColor: context.settingsColors.fg(0.045),
                   contentPadding: const EdgeInsets.all(18),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: context.settingsColors.fg(0.08),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: context.settingsColors.fg(0.08),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: context.settingsColors.fg(0.2),
                     ),
                   ),
                 ),
@@ -299,7 +300,7 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
                 _copyMessage!,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.48),
+                  color: context.settingsColors.fg(0.48),
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),

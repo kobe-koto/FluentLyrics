@@ -55,4 +55,6 @@ class AppDefaults {
   static const String lyricsStreamPath = '';
   static const String translationStreamPath = '';
   static const int artworkMinSize = 300;
+  static const String settingsThemeMode = 'dark';
+  static const bool settingsPureBlack = false;
 }

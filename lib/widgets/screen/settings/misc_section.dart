@@ -10,6 +10,7 @@ import '../../settings_card_frame.dart';
 import '../../settings_group.dart';
 import '../../settings_section.dart';
 import '../../settings_toggle_card.dart';
+import '../../../theme/settings_colors.dart';
 
 class MiscSection extends StatelessWidget {
   const MiscSection({super.key});
@@ -64,8 +65,8 @@ class _UnsupportedNotice extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Text(
         message,
-        style: const TextStyle(
-          color: Colors.white38,
+        style: TextStyle(
+          color: context.settingsColors.fg(0.38),
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
@@ -197,8 +198,8 @@ class _LyricsStreamCardState extends State<_LyricsStreamCard> {
         children: [
           Text(
             t.settings.misc.streamTitle,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: context.settingsColors.fg(0.70),
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
@@ -206,8 +207,8 @@ class _LyricsStreamCardState extends State<_LyricsStreamCard> {
           const SizedBox(height: 4),
           Text(
             t.settings.misc.streamDescription,
-            style: const TextStyle(
-              color: Colors.white54,
+            style: TextStyle(
+              color: context.settingsColors.fg(0.54),
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -216,14 +217,10 @@ class _LyricsStreamCardState extends State<_LyricsStreamCard> {
           TextField(
             controller: _lyricsController,
             focusNode: _lyricsFocus,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: context.settingsColors.onSurface),
             decoration: InputDecoration(
               labelText: t.settings.misc.lyricsPathLabel,
-              labelStyle: const TextStyle(color: Colors.white54),
               hintText: '/tmp/fluent-lyrics.txt',
-              hintStyle: const TextStyle(color: Colors.white24),
-              filled: true,
-              fillColor: Colors.black26,
             ),
             onChanged: _scheduleLyrics,
             onSubmitted: (value) {
@@ -236,14 +233,10 @@ class _LyricsStreamCardState extends State<_LyricsStreamCard> {
           TextField(
             controller: _translationController,
             focusNode: _translationFocus,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: context.settingsColors.onSurface),
             decoration: InputDecoration(
               labelText: t.settings.misc.translationPathLabel,
-              labelStyle: const TextStyle(color: Colors.white54),
               hintText: '/tmp/fluent-lyrics-translation.txt',
-              hintStyle: const TextStyle(color: Colors.white24),
-              filled: true,
-              fillColor: Colors.black26,
             ),
             onChanged: _scheduleTranslation,
             onSubmitted: (value) {

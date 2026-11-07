@@ -9,6 +9,7 @@ import '../../settings_card_frame.dart';
 import '../../settings_group.dart';
 import '../../settings_section.dart';
 import 'musixmatch_token_card.dart';
+import '../../../theme/settings_colors.dart';
 
 class PrioritySection extends StatelessWidget {
   final List<LyricProviderType> allProviders;
@@ -33,7 +34,7 @@ class PrioritySection extends StatelessWidget {
     for (int i = 0; i < allProviders.length; i++) {
       if (i == enabledCount) {
         listItems.add(
-          _buildDisabledHeader(key: const ValueKey('disabled_header')),
+          _buildDisabledHeader(context, key: const ValueKey('disabled_header')),
         );
       }
       listItems.add(
@@ -42,7 +43,7 @@ class PrioritySection extends StatelessWidget {
     }
     if (enabledCount == allProviders.length) {
       listItems.add(
-        _buildDisabledHeader(key: const ValueKey('disabled_header')),
+        _buildDisabledHeader(context, key: const ValueKey('disabled_header')),
       );
     }
 
@@ -50,7 +51,7 @@ class PrioritySection extends StatelessWidget {
       title: t.settings.priority.sectionTitle,
       description: t.settings.priority.sectionDescription,
       children: [
-        _buildCacheButton(),
+        _buildCacheButton(context),
         const SizedBox(height: 16),
         ReorderableListView(
           shrinkWrap: true,
@@ -96,7 +97,7 @@ class PrioritySection extends StatelessWidget {
     );
   }
 
-  Widget _buildCacheButton() {
+  Widget _buildCacheButton(BuildContext context) {
     return SettingsCardFrame(
       padding: EdgeInsets.zero,
       child: ListTile(
@@ -112,15 +113,18 @@ class PrioritySection extends StatelessWidget {
         ),
         title: Text(
           t.settings.priority.lyricsCacheTitle,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: context.settingsColors.onSurface,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
         ),
         subtitle: Text(
           t.settings.priority.lyricsCacheSubtitle,
-          style: const TextStyle(color: Colors.white38, fontSize: 12),
+          style: TextStyle(
+            color: context.settingsColors.fg(0.38),
+            fontSize: 12,
+          ),
         ),
         trailing: Switch(
           value: cacheEnabled,
@@ -131,7 +135,7 @@ class PrioritySection extends StatelessWidget {
     );
   }
 
-  Widget _buildDisabledHeader({required Key key}) {
+  Widget _buildDisabledHeader(BuildContext context, {required Key key}) {
     return Column(
       key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,20 +144,20 @@ class PrioritySection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Row(
             children: [
-              const Expanded(child: Divider(color: Colors.white10)),
+              Expanded(child: Divider(color: context.settingsColors.fg(0.10))),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
                   t.settings.priority.disabledArea,
-                  style: const TextStyle(
-                    color: Colors.white24,
+                  style: TextStyle(
+                    color: context.settingsColors.fg(0.24),
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.0,
                   ),
                 ),
               ),
-              const Expanded(child: Divider(color: Colors.white10)),
+              Expanded(child: Divider(color: context.settingsColors.fg(0.10))),
             ],
           ),
         ),
@@ -312,8 +316,8 @@ class _ProviderPriorityCardState extends State<_ProviderPriorityCard> {
             ),
             title: Text(
               name,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.settingsColors.onSurface,
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
               ),
@@ -343,7 +347,7 @@ class _ProviderPriorityCardState extends State<_ProviderPriorityCard> {
                 Icon(
                   Icons.drag_indicator,
                   key: _iconKey,
-                  color: Colors.white24,
+                  color: context.settingsColors.fg(0.24),
                 ),
               ],
             ),
@@ -397,7 +401,7 @@ class _CapabilityTag extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.7),
+          color: context.settingsColors.fg(0.7),
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -429,8 +433,8 @@ class _WebsiteButton extends StatelessWidget {
       tooltip: t.settings.priority.openWebsite,
       icon: const Icon(Icons.open_in_new_rounded, size: 18),
       style: IconButton.styleFrom(
-        foregroundColor: Colors.white38,
-        hoverColor: Colors.white10,
+        foregroundColor: context.settingsColors.fg(0.38),
+        hoverColor: context.settingsColors.fg(0.10),
         padding: const EdgeInsets.all(7),
         minimumSize: const Size.square(32),
         fixedSize: const Size.square(32),

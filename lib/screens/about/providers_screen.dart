@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../widgets/settings_scaffold.dart';
+import '../../theme/settings_colors.dart';
 
 class AboutProvidersScreen extends StatelessWidget {
   const AboutProvidersScreen({super.key});
@@ -109,7 +110,7 @@ class _ProviderRow extends StatelessWidget {
             width: 32,
             child: Icon(
               provider.item.icon,
-              color: Colors.white.withValues(alpha: 0.68),
+              color: context.settingsColors.fg(0.68),
             ),
           ),
           const SizedBox(width: 14),
@@ -120,7 +121,7 @@ class _ProviderRow extends StatelessWidget {
                 Text(
                   provider.name,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: context.settingsColors.fg(0.9),
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -131,7 +132,7 @@ class _ProviderRow extends StatelessWidget {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.42),
+                    color: context.settingsColors.fg(0.42),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -144,7 +145,7 @@ class _ProviderRow extends StatelessWidget {
             Icon(
               Icons.open_in_new_rounded,
               size: 18,
-              color: Colors.white.withValues(alpha: 0.32),
+              color: context.settingsColors.fg(0.32),
             ),
           ],
         ],
@@ -153,9 +154,9 @@ class _ProviderRow extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.045),
+        color: context.settingsColors.fg(0.045),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.settingsColors.fg(0.05)),
       ),
       child: onTap == null
           ? content

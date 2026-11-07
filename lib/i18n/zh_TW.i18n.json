@@ -21,6 +21,16 @@
       "subtitle": "選擇介面語言",
       "system": "跟隨系統"
     },
+    "appearance": {
+      "title": "外觀",
+      "subtitle": "淺色、深色或純黑主題",
+      "description": "套用於設定與關於頁面，歌詞頁面始終維持深色。",
+      "system": "跟隨系統",
+      "light": "淺色",
+      "dark": "深色",
+      "pureBlack": "純黑背景",
+      "pureBlackDescription": "深色模式下使用純黑背景，適合 OLED 螢幕"
+    },
     "destinations": {
       "priority": {
         "title": "歌詞來源",

@@ -12,6 +12,7 @@ import '../../settings_group.dart';
 import '../../settings_dropdown_card.dart';
 import '../../settings_slider_card.dart';
 import '../../settings_toggle_card.dart';
+import '../../../theme/settings_colors.dart';
 
 class LyricConfigurationSection extends StatelessWidget {
   const LyricConfigurationSection({super.key});
@@ -140,8 +141,8 @@ class LyricConfigurationSection extends StatelessWidget {
                     children: [
                       Text(
                         i18n.trimTitle,
-                        style: const TextStyle(
-                          color: Colors.white70,
+                        style: TextStyle(
+                          color: context.settingsColors.fg(0.70),
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
@@ -149,8 +150,8 @@ class LyricConfigurationSection extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         i18n.trimSubtitle,
-                        style: const TextStyle(
-                          color: Colors.white38,
+                        style: TextStyle(
+                          color: context.settingsColors.fg(0.38),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -195,13 +196,15 @@ class LyricConfigurationSection extends StatelessWidget {
                                           );
                                         },
                                         activeColor: Colors.blue,
-                                        checkColor: Colors.black,
+                                        checkColor: Colors.white,
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
                                         providerType.localizedName(t),
-                                        style: const TextStyle(
-                                          color: Colors.white70,
+                                        style: TextStyle(
+                                          color: context.settingsColors.fg(
+                                            0.70,
+                                          ),
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500,
                                         ),

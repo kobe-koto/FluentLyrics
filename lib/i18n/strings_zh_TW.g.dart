@@ -81,6 +81,7 @@ class Translations$settings$zh_TW extends Translations$settings$en {
 	@override String get secureStorageWriteFailed => '無法寫入安全儲存，金鑰沒有被儲存。';
 	@override String get secureStorageWriteFailedLinux => '無法寫入安全儲存。請解鎖 GNOME Keyring 或 KWallet 後再試。';
 	@override late final Translations$settings$language$zh_TW language = Translations$settings$language$zh_TW.internal(_root);
+	@override late final Translations$settings$appearance$zh_TW appearance = Translations$settings$appearance$zh_TW.internal(_root);
 	@override late final Translations$settings$destinations$zh_TW destinations = Translations$settings$destinations$zh_TW.internal(_root);
 	@override late final Translations$settings$display$zh_TW display = Translations$settings$display$zh_TW.internal(_root);
 	@override late final Translations$settings$translation$zh_TW translation = Translations$settings$translation$zh_TW.internal(_root);
@@ -211,6 +212,23 @@ class Translations$settings$language$zh_TW extends Translations$settings$languag
 	@override String get title => '語言';
 	@override String get subtitle => '選擇介面語言';
 	@override String get system => '跟隨系統';
+}
+
+// Path: settings.appearance
+class Translations$settings$appearance$zh_TW extends Translations$settings$appearance$en {
+	Translations$settings$appearance$zh_TW.internal(TranslationsZhTw root) : this._root = root, super.internal(root);
+
+	final TranslationsZhTw _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '外觀';
+	@override String get subtitle => '淺色、深色或純黑主題';
+	@override String get description => '套用於設定與關於頁面，歌詞頁面始終維持深色。';
+	@override String get system => '跟隨系統';
+	@override String get light => '淺色';
+	@override String get dark => '深色';
+	@override String get pureBlack => '純黑背景';
+	@override String get pureBlackDescription => '深色模式下使用純黑背景，適合 OLED 螢幕';
 }
 
 // Path: settings.destinations

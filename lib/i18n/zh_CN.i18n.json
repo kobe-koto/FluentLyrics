@@ -21,6 +21,16 @@
       "subtitle": "选择界面语言",
       "system": "跟随系统"
     },
+    "appearance": {
+      "title": "外观",
+      "subtitle": "亮色、深色或纯黑主题",
+      "description": "作用于设置和关于页面，歌词页面始终保持深色。",
+      "system": "跟随系统",
+      "light": "亮色",
+      "dark": "深色",
+      "pureBlack": "纯黑背景",
+      "pureBlackDescription": "深色模式下使用纯黑背景，适合 OLED 屏幕"
+    },
     "destinations": {
       "priority": {
         "title": "歌词源",

@@ -1,5 +1,7 @@
 import 'package:fluent_lyrics/i18n/strings.g.dart';
 import 'package:fluent_lyrics/screens/settings_screen.dart';
+import 'package:fluent_lyrics/widgets/settings_card_frame.dart';
+import 'package:fluent_lyrics/widgets/settings_group.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,7 +30,7 @@ void _expectAccentBarInsideCard(WidgetTester tester) {
   final bar = find.byKey(const ValueKey('bar'));
   expect(bar, findsOneWidget);
 
-  final card = find.ancestor(of: bar, matching: find.byType(ClipRRect)).first;
+  final card = find.ancestor(of: bar, matching: find.byType(SettingsCardFrame));
   final barRect = tester.getRect(bar);
   final cardRect = tester.getRect(card);
   expect(cardRect.height, lessThan(160));
@@ -37,7 +39,12 @@ void _expectAccentBarInsideCard(WidgetTester tester) {
   expect(barRect.right, lessThanOrEqualTo(cardRect.right));
   expect(barRect.bottom, lessThanOrEqualTo(cardRect.bottom));
 
-  final clip = tester.widget<ClipRRect>(card);
-  expect(clip.borderRadius, BorderRadius.circular(16));
+  final clip = tester.widget<Material>(
+    find.descendant(of: card, matching: find.byType(Material)).first,
+  );
+  expect(
+    clip.borderRadius,
+    SettingsGroupMetrics.radiusFor(SettingsGroupPosition.first),
+  );
   expect(clip.clipBehavior, isNot(Clip.none));
 }

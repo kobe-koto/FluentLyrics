@@ -2,8 +2,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../providers/appearance_controller.dart';
+import '../theme/app_theme.dart';
+import '../theme/settings_colors.dart';
+
 /// Reusable scaffold for all settings sub-screens.
-/// Provides gradient background, app bar with back button, and
+/// Applies the settings theme from [AppearanceScope], a solid background, app bar with back button, and
 /// keyboard (Escape) / mouse-back-button navigation.
 class SettingsScaffold extends StatelessWidget {
   final String title;
@@ -13,35 +17,42 @@ class SettingsScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (PointerDownEvent event) {
-        if (event.buttons == kBackMouseButton) {
-          Navigator.pop(context);
-        }
-      },
-      child: CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.escape): () =>
-              Navigator.pop(context),
-        },
-        child: Focus(
-          autofocus: true,
-          child: Scaffold(
-            backgroundColor: Colors.black,
-            body: Stack(
-              children: [
-                Positioned.fill(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF1A1A1A), Colors.black],
-                      ),
-                    ),
-                  ),
-                ),
-                SafeArea(
+    final colors =
+        AppearanceScope.maybeOf(context)
+            ?.resolve(MediaQuery.platformBrightnessOf(context)) ??
+        SettingsColors.dark;
+    return AnimatedTheme(
+      data: buildSettingsTheme(colors),
+      duration: const Duration(milliseconds: 200),
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: colors.isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return Builder(
+      builder: (context) {
+        final colors = context.settingsColors;
+        return Listener(
+          onPointerDown: (PointerDownEvent event) {
+            if (event.buttons == kBackMouseButton) {
+              Navigator.pop(context);
+            }
+          },
+          child: CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.escape): () =>
+                  Navigator.pop(context),
+            },
+            child: Focus(
+              autofocus: true,
+              child: Scaffold(
+                backgroundColor: colors.background,
+                body: SafeArea(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -53,9 +64,9 @@ class SettingsScaffold extends StatelessWidget {
                         child: Row(
                           children: [
                             IconButton(
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.arrow_back_ios_new,
-                                color: Colors.white,
+                                color: colors.onSurface,
                                 size: 20,
                               ),
                               onPressed: () => Navigator.pop(context),
@@ -63,8 +74,8 @@ class SettingsScaffold extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               title,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: colors.onSurface,
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: -0.5,
@@ -77,11 +88,11 @@ class SettingsScaffold extends StatelessWidget {
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

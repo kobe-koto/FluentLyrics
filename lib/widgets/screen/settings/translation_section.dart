@@ -9,6 +9,8 @@ import '../../settings_section.dart';
 import '../../settings_group.dart';
 import '../../settings_slider_card.dart';
 import '../../settings_toggle_card.dart';
+import '../../../theme/settings_colors.dart';
+import '../../settings_dropdown_card.dart';
 
 class TranslationSection extends StatelessWidget {
   const TranslationSection({super.key});
@@ -46,8 +48,8 @@ class TranslationSection extends StatelessWidget {
                       children: [
                         Text(
                           i18n.targetLanguageTitle,
-                          style: const TextStyle(
-                            color: Colors.white70,
+                          style: TextStyle(
+                            color: context.settingsColors.fg(0.70),
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
@@ -55,32 +57,32 @@ class TranslationSection extends StatelessWidget {
                         const SizedBox(height: 12),
                         Text(
                           i18n.targetLanguageDescription,
-                          style: const TextStyle(
-                            color: Colors.white38,
+                          style: TextStyle(
+                            color: context.settingsColors.fg(0.38),
                             fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           i18n.targetLanguageNoteMusixmatch,
-                          style: const TextStyle(
-                            color: Colors.white38,
+                          style: TextStyle(
+                            color: context.settingsColors.fg(0.38),
                             fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           i18n.targetLanguageNoteLlm,
-                          style: const TextStyle(
-                            color: Colors.white38,
+                          style: TextStyle(
+                            color: context.settingsColors.fg(0.38),
                             fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           i18n.targetLanguageNoteCJK,
-                          style: const TextStyle(
-                            color: Colors.white38,
+                          style: TextStyle(
+                            color: context.settingsColors.fg(0.38),
                             fontSize: 12,
                           ),
                         ),
@@ -90,12 +92,11 @@ class TranslationSection extends StatelessWidget {
                               .translationTargetLanguages
                               .current
                               .join(', '),
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(
+                            color: context.settingsColors.onSurface,
+                          ),
                           decoration: InputDecoration(
                             hintText: i18n.targetLanguageHint,
-                            hintStyle: const TextStyle(color: Colors.white24),
-                            filled: true,
-                            fillColor: Colors.black26,
                           ),
                           onChanged: (value) {
                             provider.setTranslationTargetLanguages(
@@ -247,8 +248,8 @@ class LlmConfigurationCard extends StatelessWidget {
         children: [
           Text(
             i18n.llmTitle,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: context.settingsColors.fg(0.70),
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
@@ -257,14 +258,10 @@ class LlmConfigurationCard extends StatelessWidget {
           // Endpoint
           TextFormField(
             initialValue: provider.llmApiEndpoint.current,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: context.settingsColors.onSurface),
             decoration: InputDecoration(
               labelText: i18n.llmEndpointLabel,
-              labelStyle: const TextStyle(color: Colors.white54),
               hintText: i18n.llmEndpointHint,
-              hintStyle: const TextStyle(color: Colors.white24),
-              filled: true,
-              fillColor: Colors.black26,
             ),
             onChanged: (value) => provider.setLlmApiEndpoint(value),
           ),
@@ -272,13 +269,8 @@ class LlmConfigurationCard extends StatelessWidget {
           // API Key
           TextFormField(
             initialValue: provider.llmApiKey.current,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              labelText: i18n.llmApiKeyLabel,
-              labelStyle: const TextStyle(color: Colors.white54),
-              filled: true,
-              fillColor: Colors.black26,
-            ),
+            style: TextStyle(color: context.settingsColors.onSurface),
+            decoration: InputDecoration(labelText: i18n.llmApiKeyLabel),
             obscureText: true,
             onChanged: (value) => provider.setLlmApiKey(value),
           ),
@@ -293,14 +285,10 @@ class LlmConfigurationCard extends StatelessWidget {
           // Model
           TextFormField(
             initialValue: provider.llmModel.current,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: context.settingsColors.onSurface),
             decoration: InputDecoration(
               labelText: i18n.llmModelLabel,
-              labelStyle: const TextStyle(color: Colors.white54),
               hintText: i18n.llmModelHint,
-              hintStyle: const TextStyle(color: Colors.white24),
-              filled: true,
-              fillColor: Colors.black26,
             ),
             onChanged: (value) => provider.setLlmModel(value),
           ),
@@ -315,13 +303,16 @@ class LlmConfigurationCard extends StatelessWidget {
                   children: [
                     Text(
                       i18n.llmReasoningTitle,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                      style: TextStyle(
+                        color: context.settingsColors.onSurface,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       i18n.llmReasoningSubtitle,
-                      style: const TextStyle(
-                        color: Colors.white54,
+                      style: TextStyle(
+                        color: context.settingsColors.fg(0.54),
                         fontSize: 12,
                       ),
                     ),
@@ -329,38 +320,47 @@ class LlmConfigurationCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              DropdownButton<String>(
-                value: provider.llmReasoningEffort.current,
-                dropdownColor: Colors.black87,
-                style: const TextStyle(color: Colors.white),
-                underline: const SizedBox(),
-                items: [
-                  DropdownMenuItem(
-                    value: 'none',
-                    child: Text(i18n.llmReasoningNone),
+              SizedBox(
+                width: 150,
+                child: SettingsDropdownFrame(
+                  child: DropdownButton<String>(
+                    value: provider.llmReasoningEffort.current,
+                    dropdownColor: context.settingsColors.dialog,
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: context.settingsColors.onSurface,
+                      fontSize: 14,
+                    ),
+                    isExpanded: true,
+                    borderRadius: BorderRadius.circular(10),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'none',
+                        child: Text(i18n.llmReasoningNone),
+                      ),
+                      DropdownMenuItem(
+                        value: 'low',
+                        child: Text(i18n.llmReasoningLow),
+                      ),
+                      DropdownMenuItem(
+                        value: 'medium',
+                        child: Text(i18n.llmReasoningMedium),
+                      ),
+                      DropdownMenuItem(
+                        value: 'high',
+                        child: Text(i18n.llmReasoningHigh),
+                      ),
+                      DropdownMenuItem(
+                        value: 'auto',
+                        child: Text(i18n.llmReasoningAuto),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        provider.setLlmReasoningEffort(value);
+                      }
+                    },
                   ),
-                  DropdownMenuItem(
-                    value: 'low',
-                    child: Text(i18n.llmReasoningLow),
-                  ),
-                  DropdownMenuItem(
-                    value: 'medium',
-                    child: Text(i18n.llmReasoningMedium),
-                  ),
-                  DropdownMenuItem(
-                    value: 'high',
-                    child: Text(i18n.llmReasoningHigh),
-                  ),
-                  DropdownMenuItem(
-                    value: 'auto',
-                    child: Text(i18n.llmReasoningAuto),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    provider.setLlmReasoningEffort(value);
-                  }
-                },
+                ),
               ),
             ],
           ),

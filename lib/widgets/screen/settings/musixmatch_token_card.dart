@@ -8,6 +8,8 @@ import '../../../services/secret_store_message.dart';
 import '../../../services/settings_service.dart';
 import '../../../theme/monospace_text_style.dart';
 import '../../settings_card_frame.dart';
+import '../../../theme/settings_colors.dart';
+import '../../settings_tonal_button_style.dart';
 
 class MusixmatchTokenCard extends StatefulWidget {
   const MusixmatchTokenCard({super.key});
@@ -108,10 +110,13 @@ class _MusixmatchTokenCardState extends State<MusixmatchTokenCard> {
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
+        content: Text(
+          message,
+          style: TextStyle(color: context.settingsColors.onSurface),
+        ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        backgroundColor: Colors.white24,
+        backgroundColor: context.settingsColors.fg(0.24),
       ),
     );
   }
@@ -125,8 +130,8 @@ class _MusixmatchTokenCardState extends State<MusixmatchTokenCard> {
         children: [
           Text(
             i18n.musixmatchTitle,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: context.settingsColors.fg(0.70),
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
@@ -134,21 +139,20 @@ class _MusixmatchTokenCardState extends State<MusixmatchTokenCard> {
           const SizedBox(height: 4),
           Text(
             i18n.musixmatchSubtitle,
-            style: const TextStyle(color: Colors.white38, fontSize: 12),
+            style: TextStyle(
+              color: context.settingsColors.fg(0.38),
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _tokenController,
-            style: monospaceTextStyle(color: Colors.white, fontSize: 14),
+            style: monospaceTextStyle(
+              color: context.settingsColors.onSurface,
+              fontSize: 14,
+            ),
             decoration: InputDecoration(
               hintText: i18n.musixmatchHint,
-              hintStyle: const TextStyle(color: Colors.white24),
-              filled: true,
-              fillColor: Colors.black26,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,
@@ -183,13 +187,9 @@ class _MusixmatchTokenCardState extends State<MusixmatchTokenCard> {
                     i18n.getNewToken,
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange.withValues(alpha: 0.2),
-                    foregroundColor: Colors.orange,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                  style: settingsTonalButtonStyle(
+                    context,
+                    SettingsButtonTone.warning,
                   ),
                 ),
               ),

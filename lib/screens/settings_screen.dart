@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../i18n/strings.g.dart';
+import '../widgets/settings_card_frame.dart';
+import '../widgets/settings_group.dart';
 import '../widgets/settings_scaffold.dart';
 import 'about_screen.dart';
 import 'settings/priority_screen.dart';
@@ -10,6 +12,8 @@ import 'settings/lyric_configuration_screen.dart';
 import 'settings/cache_screen.dart';
 import 'settings/misc_screen.dart';
 import 'settings/language_screen.dart';
+import 'settings/appearance_screen.dart';
+import '../theme/settings_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -40,24 +44,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildCompactLayout(BuildContext context, Translations i18n) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      itemCount: _SettingsDestination.values.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final destination = _SettingsDestination.values[index];
-        return _SettingsEntry(
-          destination: destination,
-          i18n: i18n,
-          selected: false,
-          showAccentBar: false,
-          trailing: Icon(
-            Icons.chevron_right,
-            color: Colors.white.withValues(alpha: 0.3),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        for (final (index, group) in _SettingsGroup.values.indexed) ...[
+          if (index > 0) const SizedBox(height: 20),
+          SettingsGroup(
+            children: [
+              for (final destination in group.destinations)
+                _SettingsEntry(
+                  destination: destination,
+                  i18n: i18n,
+                  selected: false,
+                  showAccentBar: false,
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: context.settingsColors.fg(0.3),
+                  ),
+                  onTap: () => _push(context, destination.screen),
+                ),
+            ],
           ),
-          onTap: () => _push(context, destination.screen),
-        );
-      },
+        ],
+      ],
     );
   }
 
@@ -72,34 +81,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               children: [
                 Expanded(
-                  child: Container(
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ScrollConfiguration(
-                      behavior: ScrollConfiguration.of(context)
-                          .copyWith(scrollbars: false),
-                      child: ListView.separated(
-                        itemCount: _SettingsDestination.values.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final destination =
-                              _SettingsDestination.values[index];
-                          return _SettingsEntry(
-                            destination: destination,
-                            i18n: i18n,
-                            selected: destination == _selectedDestination,
-                            showAccentBar: true,
-                            trailing: null,
-                            onTap: () {
-                              setState(() {
-                                _selectedDestination = destination;
-                              });
-                            },
-                          );
-                        },
-                      ),
+                  child: ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(context)
+                        .copyWith(scrollbars: false),
+                    child: ListView(
+                      children: [
+                        for (final (index, group)
+                            in _SettingsGroup.values.indexed) ...[
+                          if (index > 0) const SizedBox(height: 16),
+                          SettingsGroup(
+                            children: [
+                              for (final destination in group.destinations)
+                                _SettingsEntry(
+                                  destination: destination,
+                                  i18n: i18n,
+                                  selected: destination == _selectedDestination,
+                                  showAccentBar: true,
+                                  trailing: null,
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedDestination = destination;
+                                    });
+                                  },
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
@@ -110,9 +118,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
+                color: context.settingsColors.fg(0.04),
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                border: Border.all(color: context.settingsColors.fg(0.06)),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28),
@@ -148,8 +156,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               Text(
                                 destination.localizedTitle(i18n),
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: context.settingsColors.onSurface,
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -158,7 +166,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Text(
                                 destination.localizedSubtitle(i18n),
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.45),
+                                  color: context.settingsColors.fg(0.45),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -168,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         Divider(
                           height: 1,
-                          color: Colors.white.withValues(alpha: 0.06),
+                          color: context.settingsColors.fg(0.06),
                         ),
                         Expanded(child: destination.content),
                       ],
@@ -207,74 +215,67 @@ class _SettingsEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destination.color;
-    final cardRadius = BorderRadius.circular(16);
-    return ClipRRect(
-      borderRadius: cardRadius,
+    return SettingsCardFrame(
+      padding: EdgeInsets.zero,
+      color: selected ? context.settingsColors.fg(0.1) : null,
       child: Stack(
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            decoration: BoxDecoration(
-              color: selected
-                  ? color.withValues(alpha: 0.15)
-                  : Colors.white.withValues(alpha: 0.05),
-              borderRadius: cardRadius,
-            ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: cardRadius,
-              child: InkWell(
-                borderRadius: cardRadius,
-                onTap: onTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 16.0,
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: SettingsGroupMetrics.groupedPadding,
+              child: Row(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: context.settingsColors.fg(selected ? 0.12 : 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      destination.icon,
+                      color: context.settingsColors.fg(selected ? 1.0 : 0.8),
+                      size: 20,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          destination.localizedTitle(i18n),
+                          style: TextStyle(
+                            color: context.settingsColors.onSurface,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontVariations: <FontVariation>[
+                              FontVariation('wght', 600),
+                            ],
+                          ),
                         ),
-                        child: Icon(destination.icon, color: color, size: 20),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              destination.localizedTitle(i18n),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
+                        const SizedBox(height: 2),
+                        Text(
+                          destination.localizedSubtitle(i18n),
+                          style: TextStyle(
+                            color: context.settingsColors.fg(
+                              selected ? 0.7 : 0.5,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              destination.localizedSubtitle(i18n),
-                              style: TextStyle(
-                                color: Colors.white.withValues(
-                                  alpha: selected ? 0.72 : 0.4,
-                                ),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            fontVariations: const <FontVariation>[
+                              FontVariation('wght', 400),
+                            ],
+                          ),
                         ),
-                      ),
-                      ?trailing,
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                  ?trailing,
+                ],
               ),
             ),
           ),
@@ -304,19 +305,12 @@ class _SettingsEntry extends StatelessWidget {
                   child: selected
                       ? Container(
                           key: const ValueKey('bar'),
-                          width: 4,
+                          width: 3,
                           decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: const BorderRadius.horizontal(
+                            color: context.settingsColors.onSurface,
+                            borderRadius: BorderRadius.horizontal(
                               right: Radius.circular(2),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.5),
-                                blurRadius: 8,
-                                offset: const Offset(2, 0),
-                              ),
-                            ],
                           ),
                         )
                       : const SizedBox.shrink(key: ValueKey('empty')),
@@ -329,64 +323,75 @@ class _SettingsEntry extends StatelessWidget {
   }
 }
 
+enum _SettingsGroup {
+  lyrics([
+    _SettingsDestination.priority,
+    _SettingsDestination.display,
+    _SettingsDestination.translation,
+    _SettingsDestination.lyricConfiguration,
+  ]),
+  app([
+    _SettingsDestination.cache,
+    _SettingsDestination.misc,
+    _SettingsDestination.language,
+    _SettingsDestination.appearance,
+  ]),
+  about([_SettingsDestination.about]);
+
+  final List<_SettingsDestination> destinations;
+
+  const _SettingsGroup(this.destinations);
+}
+
 enum _SettingsDestination {
   priority(
     icon: Icons.sort,
-    color: Colors.blue,
     screen: PriorityScreen(),
     content: PrioritySettingsContent(),
   ),
   display(
     icon: Icons.display_settings,
-    color: Colors.purple,
     screen: DisplayScreen(),
     content: DisplaySettingsContent(),
   ),
   translation(
     icon: Icons.translate,
-    color: Colors.teal,
     screen: TranslationScreen(),
     content: TranslationSettingsContent(),
   ),
   lyricConfiguration(
     icon: Icons.music_note,
-    color: Colors.orange,
     screen: LyricConfigurationScreen(),
     content: LyricConfigurationSettingsContent(),
   ),
   cache(
     icon: Icons.storage,
-    color: Colors.red,
     screen: CacheScreen(),
     content: CacheSettingsContent(),
   ),
-  misc(
-    icon: Icons.tune,
-    color: Colors.green,
-    screen: MiscScreen(),
-    content: MiscSettingsContent(),
-  ),
+  misc(icon: Icons.tune, screen: MiscScreen(), content: MiscSettingsContent()),
   language(
     icon: Icons.language,
-    color: Colors.cyan,
     screen: LanguageScreen(),
     content: LanguageSettingsContent(),
   ),
+  appearance(
+    icon: Icons.palette_outlined,
+    screen: AppearanceScreen(),
+    content: AppearanceSettingsContent(),
+  ),
   about(
     icon: Icons.info_outline,
-    color: Colors.blueGrey,
     screen: AboutScreen(),
     content: AboutContent(),
   );
 
   final IconData icon;
-  final Color color;
   final Widget screen;
   final Widget content;
 
   const _SettingsDestination({
     required this.icon,
-    required this.color,
     required this.screen,
     required this.content,
   });
@@ -400,6 +405,7 @@ enum _SettingsDestination {
       cache => t.settings.destinations.cache.title,
       misc => t.settings.destinations.misc.title,
       language => t.settings.language.title,
+      appearance => t.settings.appearance.title,
       about => t.about.title,
     };
   }
@@ -413,6 +419,7 @@ enum _SettingsDestination {
       cache => t.settings.destinations.cache.subtitle,
       misc => t.settings.destinations.misc.subtitle,
       language => t.settings.language.subtitle,
+      appearance => t.settings.appearance.subtitle,
       about => t.about.subtitle,
     };
   }

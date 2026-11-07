@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/settings_colors.dart';
+
 class SettingsSection extends StatelessWidget {
   final String title;
   final String description;
@@ -19,8 +21,8 @@ class SettingsSection extends StatelessWidget {
       children: [
         Text(
           title.toUpperCase(),
-          style: const TextStyle(
-            color: Colors.white54,
+          style: TextStyle(
+            color: context.settingsColors.fg(0.54),
             fontSize: 12,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.5,
@@ -29,8 +31,8 @@ class SettingsSection extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           description,
-          style: const TextStyle(
-            color: Colors.white38,
+          style: TextStyle(
+            color: context.settingsColors.fg(0.38),
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),

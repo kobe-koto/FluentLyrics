@@ -7,6 +7,8 @@ import '../../settings_section.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_group.dart';
 import '../../../utils/cache_helper.dart';
+import '../../../theme/settings_colors.dart';
+import '../../settings_tonal_button_style.dart';
 
 class CacheSection extends StatefulWidget {
   final VoidCallback onRefresh;
@@ -64,14 +66,18 @@ class _CacheSectionState extends State<CacheSection> {
                         final confirmed = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            backgroundColor: const Color(0xFF1A1A1A),
+                            backgroundColor: context.settingsColors.dialog,
                             title: Text(
                               i18n.clearDialogTitle,
-                              style: const TextStyle(color: Colors.white),
+                              style: TextStyle(
+                                color: context.settingsColors.onSurface,
+                              ),
                             ),
                             content: Text(
                               i18n.clearDialogContent,
-                              style: const TextStyle(color: Colors.white70),
+                              style: TextStyle(
+                                color: context.settingsColors.fg(0.70),
+                              ),
                             ),
                             actions: [
                               TextButton(
@@ -103,13 +109,9 @@ class _CacheSectionState extends State<CacheSection> {
                         i18n.clearLyricsCacheButton,
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.withValues(alpha: 0.2),
-                        foregroundColor: Colors.redAccent,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                      style: settingsTonalButtonStyle(
+                        context,
+                        SettingsButtonTone.danger,
                       ),
                     ),
                   );
@@ -146,14 +148,18 @@ class _CacheSectionState extends State<CacheSection> {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        backgroundColor: const Color(0xFF1A1A1A),
+                        backgroundColor: context.settingsColors.dialog,
                         title: Text(
                           i18n.artworkClearDialogTitle,
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(
+                            color: context.settingsColors.onSurface,
+                          ),
                         ),
                         content: Text(
                           i18n.artworkClearDialogContent,
-                          style: const TextStyle(color: Colors.white70),
+                          style: TextStyle(
+                            color: context.settingsColors.fg(0.70),
+                          ),
                         ),
                         actions: [
                           TextButton(
@@ -185,13 +191,9 @@ class _CacheSectionState extends State<CacheSection> {
                     i18n.clearArtworkCacheButton,
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.withValues(alpha: 0.2),
-                    foregroundColor: Colors.redAccent,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                  style: settingsTonalButtonStyle(
+                    context,
+                    SettingsButtonTone.danger,
                   ),
                 ),
               ),
@@ -235,8 +237,8 @@ class _CacheActionCard extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                color: Colors.white70,
+              style: TextStyle(
+                color: context.settingsColors.fg(0.70),
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -247,7 +249,10 @@ class _CacheActionCard extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           description,
-          style: const TextStyle(color: Colors.white38, fontSize: 12),
+          style: TextStyle(
+            color: context.settingsColors.fg(0.38),
+            fontSize: 12,
+          ),
         ),
         const SizedBox(height: 16),
         Row(children: [Expanded(child: actionButton)]),
@@ -314,8 +319,8 @@ class _KanjiDictCardState extends State<_KanjiDictCard> {
           children: [
             Text(
               i18n.kanjiDictTitle,
-              style: const TextStyle(
-                color: Colors.white70,
+              style: TextStyle(
+                color: context.settingsColors.fg(0.70),
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -346,7 +351,10 @@ class _KanjiDictCardState extends State<_KanjiDictCard> {
         const SizedBox(height: 4),
         Text(
           i18n.kanjiDictDescription,
-          style: const TextStyle(color: Colors.white38, fontSize: 12),
+          style: TextStyle(
+            color: context.settingsColors.fg(0.38),
+            fontSize: 12,
+          ),
         ),
         const SizedBox(height: 16),
         Row(
@@ -359,13 +367,9 @@ class _KanjiDictCardState extends State<_KanjiDictCard> {
                   i18n.kanjiDictDownloadButton,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.withValues(alpha: 0.2),
-                  foregroundColor: Colors.greenAccent,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                style: settingsTonalButtonStyle(
+                  context,
+                  SettingsButtonTone.positive,
                 ),
               ),
             ),
@@ -387,13 +391,9 @@ class _KanjiDictCardState extends State<_KanjiDictCard> {
                   i18n.kanjiDictReloadButton,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.withValues(alpha: 0.2),
-                  foregroundColor: Colors.blueAccent,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                style: settingsTonalButtonStyle(
+                  context,
+                  SettingsButtonTone.info,
                 ),
               ),
             ),
@@ -411,13 +411,9 @@ class _KanjiDictCardState extends State<_KanjiDictCard> {
                   i18n.kanjiDictClearButton,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.withValues(alpha: 0.2),
-                  foregroundColor: Colors.redAccent,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                style: settingsTonalButtonStyle(
+                  context,
+                  SettingsButtonTone.danger,
                 ),
               ),
             ),
