@@ -181,6 +181,16 @@ class _AboutContentState extends State<AboutContent> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                about.trademarks,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: context.settingsColors.fg(0.28),
+                  fontSize: 11,
+                  height: 1.4,
+                ),
+              ),
             ],
           ),
         ),

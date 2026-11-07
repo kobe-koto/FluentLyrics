@@ -317,7 +317,8 @@
       "includeConfigurationSubtitle": "Include provider order and app settings; secrets and file paths are omitted"
     },
     "linkUnavailable": "Unable to open this link",
-    "builtWith": "Built with Flutter"
+    "builtWith": "Built with Flutter",
+    "trademarks": "Provider names and logos are trademarks of their respective owners; Fluent Lyrics is not affiliated with them. LLM icon from Font Awesome Free (CC BY 4.0)."
   },
   "lyrics": {
     "noMedia": "No Media Playing",

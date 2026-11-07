@@ -1,0 +1,65 @@
+Fluent Lyrics provider logos
+============================
+
+The lyrics provider names and logos in this directory are trademarks of
+their respective owners. Fluent Lyrics uses them only to identify each
+lyrics source in its settings. Fluent Lyrics is not affiliated with,
+sponsored by, or endorsed by any of these owners. These files are not
+covered by the project's AGPL-3.0 license.
+
+lrclib.svg
+  LRCLIB. Redrawn as vector after the LRCLIB app icon at https://lrclib.net.
+
+musixmatch.svg
+  Musixmatch, a trademark of Musixmatch S.p.A. Logo mark cropped from the
+  wordmark at https://worldvectorlogo.com/logo/musixmatch, with CSS classes
+  turned into fill attributes.
+
+netease.svg
+  NetEase Cloud Music, a trademark of NetEase, Inc. From thesvg
+  (https://github.com/glincker/thesvg, MIT License below), with a white
+  disc added behind the cut-out mark.
+
+qqmusic.svg
+  QQ Music, a trademark of Tencent Music Entertainment Group. From
+  https://worldvectorlogo.com/logo/qq-music-1.
+
+kugou.svg
+  Kugou Music, a trademark of Tencent Music Entertainment Group. From
+  https://worldvectorlogo.com/logo/kugou.
+
+youtube_music.svg
+  YouTube Music, a trademark of Google LLC. From thesvg
+  (https://github.com/glincker/thesvg, MIT License below).
+
+llm.svg
+  "language" icon from Font Awesome Free 7.3.1
+  (https://fontawesome.com/icons/language).
+  Copyright 2026 Fonticons, Inc. Licensed under CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/). See
+  https://fontawesome.com/license/free.
+
+thesvg license
+--------------
+
+MIT License
+
+Copyright (c) 2025 thesvg.org
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

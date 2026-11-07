@@ -113,6 +113,12 @@ git clone --recurse-submodules <repo-url>
 flutter run
 ```
 
+## Trademarks and Attribution
+
+Provider names and logos shown in the app (LRCLIB, Musixmatch, NetEase Cloud Music, QQ Music, Kugou Music, YouTube Music) are trademarks of their respective owners. Fluent Lyrics is not affiliated with, sponsored by, or endorsed by them. The logo files are not covered by the AGPL-3.0 license; sources and owners are listed in [assets/provider_logos/NOTICE](assets/provider_logos/NOTICE), which also appears under About > Open-source licenses in the app.
+
+The LLM translation icon is the "language" icon from [Font Awesome Free](https://fontawesome.com/icons/language) by Fonticons, Inc., licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 ## Disclaimer
 
 This project is vibe-coded; I think I only produced around 5% of the codebase, so don't expect any quality or polished experience from this.

@@ -7,6 +7,7 @@ import '../../../models/lyric_provider_type.dart';
 import '../../../services/lyrics_source_registry.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_group.dart';
+import '../../provider_logo.dart';
 import '../../settings_section.dart';
 import 'musixmatch_token_card.dart';
 import '../../../theme/settings_colors.dart';
@@ -291,29 +292,7 @@ class _ProviderPriorityCardState extends State<_ProviderPriorityCard> {
               horizontal: 20,
               vertical: 8,
             ),
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: widget.isEnabled
-                    ? Text(
-                        (widget.index + 1).toString(),
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : Icon(
-                        Icons.block,
-                        size: 20,
-                        color: color.withValues(alpha: 0.5),
-                      ),
-              ),
-            ),
+            leading: ProviderLogo(type: widget.type, enabled: widget.isEnabled),
             title: Text(
               name,
               style: TextStyle(

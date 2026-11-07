@@ -18,6 +18,7 @@ import 'services/opencc/zh_conversion_service.dart';
 import 'services/settings_service.dart';
 import 'services/tray_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/provider_logo.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -36,6 +37,7 @@ Future<void> main() async {
     yield LicenseEntryWithLineBreaks(<String>['Outfit (font)'], license);
   });
   ZhConversionService.registerLicense();
+  ProviderLogo.registerLicense();
   KanjiReadingDictionary.registerLicense();
 
   // Create the provider eagerly so the tray bridge can subscribe to it before

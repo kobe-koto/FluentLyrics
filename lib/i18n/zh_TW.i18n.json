@@ -317,7 +317,8 @@
       "includeConfigurationSubtitle": "包含 provider 順序和應用程式設定，不包含金鑰與檔案路徑"
     },
     "linkUnavailable": "無法開啟此連結",
-    "builtWith": "使用 Flutter 建置"
+    "builtWith": "使用 Flutter 建置",
+    "trademarks": "各歌詞提供者的名稱與標誌均為其各自所有者的商標，Fluent Lyrics 與其無關聯。LLM 圖示來自 Font Awesome Free（CC BY 4.0）。"
   },
   "lyrics": {
     "noMedia": "未在播放",

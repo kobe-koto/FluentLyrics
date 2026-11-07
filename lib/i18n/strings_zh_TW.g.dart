@@ -129,6 +129,7 @@ class Translations$about$zh_TW extends Translations$about$en {
 	@override late final Translations$about$diagnosticsPage$zh_TW diagnosticsPage = Translations$about$diagnosticsPage$zh_TW.internal(_root);
 	@override String get linkUnavailable => '無法開啟此連結';
 	@override String get builtWith => '使用 Flutter 建置';
+	@override String get trademarks => '各歌詞提供者的名稱與標誌均為其各自所有者的商標，Fluent Lyrics 與其無關聯。LLM 圖示來自 Font Awesome Free（CC BY 4.0）。';
 }
 
 // Path: lyrics

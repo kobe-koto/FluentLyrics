@@ -74,6 +74,22 @@ extension LyricProviderTypeMetadata on LyricProviderType {
     };
   }
 
+  /// Bundled SVG logo, or null when the provider has none. Sources and
+  /// trademark notes are in `assets/provider_logos/NOTICE`.
+  String? get logoAsset {
+    return switch (this) {
+      LyricProviderType.lrclib => 'assets/provider_logos/lrclib.svg',
+      LyricProviderType.musixmatch => 'assets/provider_logos/musixmatch.svg',
+      LyricProviderType.netease => 'assets/provider_logos/netease.svg',
+      LyricProviderType.qqmusic => 'assets/provider_logos/qqmusic.svg',
+      LyricProviderType.kugou => 'assets/provider_logos/kugou.svg',
+      LyricProviderType.youtubeMusic =>
+        'assets/provider_logos/youtube_music.svg',
+      LyricProviderType.llm => 'assets/provider_logos/llm.svg',
+      LyricProviderType.cache => null,
+    };
+  }
+
   /// Localized display name for the provider. Brand names (LRCLIB,
   /// Musixmatch) stay constant across locales; generic names (Cache,
   /// LLM Translation, Netease Music, QQ Music) are translated.

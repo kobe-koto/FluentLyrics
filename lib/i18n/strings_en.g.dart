@@ -209,6 +209,9 @@ class Translations$about$en {
 
 	/// en: 'Built with Flutter'
 	String get builtWith => 'Built with Flutter';
+
+	/// en: 'Provider names and logos are trademarks of their respective owners; Fluent Lyrics is not affiliated with them. LLM icon from Font Awesome Free (CC BY 4.0).'
+	String get trademarks => 'Provider names and logos are trademarks of their respective owners; Fluent Lyrics is not affiliated with them. LLM icon from Font Awesome Free (CC BY 4.0).';
 }
 
 // Path: lyrics
