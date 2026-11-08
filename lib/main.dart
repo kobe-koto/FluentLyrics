@@ -49,18 +49,25 @@ Future<void> main() async {
   // window_manager / tray_manager are desktop-only. Skip the bootstrap on
   // Android so the app keeps booting like before.
   TrayService? trayService;
+  _MainWindow? mainWindow;
   if (trayPlatformSupported) {
-    await windowManager.ensureInitialized();
+    // Resolve the native window once, before the tray exists: nativeapi's
+    // getCurrent() answers the focused (or first) toplevel, so asking later
+    // could pick up a different one.
+    final window = WindowManager.instance.getCurrent();
+    if (window != null) mainWindow = _MainWindow(window);
+  }
+  if (mainWindow != null) {
+    final window = mainWindow;
     trayService = TrayService(
       onShowWindow: () async {
-        await windowManager.show();
-        await windowManager.focus();
+        window.show();
       },
       onHideWindow: () async {
-        await windowManager.hide();
+        window.hide();
       },
       onQuit: () async {
-        await windowManager.destroy();
+        window.destroy();
       },
       onLyricsCandidateSelected: (candidate) {
         unawaited(lyricsProvider.selectCandidate(candidate));
@@ -86,9 +93,9 @@ Future<void> main() async {
     );
   }
 
-  if (trayService != null) {
+  if (trayService != null && mainWindow != null) {
     _bindTrayToProvider(trayService, lyricsProvider);
-    await _installCloseInterceptor(trayService, lyricsProvider);
+    _installCloseInterceptor(mainWindow, trayService, lyricsProvider);
   }
 
   // Lyrics / translation streaming to plain text files is desktop-only —
@@ -180,6 +187,33 @@ void _bindTrayToProvider(TrayService tray, LyricsProvider provider) {
   });
 }
 
+/// The app's native window, with the 0.5.x `windowManager` behaviour the tray
+/// relies on: [show] restores a minimized window, and [destroy] closes past
+/// the close interceptor.
+class _MainWindow {
+  _MainWindow(this.window);
+
+  final Window window;
+
+  /// Set by [destroy] so the close interceptor lets that one request through.
+  bool _destroying = false;
+
+  void show() {
+    if (window.isMinimized) window.restore();
+    window.show();
+    window.focus();
+  }
+
+  void hide() => window.hide();
+
+  /// Closes the window without asking [_installCloseInterceptor]. Closing the
+  /// last window ends the app, as the platform runner decides.
+  void destroy() {
+    _destroying = true;
+    if (!window.close()) _destroying = false;
+  }
+}
+
 /// Intercepts the OS window-close signal so we can hide-to-tray instead of
 /// terminating when the user has opted in.
 ///
@@ -187,23 +221,28 @@ void _bindTrayToProvider(TrayService tray, LyricsProvider provider) {
 /// while hidden because [LyricsProvider] owns its own lifecycle and the
 /// Flutter engine pauses rendering automatically when the window is not
 /// visible. To actually quit, the tray menu's "Quit" item or any other
-/// explicit `windowManager.destroy()` call must be used.
-Future<void> _installCloseInterceptor(
+/// explicit [_MainWindow.destroy] call must be used.
+void _installCloseInterceptor(
+  _MainWindow mainWindow,
   TrayService tray,
   LyricsProvider provider,
-) async {
-  await windowManager.setPreventClose(true);
-  windowManager.addListener(_CloseInterceptor(tray: tray, provider: provider));
-}
+) {
+  Future<void> quit() async {
+    await tray.disable();
+    mainWindow.destroy();
+  }
 
-class _CloseInterceptor with WindowListener {
-  _CloseInterceptor({required this.tray, required this.provider});
+  mainWindow.window.addListener((event) {
+    if (event is! WindowCloseRequestedEvent) return;
+    if (mainWindow._destroying) {
+      mainWindow._destroying = false;
+      return;
+    }
 
-  final TrayService tray;
-  final LyricsProvider provider;
+    // Always hold the window open: either it hides to the tray, or the tray
+    // is torn down first and the window is then destroyed.
+    event.request.cancel();
 
-  @override
-  void onWindowClose() {
     // Safety net: only hide if the user actually has the tray enabled AND it
     // is currently up. Otherwise hiding the window would strand the user
     // with no way to bring it back, so fall through to a real quit.
@@ -212,17 +251,12 @@ class _CloseInterceptor with WindowListener {
         hideRequested && provider.trayEnabled.current && tray.isEnabled;
 
     if (canHide) {
-      unawaited(windowManager.hide());
+      mainWindow.hide();
       return;
     }
 
-    unawaited(_quit());
-  }
-
-  Future<void> _quit() async {
-    await tray.disable();
-    await windowManager.destroy();
-  }
+    unawaited(quit());
+  });
 }
 
 class MyApp extends StatelessWidget {
