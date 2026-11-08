@@ -94,6 +94,10 @@ Future<void> main() async {
   }
 
   if (trayService != null && mainWindow != null) {
+    final tray = trayService;
+    mainWindow.onShownChanged = (shown) {
+      unawaited(tray.updateWindowShown(shown));
+    };
     _bindTrayToProvider(trayService, lyricsProvider);
     _installCloseInterceptor(mainWindow, trayService, lyricsProvider);
   }
@@ -190,21 +194,56 @@ void _bindTrayToProvider(TrayService tray, LyricsProvider provider) {
 /// The app's native window, with the 0.5.x `windowManager` behaviour the tray
 /// relies on: [show] restores a minimized window, and [destroy] closes past
 /// the close interceptor.
+///
+/// Also tracks whether the window is on screen so the tray can offer either
+/// "Show" or "Hide". nativeapi has no shown / hidden event, so [show] and
+/// [hide] set the state directly and window events cover the rest: the user
+/// minimizing it, or a second launch presenting it again.
 class _MainWindow {
-  _MainWindow(this.window);
+  _MainWindow(this.window) {
+    window.addListener(_onWindowEvent);
+  }
 
   final Window window;
 
   /// Set by [destroy] so the close interceptor lets that one request through.
   bool _destroying = false;
 
+  /// The runner shows the window on the first frame, so start as shown.
+  bool _shown = true;
+
+  /// Called whenever [_shown] flips.
+  void Function(bool shown)? onShownChanged;
+
   void show() {
     if (window.isMinimized) window.restore();
     window.show();
     window.focus();
+    _setShown(true);
   }
 
-  void hide() => window.hide();
+  void hide() {
+    window.hide();
+    _setShown(false);
+  }
+
+  void _onWindowEvent(WindowEvent event) {
+    switch (event) {
+      case WindowMinimizedEvent():
+        _setShown(false);
+      case WindowRestoredEvent() || WindowFocusedEvent():
+        // A hidden window cannot take focus, so focus means it is back.
+        _setShown(true);
+      default:
+        break;
+    }
+  }
+
+  void _setShown(bool shown) {
+    if (_shown == shown) return;
+    _shown = shown;
+    onShownChanged?.call(shown);
+  }
 
   /// Closes the window without asking [_installCloseInterceptor]. Closing the
   /// last window ends the app, as the platform runner decides.

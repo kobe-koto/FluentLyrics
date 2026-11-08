@@ -77,6 +77,9 @@ class TrayService {
   bool _isFetching = false;
   bool _isPausedForCandidates = false;
   bool _translationEnabled = false;
+  // Window state, not tray state: kept across disable() so re-enabling the
+  // tray still offers the right Show / Hide entry.
+  bool _windowShown = true;
   TrayIcon? _trayIcon;
   ListenerId? _trayIconListenerId;
   Image? _icon;
@@ -149,6 +152,15 @@ class TrayService {
     );
   }
 
+  /// Offer "Hide window" while the main window is on screen and "Show window"
+  /// while it is hidden or minimized.
+  Future<void> updateWindowShown(bool shown) async {
+    if (_windowShown == shown) return;
+    _windowShown = shown;
+    if (!_enabled) return;
+    await _refreshMenu();
+  }
+
   /// Replace the candidate lists shown under the "Lyrics" / "Translations"
   /// submenus.
   ///
@@ -215,10 +227,13 @@ class TrayService {
       'Translations',
       submenu: _buildTranslationsSubmenu(binding),
     );
+    binding.addSeparator(menu);
+    if (_windowShown) {
+      binding.addItem(menu, 'hide_window', 'Hide window');
+    } else {
+      binding.addItem(menu, 'show_window', 'Show window');
+    }
     binding
-      ..addSeparator(menu)
-      ..addItem(menu, 'show_window', 'Show window')
-      ..addItem(menu, 'hide_window', 'Hide window')
       ..addSeparator(menu)
       ..addItem(menu, 'quit', 'Quit Fluent Lyrics');
 
