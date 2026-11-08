@@ -117,7 +117,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: master
-          flutter-version: beta
+          flutter-version: stable
           cache: false
 
       - name: Predownload flutter artifacts
@@ -194,7 +194,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: master
-          flutter-version: beta
+          flutter-version: stable
           cache: false
 
       - name: Predownload flutter artifacts
@@ -269,7 +269,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: master
-          flutter-version: beta
+          flutter-version: stable
           cache: false
 
       - name: Predownload flutter artifacts
