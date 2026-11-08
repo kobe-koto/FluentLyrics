@@ -18,6 +18,7 @@ import 'services/opencc/zh_conversion_service.dart';
 import 'services/settings_service.dart';
 import 'services/tray_service.dart';
 import 'theme/app_theme.dart';
+import 'utils/app_locale_code.dart';
 import 'widgets/provider_logo.dart';
 
 class MyHttpOverrides extends HttpOverrides {
@@ -100,14 +101,9 @@ Future<void> main() async {
 
   // Restore persisted locale (null = follow system).
   final settingsService = SettingsService();
-  final savedLocaleTag = await settingsService.getLocale();
-  if (savedLocaleTag != null) {
-    final match = AppLocale.values.where(
-      (l) => l.languageTag == savedLocaleTag,
-    );
-    if (match.isNotEmpty) {
-      LocaleSettings.setLocale(match.first);
-    }
+  final savedLocale = appLocaleFromCode(await settingsService.getLocale());
+  if (savedLocale != null) {
+    LocaleSettings.setLocale(savedLocale);
   }
 
   final appearanceController = AppearanceController();

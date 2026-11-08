@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../i18n/strings.g.dart';
 import '../../../services/settings_service.dart';
+import '../../../utils/app_locale_code.dart';
 import '../../settings_card_frame.dart';
 import '../../settings_group.dart';
 import '../../settings_section.dart';
@@ -18,7 +19,7 @@ class _LanguageSectionState extends State<LanguageSection> {
   final SettingsService _settingsService = SettingsService();
 
   /// null means "follow system".
-  String? _savedLocaleTag;
+  String? _savedLocaleCode;
   bool _loaded = false;
 
   @override
@@ -28,10 +29,10 @@ class _LanguageSectionState extends State<LanguageSection> {
   }
 
   Future<void> _load() async {
-    final tag = await _settingsService.getLocale();
+    final code = await _settingsService.getLocale();
     if (mounted) {
       setState(() {
-        _savedLocaleTag = tag;
+        _savedLocaleCode = code;
         _loaded = true;
       });
     }
@@ -43,12 +44,12 @@ class _LanguageSectionState extends State<LanguageSection> {
       await _settingsService.setLocale(null);
       LocaleSettings.useDeviceLocale();
     } else {
-      await _settingsService.setLocale(locale.languageTag);
+      await _settingsService.setLocale(appLocaleCode(locale));
       LocaleSettings.setLocale(locale);
     }
     if (mounted) {
       setState(() {
-        _savedLocaleTag = locale?.languageTag;
+        _savedLocaleCode = locale == null ? null : appLocaleCode(locale);
       });
     }
   }
@@ -75,14 +76,14 @@ class _LanguageSectionState extends State<LanguageSection> {
             _LanguageTile(
               label: i18n.settings.language.system,
               subtitle: null,
-              selected: _savedLocaleTag == null,
+              selected: _savedLocaleCode == null,
               onTap: () => _setLocale(null),
             ),
             for (final locale in AppLocale.values)
               _LanguageTile(
                 label: _displayName(locale),
-                subtitle: locale.languageTag,
-                selected: _savedLocaleTag == locale.languageTag,
+                subtitle: appLocaleCode(locale),
+                selected: _savedLocaleCode == appLocaleCode(locale),
                 onTap: () => _setLocale(locale),
               ),
           ],

@@ -351,18 +351,32 @@ class SettingsService {
   Future<void> setArtworkMinSize(int size) =>
       writeSetting(PrefSettings.artworkMinSize, size);
 
-  /// Returns the saved locale tag (e.g. 'en', 'zh_CN'), or null for system default.
+  /// Region-based codes saved by older versions, mapped to the script-based
+  /// codes from `appLocaleCode`. [getLocale] rewrites them once on read.
+  static const Map<String, String> _legacyLocaleCodes = {
+    'zh-CN': 'zh_Hans',
+    'zh_CN': 'zh_Hans',
+    'zh-TW': 'zh_Hant',
+    'zh_TW': 'zh_Hant',
+  };
+
+  /// Returns the saved locale code (e.g. 'en', 'zh_Hans'), or null for
+  /// system default.
   Future<String?> getLocale() async {
     final prefs = await _prefs;
-    return prefs.getString(_localeKey);
+    final saved = prefs.getString(_localeKey);
+    final migrated = _legacyLocaleCodes[saved];
+    if (migrated == null) return saved;
+    await prefs.setString(_localeKey, migrated);
+    return migrated;
   }
 
-  Future<void> setLocale(String? localeTag) async {
+  Future<void> setLocale(String? localeCode) async {
     final prefs = await _prefs;
-    if (localeTag == null) {
+    if (localeCode == null) {
       await prefs.remove(_localeKey);
     } else {
-      await prefs.setString(_localeKey, localeTag);
+      await prefs.setString(_localeKey, localeCode);
     }
   }
 
