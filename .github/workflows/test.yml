@@ -8,7 +8,13 @@ on:
   workflow_call:
 
 jobs:
+  # Also the source of the `kanji-readings` artifact the platform builds in
+  # release.yml download, since release.yml calls this workflow first.
+  kanji-readings:
+    uses: ./.github/workflows/prepare-kanji-readings.yml
+
   test:
+    needs: kanji-readings
     runs-on: ubuntu-26.04
     timeout-minutes: 45
     steps:
@@ -31,8 +37,11 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
-      - name: Sync kanji readings
-        run: ./tool/sync_kanji_readings.sh
+      - name: Download kanji readings
+        uses: actions/download-artifact@v8
+        with:
+          name: kanji-readings
+          path: assets/kanji_readings
 
       - name: Run tests
         run: flutter test

@@ -1,0 +1,75 @@
+name: Prepare kanji readings
+
+# Downloads KANJIDIC2 from EDRDG once per workflow run and shares the converted
+# assets/kanji_readings as the `kanji-readings` artifact, so the test job and
+# every platform build use the same copy instead of each hitting edrdg.org.
+#
+# If EDRDG cannot be reached, the most recent copy cached by an earlier run is
+# used instead (with a warning). The cache key includes the converter sources,
+# so a converter change never reuses output produced by older code.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  kanji-readings:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compute cache key prefix
+        run: |
+          echo "CACHE_PREFIX=kanji-readings-${{ hashFiles('tool/sync_kanji_readings.sh', 'tool/kanji_readings_convert.dart', 'lib/utils/kanji_readings_converter.dart') }}-" >> "$GITHUB_ENV"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: master
+          flutter-version: stable
+          cache: true
+
+      - name: Get flutter dependencies
+        run: flutter pub get
+
+      # Restored into place before the sync. The sync only replaces
+      # assets/kanji_readings once a download and conversion fully succeed, so
+      # on failure the cached copy is still there.
+      - name: Restore cached kanji readings
+        id: restore
+        uses: actions/cache/restore@v6
+        with:
+          path: assets/kanji_readings
+          key: ${{ env.CACHE_PREFIX }}${{ github.run_id }}
+          restore-keys: ${{ env.CACHE_PREFIX }}
+
+      - name: Sync kanji readings
+        id: sync
+        continue-on-error: true
+        run: ./tool/sync_kanji_readings.sh
+
+      - name: Fall back to cached kanji readings
+        if: ${{ steps.sync.outcome == 'failure' }}
+        run: |
+          if [ ! -s assets/kanji_readings/kanji_readings.json ]; then
+            echo "::error::KANJIDIC2 download failed and no cached kanji readings are available."
+            exit 1
+          fi
+          echo "::warning::KANJIDIC2 download failed; using cached kanji readings $(cat assets/kanji_readings/version.txt) from ${{ steps.restore.outputs.cache-matched-key }}."
+
+      # Keyed by the KANJIDIC2 version (its date of creation; EDRDG rebuilds
+      # the file daily), so runs on the same day share one cache entry.
+      - name: Save kanji readings cache
+        if: ${{ steps.sync.outcome == 'success' }}
+        uses: actions/cache/save@v6
+        with:
+          path: assets/kanji_readings
+          key: ${{ env.CACHE_PREFIX }}${{ hashFiles('assets/kanji_readings/version.txt') }}
+
+      - name: Upload kanji readings
+        uses: actions/upload-artifact@v7
+        with:
+          name: kanji-readings
+          path: assets/kanji_readings
+          if-no-files-found: error
+          retention-days: 3

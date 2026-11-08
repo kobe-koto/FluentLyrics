@@ -136,8 +136,13 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
-      - name: Sync kanji readings
-        run: ./tool/sync_kanji_readings.sh
+      # Produced once per run by prepare-kanji-readings.yml, through the
+      # `test` job's workflow.
+      - name: Download kanji readings
+        uses: actions/download-artifact@v8
+        with:
+          name: kanji-readings
+          path: assets/kanji_readings
 
       - name: Build Linux
         env:
@@ -224,8 +229,13 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
-      - name: Sync kanji readings
-        run: ./tool/sync_kanji_readings.sh
+      # Produced once per run by prepare-kanji-readings.yml, through the
+      # `test` job's workflow.
+      - name: Download kanji readings
+        uses: actions/download-artifact@v8
+        with:
+          name: kanji-readings
+          path: assets/kanji_readings
 
       - name: Build Android
         env:
@@ -294,8 +304,13 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
-      - name: Sync kanji readings
-        run: ./tool/sync_kanji_readings.sh
+      # Produced once per run by prepare-kanji-readings.yml, through the
+      # `test` job's workflow.
+      - name: Download kanji readings
+        uses: actions/download-artifact@v8
+        with:
+          name: kanji-readings
+          path: assets/kanji_readings
 
       - name: Build macOS
         env:

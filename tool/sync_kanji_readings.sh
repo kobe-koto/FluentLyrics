@@ -9,14 +9,18 @@ set -eu
 # KANJIDIC2 is distributed by the EDRDG under CC BY-SA 4.0. It is downloaded
 # here and converted; nothing from it is committed to the repository. The
 # conversion keeps only the Japanese on/kun readings (kun readings are cut at
-# the okurigana "." marker) keyed by kanji. CI runs this before flutter test
-# and before each platform build.
+# the okurigana "." marker) keyed by kanji. CI runs this once per workflow run
+# in .github/workflows/prepare-kanji-readings.yml and shares the result as an
+# artifact with the test and platform build jobs.
 #
 # Usage: tool/sync_kanji_readings.sh
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DEST_DIR="$ROOT_DIR/assets/kanji_readings"
 WORK_DIR="$ROOT_DIR/build/kanji_readings"
+# Everything is written here first and moved over DEST_DIR only once complete,
+# so a failed download leaves the previous assets/kanji_readings untouched.
+STAGE_DIR="$WORK_DIR/out"
 
 # Pin the KANJIDIC2 release. EDRDG serves the current file at a stable URL; the
 # version is recorded from the file's own <date_of_creation> after parsing.
@@ -34,30 +38,38 @@ require_command curl
 require_command gunzip
 require_command dart
 
+# EDRDG is occasionally slow or unreachable from CI runners. Retry transient
+# failures and cap each connection attempt instead of hanging for minutes.
+fetch() {
+  curl -fsSL --retry 4 --retry-all-errors --retry-delay 10 \
+    --connect-timeout 30 "$1" -o "$2"
+}
+
 mkdir -p "$WORK_DIR"
 GZ_FILE="$WORK_DIR/kanjidic2.xml.gz"
 XML_FILE="$WORK_DIR/kanjidic2.xml"
 
 echo "Downloading KANJIDIC2..."
-curl -fsSL "$KANJIDIC2_URL" -o "$GZ_FILE"
+fetch "$KANJIDIC2_URL" "$GZ_FILE"
 gunzip -kf "$GZ_FILE"
 
-mkdir -p "$DEST_DIR"
+rm -rf "$STAGE_DIR"
+mkdir -p "$STAGE_DIR"
 
 # Convert with the same logic the app uses at runtime
 # (lib/utils/kanji_readings_converter.dart), so the bundled asset and an in-app
 # EDRDG download produce identical data. flutter pub get must have run first.
 dart "$ROOT_DIR/tool/kanji_readings_convert.dart" \
   --input "$XML_FILE" \
-  --out-json "$DEST_DIR/kanji_readings.json" \
-  --out-version "$DEST_DIR/version.txt"
+  --out-json "$STAGE_DIR/kanji_readings.json" \
+  --out-version "$STAGE_DIR/version.txt"
 
-VERSION="$(cat "$DEST_DIR/version.txt")"
+VERSION="$(cat "$STAGE_DIR/version.txt")"
 
 # EDRDG requires attribution to the group and a statement that the material was
 # changed (CC BY-SA 4.0 §3(a)). The LICENSE is the CC BY-SA 4.0 legalcode; the
 # NOTICE names the source, the attribution, and the modifications made.
-cat > "$DEST_DIR/NOTICE" <<NOTICE
+cat > "$STAGE_DIR/NOTICE" <<NOTICE
 KANJIDIC2
 https://www.edrdg.org/wiki/index.php/KANJIDIC_Project
 
@@ -77,7 +89,11 @@ altered.
 NOTICE
 
 echo "Downloading CC BY-SA 4.0 legalcode..."
-curl -fsSL "https://creativecommons.org/licenses/by-sa/4.0/legalcode.txt" \
-  -o "$DEST_DIR/LICENSE"
+fetch "https://creativecommons.org/licenses/by-sa/4.0/legalcode.txt" \
+  "$STAGE_DIR/LICENSE"
+
+rm -rf "$DEST_DIR"
+mkdir -p "$(dirname "$DEST_DIR")"
+mv "$STAGE_DIR" "$DEST_DIR"
 
 echo "Synced KANJIDIC2 $VERSION readings into assets/kanji_readings"
