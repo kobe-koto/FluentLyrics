@@ -109,7 +109,7 @@ class _LanguageTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return SettingsCardFrame(
       padding: EdgeInsets.zero,
-      color: selected ? Colors.cyan.withValues(alpha: 0.15) : null,
+      color: selected ? context.settingsColors.fg(0.1) : null,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -143,7 +143,11 @@ class _LanguageTile extends StatelessWidget {
                 ),
               ),
               if (selected)
-                const Icon(Icons.check_circle, color: Colors.cyan, size: 22),
+                Icon(
+                  Icons.check_circle,
+                  color: context.settingsColors.onSurface,
+                  size: 22,
+                ),
             ],
           ),
         ),
