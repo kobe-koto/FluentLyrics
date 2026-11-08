@@ -31,7 +31,7 @@ dependencies:
   html_unescape: ^2.0.0
   wakelock_plus: ^1.8.0
   string_similarity: ^2.0.0
-  xml: ^6.5.0
+  xml: ^7.0.1
   cached_network_image: ^4.0.4
   flutter_cache_manager: ^3.4.5
   tray_manager: ^0.8.0
