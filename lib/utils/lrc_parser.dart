@@ -6,6 +6,7 @@ import '../../utils/string_similarity.dart';
 import 'package:html_unescape/html_unescape.dart';
 
 import 'app_logger.dart';
+import 'non_lyric_line_classifier.dart';
 
 /// Result of parsing LRC content with optional metadata trimming.
 class LrcParseResult {
@@ -166,8 +167,20 @@ class LrcParser {
   }) {
     if (lyrics.isEmpty) return LrcParseResult(lyrics: lyrics);
 
-    final List<Lyric> result = List<Lyric>.from(lyrics);
     final Map<String, String> trimmedMetadata = {};
+
+    // Pass 1: section/structure markers ([Chorus], 【副歌】, Verse 1, 间奏) and
+    // strong copyright notices (未经许可, 版权所有, © ...) are not sung lyrics
+    // wherever they appear, so drop them across the whole track.
+    final List<Lyric> result = [];
+    for (final lyric in lyrics) {
+      final text = lyric.text.trim();
+      if (NonLyricLineClassifier.isGloballyRemovable(text)) {
+        AppLogger.debug('[trimMetadataLines] removed non-lyric line "$text"');
+        continue;
+      }
+      result.add(lyric);
+    }
 
     String? title = lrcMetadata['title'] ?? lrcMetadata['ti'];
     String? artist = lrcMetadata['artist'] ?? lrcMetadata['ar'];

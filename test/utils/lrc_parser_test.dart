@@ -63,4 +63,30 @@ void main() {
     expect(parsed.lyrics.map((line) => line.text), ['作词：甲', 'line']);
     expect(parsed.trimmedMetadata, isEmpty);
   });
+
+  test('removes structure markers and copyright anywhere when trimming', () {
+    final parsed = LrcParser.parse('''
+[00:01.00][Verse 1]
+[00:02.00]first line
+[00:03.00][Chorus]
+[00:04.00]second line
+[00:05.00]间奏
+[00:06.00]third line
+[00:07.00]未经许可，不得翻唱
+''', trimMetadata: true);
+
+    expect(parsed.lyrics.map((line) => line.text), [
+      'first line',
+      'second line',
+      'third line',
+    ]);
+  });
+
+  test('keeps structure-like lyrics and markers when trimming is off', () {
+    final parsed = LrcParser.parse(
+      '[00:01.00][Chorus]\n[00:02.00]line\n[00:03.00]间奏',
+    );
+
+    expect(parsed.lyrics.map((line) => line.text), ['[Chorus]', 'line', '间奏']);
+  });
 }
