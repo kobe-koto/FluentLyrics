@@ -256,6 +256,7 @@ class LrclibLyricsSource extends LyricsSource {
       durationSeconds: request.durationSeconds,
       onStatusUpdate: request.onStatusUpdate,
       onArtworkUrl: request.onArtworkUrl,
+      trimMetadata: request.shouldTrimMetadata,
       scope: request.scope,
     );
   }
@@ -280,6 +281,7 @@ class MusixmatchLyricsSource extends LyricsSource {
       durationSeconds: request.durationSeconds,
       onStatusUpdate: request.onStatusUpdate,
       onArtworkUrl: request.onArtworkUrl,
+      trimMetadata: request.shouldTrimMetadata,
       scope: request.scope,
     );
   }

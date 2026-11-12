@@ -24,6 +24,7 @@ class LrclibService {
     required int durationSeconds,
     Function(String)? onStatusUpdate,
     Function(String)? onArtworkUrl,
+    bool trimMetadata = false,
     LyricsRequestScope? scope,
   }) async {
     try {
@@ -138,6 +139,9 @@ class LrclibService {
         }
 
         if (lyrics.isNotEmpty || isInstrumental) {
+          if (trimMetadata) {
+            lyrics = LrcParser.stripNonLyricLines(lyrics);
+          }
           return LyricsResult(
             lyrics: lyrics,
             source: 'LRCLIB',

@@ -172,15 +172,7 @@ class LrcParser {
     // Pass 1: section/structure markers ([Chorus], 【副歌】, Verse 1, 间奏) and
     // strong copyright notices (未经许可, 版权所有, © ...) are not sung lyrics
     // wherever they appear, so drop them across the whole track.
-    final List<Lyric> result = [];
-    for (final lyric in lyrics) {
-      final text = lyric.text.trim();
-      if (NonLyricLineClassifier.isGloballyRemovable(text)) {
-        AppLogger.debug('[trimMetadataLines] removed non-lyric line "$text"');
-        continue;
-      }
-      result.add(lyric);
-    }
+    final List<Lyric> result = stripNonLyricLines(lyrics);
 
     String? title = lrcMetadata['title'] ?? lrcMetadata['ti'];
     String? artist = lrcMetadata['artist'] ?? lrcMetadata['ar'];
@@ -238,6 +230,28 @@ class LrcParser {
     }
 
     return LrcParseResult(lyrics: result, trimmedMetadata: trimmedMetadata);
+  }
+
+  /// Removes section/structure markers (`[Chorus]`, `【副歌】`, `Verse 1`,
+  /// `间奏`) and strong copyright notices (`未经许可`, `版权所有`, `© ...`) from
+  /// anywhere in [lyrics].
+  ///
+  /// This is the whole-track pass shared by [trimMetadataLines] and by
+  /// providers whose word-by-word tracks do not otherwise pass through the
+  /// head/tail metadata trimming (lrclib enhanced LRC, Musixmatch richsync).
+  /// Returns [lyrics] unchanged when nothing matches.
+  static List<Lyric> stripNonLyricLines(List<Lyric> lyrics) {
+    if (lyrics.isEmpty) return lyrics;
+    final List<Lyric> result = [];
+    for (final lyric in lyrics) {
+      final text = lyric.text.trim();
+      if (NonLyricLineClassifier.isGloballyRemovable(text)) {
+        AppLogger.debug('[stripNonLyricLines] removed non-lyric line "$text"');
+        continue;
+      }
+      result.add(lyric);
+    }
+    return result.length == lyrics.length ? lyrics : result;
   }
 
   static double _isTitleAndArtistLine(

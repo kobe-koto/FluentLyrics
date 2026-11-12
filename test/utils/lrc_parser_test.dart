@@ -1,3 +1,4 @@
+import 'package:fluent_lyrics/models/lyric_model.dart';
 import 'package:fluent_lyrics/utils/lrc_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -88,5 +89,41 @@ void main() {
     );
 
     expect(parsed.lyrics.map((line) => line.text), ['[Chorus]', 'line', '间奏']);
+  });
+
+  test('stripNonLyricLines drops markers and keeps word-by-word parts', () {
+    final kept = Lyric(
+      startTime: const Duration(seconds: 2),
+      text: 'hello world',
+      inlineParts: [
+        LyricInlinePart(
+          startTime: const Duration(seconds: 2),
+          endTime: const Duration(milliseconds: 2500),
+          text: 'hello ',
+        ),
+        LyricInlinePart(
+          startTime: const Duration(milliseconds: 2500),
+          endTime: const Duration(seconds: 3),
+          text: 'world',
+        ),
+      ],
+    );
+    final stripped = LrcParser.stripNonLyricLines([
+      Lyric(startTime: const Duration(seconds: 1), text: '[Verse 1]'),
+      kept,
+      Lyric(startTime: const Duration(seconds: 3), text: '版权所有'),
+    ]);
+
+    expect(stripped.map((line) => line.text), ['hello world']);
+    expect(stripped.single.inlineParts, hasLength(2));
+  });
+
+  test('stripNonLyricLines returns the same list when nothing matches', () {
+    final input = [
+      Lyric(startTime: const Duration(seconds: 1), text: 'first'),
+      Lyric(startTime: const Duration(seconds: 2), text: 'second'),
+    ];
+
+    expect(identical(LrcParser.stripNonLyricLines(input), input), isTrue);
   });
 }

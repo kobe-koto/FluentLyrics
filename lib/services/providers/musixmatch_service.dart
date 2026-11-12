@@ -47,6 +47,7 @@ class MusixmatchService {
     required int durationSeconds,
     Function(String)? onStatusUpdate,
     Function(String)? onArtworkUrl,
+    bool trimMetadata = false,
     LyricsRequestScope? scope,
   }) async {
     try {
@@ -69,6 +70,7 @@ class MusixmatchService {
         durationSeconds,
         token,
         onArtworkUrl,
+        trimMetadata: trimMetadata,
         scope: scope,
       );
 
@@ -118,6 +120,7 @@ class MusixmatchService {
     Function(String)? onArtworkUrl, {
     LyricsRequestScope? scope,
     bool allowRefresh = true,
+    bool trimMetadata = false,
   }) async {
     final url = _apiUri('macro.subtitles.get', {
       'namespace': 'lyrics_richsynched',
@@ -259,7 +262,9 @@ class MusixmatchService {
           }
 
           return LyricsResult(
-            lyrics: lyrics,
+            lyrics: trimMetadata
+                ? LrcParser.stripNonLyricLines(lyrics)
+                : lyrics,
             language: language,
             source: 'Musixmatch',
             writtenBy: writtenBy,
@@ -281,6 +286,7 @@ class MusixmatchService {
             onArtworkUrl,
             scope: scope,
             allowRefresh: false,
+            trimMetadata: trimMetadata,
           );
         }
       }
