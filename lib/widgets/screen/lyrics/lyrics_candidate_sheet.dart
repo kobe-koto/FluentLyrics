@@ -6,6 +6,8 @@ import '../../../models/lyric_model.dart';
 import '../../../models/lyric_provider_type.dart';
 import '../../../providers/lyrics_provider.dart';
 import '../../../services/lyrics_source_registry.dart';
+import '../../../services/opencc/zh_conversion.dart';
+import '../../../services/opencc/zh_conversion_service.dart';
 import '../../../theme/monospace_text_style.dart';
 import '../../../utils/lyrics_candidate_helper.dart';
 import '../../../utils/translation_helper.dart';
@@ -344,6 +346,10 @@ class _LyricsTab extends StatelessWidget {
     final candidates = provider.candidates;
     final skipped = provider.skippedSources;
     final current = provider.lyricsResult;
+    final zhTarget = ZhConversionTarget.fromSetting(
+      provider.zhConversionTarget.current,
+    );
+    final zhIgnored = provider.zhConversionIgnoredLanguages.current;
 
     // All rich-sync candidates that could be used as Richify sources.
     final richSources = candidates
@@ -477,6 +483,8 @@ class _LyricsTab extends StatelessWidget {
         return _CandidateTile(
           candidate: candidate,
           isActive: isActive,
+          zhTarget: zhTarget,
+          zhIgnored: zhIgnored,
           richSources: canRichify ? richSources : const [],
           onSelect: () {
             provider.selectCandidate(candidate);
@@ -543,6 +551,10 @@ class _TranslationTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final candidates = provider.translationCandidates;
     final current = provider.translationResult;
+    final zhTarget = ZhConversionTarget.fromSetting(
+      provider.zhConversionTarget.current,
+    );
+    final zhIgnored = provider.zhConversionIgnoredLanguages.current;
     // Use provider.lyrics — the actual displayed list (rich sync stripped
     // when disabled) — so coverage reflects exactly what the user sees.
     final displayLyrics = provider.lyrics;
@@ -655,6 +667,8 @@ class _TranslationTab extends StatelessWidget {
         return _TranslationTile(
           candidate: candidate,
           isActive: isActive,
+          zhTarget: zhTarget,
+          zhIgnored: zhIgnored,
           matchedLines: matched,
           totalLines: total,
           onSelect: () {
@@ -676,6 +690,10 @@ class _CandidateTile extends StatelessWidget {
   final bool isActive;
   final VoidCallback onSelect;
 
+  /// Target script for the preview, so it matches the main view.
+  final ZhConversionTarget zhTarget;
+  final List<String> zhIgnored;
+
   /// Rich-sync candidates available as Richify sources. Empty = Richify hidden.
   final List<LyricsResult> richSources;
 
@@ -686,6 +704,8 @@ class _CandidateTile extends StatelessWidget {
     required this.candidate,
     required this.isActive,
     required this.onSelect,
+    required this.zhTarget,
+    required this.zhIgnored,
     this.richSources = const [],
     this.onRichify,
   });
@@ -732,7 +752,13 @@ class _CandidateTile extends StatelessWidget {
           ? candidate.failureMessage!.trim()
           : t.candidateSheet.syncFailed;
     }
-    final lines = candidate.lyrics
+    final lines = ZhConversionService.instance
+        .convertLyrics(
+          candidate.lyrics,
+          target: zhTarget,
+          ignoredLanguages: zhIgnored,
+          languageHint: candidate.language,
+        )
         .where((l) => l.text.trim().isNotEmpty)
         .take(2)
         .map((l) => l.text.trim())
@@ -988,12 +1014,18 @@ class _TranslationTile extends StatelessWidget {
   final int totalLines;
   final VoidCallback onSelect;
 
+  /// Target script for the preview, so it matches the main view.
+  final ZhConversionTarget zhTarget;
+  final List<String> zhIgnored;
+
   const _TranslationTile({
     required this.candidate,
     required this.isActive,
     required this.matchedLines,
     required this.totalLines,
     required this.onSelect,
+    required this.zhTarget,
+    required this.zhIgnored,
   });
 
   LyricProviderType? _providerType() {
@@ -1018,10 +1050,21 @@ class _TranslationTile extends StatelessWidget {
     if (candidate.rawTranslation == null) {
       return t.candidateSheet.noTranslationPreview;
     }
-    final first = candidate.rawTranslation!
-        .where((m) => (m['translated'] ?? '').trim().isNotEmpty)
+    // Convert through the same path as the main view so the preview script
+    // matches: wrap each translated line in a throwaway Lyric.
+    final first = ZhConversionService.instance
+        .convertLyrics(
+          [
+            for (final m in candidate.rawTranslation!)
+              Lyric(startTime: Duration.zero, text: m['translated'] ?? ''),
+          ],
+          target: zhTarget,
+          ignoredLanguages: zhIgnored,
+          languageHint: candidate.language,
+        )
+        .where((l) => l.text.trim().isNotEmpty)
         .take(2)
-        .map((m) => m['translated']!.trim())
+        .map((l) => l.text.trim())
         .join('  /  ');
     return first.isEmpty ? t.candidateSheet.noTranslationPreview : first;
   }
