@@ -179,6 +179,11 @@ class LyricsProviderSettings {
   set experimentalAnnotationFontSizeGlitching(Setting<bool> value) =>
       _set(PrefSettings.experimentalAnnotationFontSizeGlitching, value);
 
+  Setting<bool> get experimentalLineWideRichWipe =>
+      _get(PrefSettings.experimentalLineWideRichWipe);
+  set experimentalLineWideRichWipe(Setting<bool> value) =>
+      _set(PrefSettings.experimentalLineWideRichWipe, value);
+
   Setting<bool> get experimentalStripTimestampsBeforeRender =>
       _get(PrefSettings.experimentalStripTimestampsBeforeRender);
   set experimentalStripTimestampsBeforeRender(Setting<bool> value) =>

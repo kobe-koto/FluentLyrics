@@ -334,6 +334,12 @@ class PrefSettings {
     read: _readBool,
     write: _writeBool,
   );
+  static final experimentalLineWideRichWipe = PrefSetting<bool>(
+    key: 'experimental_line_wide_rich_wipe',
+    defaultValue: AppDefaults.experimentalLineWideRichWipe,
+    read: _readBool,
+    write: _writeBool,
+  );
   static final experimentalStripTimestampsBeforeRender = PrefSetting<bool>(
     key: 'experimental_strip_timestamps_before_render',
     defaultValue: AppDefaults.experimentalStripTimestampsBeforeRender,
@@ -441,6 +447,7 @@ class PrefSettings {
     backgroundMotionEnabled,
     experimentalRichInlineFontSizeGlitching,
     experimentalAnnotationFontSizeGlitching,
+    experimentalLineWideRichWipe,
     experimentalStripTimestampsBeforeRender,
     trayEnabled,
     hideToTrayOnClose,

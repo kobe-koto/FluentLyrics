@@ -235,6 +235,8 @@ class LyricsProvider with ChangeNotifier {
       _settings.experimentalRichInlineFontSizeGlitching;
   Setting<bool> get experimentalAnnotationFontSizeGlitching =>
       _settings.experimentalAnnotationFontSizeGlitching;
+  Setting<bool> get experimentalLineWideRichWipe =>
+      _settings.experimentalLineWideRichWipe;
   Setting<bool> get experimentalStripTimestampsBeforeRender =>
       _settings.experimentalStripTimestampsBeforeRender;
   Setting<bool> get trayEnabled => _settings.trayEnabled;
@@ -1003,6 +1005,15 @@ class LyricsProvider with ChangeNotifier {
       assign: (value) =>
           _settings.experimentalAnnotationFontSizeGlitching = value,
       persist: _settingsService.setExperimentalAnnotationFontSizeGlitching,
+    );
+  }
+
+  void setExperimentalLineWideRichWipe(bool enabled) {
+    _setSettingValue(
+      currentSetting: _settings.experimentalLineWideRichWipe,
+      value: enabled,
+      assign: (value) => _settings.experimentalLineWideRichWipe = value,
+      persist: _settingsService.setExperimentalLineWideRichWipe,
     );
   }
 

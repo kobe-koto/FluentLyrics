@@ -303,6 +303,12 @@ class SettingsService {
         enabled,
       );
 
+  Future<Setting<bool>> getExperimentalLineWideRichWipe() =>
+      readSetting(PrefSettings.experimentalLineWideRichWipe);
+
+  Future<void> setExperimentalLineWideRichWipe(bool enabled) =>
+      writeSetting(PrefSettings.experimentalLineWideRichWipe, enabled);
+
   Future<Setting<bool>> getExperimentalAnnotationFontSizeGlitching() =>
       readSetting(PrefSettings.experimentalAnnotationFontSizeGlitching);
 

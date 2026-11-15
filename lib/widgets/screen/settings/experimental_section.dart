@@ -38,6 +38,13 @@ class ExperimentalSection extends StatelessWidget {
                       .setExperimentalAnnotationFontSizeGlitching(value),
                 ),
                 SettingsToggleCard(
+                  title: i18n.lineWideRichWipe,
+                  subtitle: i18n.lineWideRichWipeSubtitle,
+                  value: provider.experimentalLineWideRichWipe.current,
+                  onChanged: (value) =>
+                      provider.setExperimentalLineWideRichWipe(value),
+                ),
+                SettingsToggleCard(
                   title: i18n.stripTimestamps,
                   subtitle: i18n.stripTimestampsSubtitle,
                   value:

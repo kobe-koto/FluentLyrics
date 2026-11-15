@@ -394,6 +394,8 @@ class _LyricsListState extends State<LyricsList> {
           provider.experimentalRichInlineFontSizeGlitching.current,
       experimentalAnnotationFontSizeGlitching:
           provider.experimentalAnnotationFontSizeGlitching.current,
+      experimentalLineWideRichWipe:
+          provider.experimentalLineWideRichWipe.current,
       richSyncThreshold: Duration(
         milliseconds: provider.richSyncThresholdMs.current,
       ),

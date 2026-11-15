@@ -169,6 +169,7 @@ class _AboutDiagnosticsScreenState extends State<AboutDiagnosticsScreen> {
       'Secure storage available: $secureStorageAvailable',
       'Experimental rich inline font fix: ${settings.experimentalRichInlineFontSizeGlitching.current}',
       'Experimental annotation font fix: ${settings.experimentalAnnotationFontSizeGlitching.current}',
+      'Experimental line-wide rich wipe: ${settings.experimentalLineWideRichWipe.current}',
       'Experimental strip timestamps before render: ${settings.experimentalStripTimestampsBeforeRender.current}',
       'System tray enabled: ${settings.trayEnabled.current}',
       'Hide to tray on close: ${settings.hideToTrayOnClose.current}',

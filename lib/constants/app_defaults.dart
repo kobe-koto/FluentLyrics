@@ -49,6 +49,7 @@ class AppDefaults {
   static const bool backgroundMotionEnabled = true;
   static const bool experimentalRichInlineFontSizeGlitching = false;
   static const bool experimentalAnnotationFontSizeGlitching = false;
+  static const bool experimentalLineWideRichWipe = false;
   static const bool experimentalStripTimestampsBeforeRender = false;
   static const bool trayEnabled = false;
   static const bool hideToTrayOnClose = false;

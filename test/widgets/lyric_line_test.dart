@@ -24,6 +24,7 @@ Widget _buildHarness({
         translationHighlightOnly: translationHighlightOnly,
         experimentalRichInlineFontSizeGlitching: false,
         experimentalAnnotationFontSizeGlitching: false,
+        experimentalLineWideRichWipe: false,
         adjustedPosition: Duration.zero,
         isPlaying: false,
       ),
@@ -62,9 +63,87 @@ Widget _buildRichHarness({
         translationHighlightOnly: true,
         experimentalRichInlineFontSizeGlitching: false,
         experimentalAnnotationFontSizeGlitching: false,
+        experimentalLineWideRichWipe: false,
         adjustedPosition: partDuration,
         isPlaying: false,
         richSyncThreshold: richSyncThreshold,
+      ),
+    ),
+  );
+}
+
+Widget _buildLineWideHarness({
+  required Duration adjustedPosition,
+  bool isPlaying = false,
+}) {
+  final parts = [
+    LyricInlinePart(
+      startTime: Duration.zero,
+      endTime: const Duration(milliseconds: 300),
+      text: 'Hello ',
+    ),
+    LyricInlinePart(
+      startTime: const Duration(milliseconds: 300),
+      endTime: const Duration(milliseconds: 600),
+      text: 'world',
+    ),
+  ];
+  return MaterialApp(
+    home: Scaffold(
+      body: LyricLine(
+        lyric: Lyric(
+          startTime: Duration.zero,
+          text: 'Hello world',
+          inlineParts: parts,
+        ),
+        isHighlighted: true,
+        isPrerendered: false,
+        fontSize: 36,
+        inactiveScale: 0.85,
+        translationHighlightOnly: true,
+        experimentalRichInlineFontSizeGlitching: false,
+        experimentalAnnotationFontSizeGlitching: false,
+        experimentalLineWideRichWipe: true,
+        adjustedPosition: adjustedPosition,
+        isPlaying: isPlaying,
+      ),
+    ),
+  );
+}
+
+Widget _buildGappedLineWideHarness({required Duration adjustedPosition}) {
+  // Long silent gap between the two words: word 1 ends at 300ms, word 2 does
+  // not start until 2000ms.
+  final parts = [
+    LyricInlinePart(
+      startTime: Duration.zero,
+      endTime: const Duration(milliseconds: 300),
+      text: 'Hello ',
+    ),
+    LyricInlinePart(
+      startTime: const Duration(milliseconds: 2000),
+      endTime: const Duration(milliseconds: 2300),
+      text: 'world',
+    ),
+  ];
+  return MaterialApp(
+    home: Scaffold(
+      body: LyricLine(
+        lyric: Lyric(
+          startTime: Duration.zero,
+          text: 'Hello world',
+          inlineParts: parts,
+        ),
+        isHighlighted: true,
+        isPrerendered: false,
+        fontSize: 36,
+        inactiveScale: 0.85,
+        translationHighlightOnly: true,
+        experimentalRichInlineFontSizeGlitching: false,
+        experimentalAnnotationFontSizeGlitching: false,
+        experimentalLineWideRichWipe: true,
+        adjustedPosition: adjustedPosition,
+        isPlaying: false,
       ),
     ),
   );
@@ -97,6 +176,7 @@ Widget _buildAnnotatedHarnessWith({
         experimentalRichInlineFontSizeGlitching: false,
         experimentalAnnotationFontSizeGlitching:
             experimentalAnnotationFontSizeGlitching,
+        experimentalLineWideRichWipe: false,
         adjustedPosition: Duration.zero,
         isPlaying: false,
       ),
@@ -136,6 +216,7 @@ Widget _buildRichAnnotatedHarness() {
         translationHighlightOnly: true,
         experimentalRichInlineFontSizeGlitching: false,
         experimentalAnnotationFontSizeGlitching: false,
+        experimentalLineWideRichWipe: false,
         adjustedPosition: const Duration(seconds: 1),
         isPlaying: false,
       ),
@@ -182,6 +263,7 @@ Widget _buildMultiPartAnnotatedHarness() {
         translationHighlightOnly: true,
         experimentalRichInlineFontSizeGlitching: false,
         experimentalAnnotationFontSizeGlitching: false,
+        experimentalLineWideRichWipe: false,
         isPlaying: false,
       ),
     ),
@@ -359,5 +441,54 @@ void main() {
     final annotated = tester.getRect(find.text('青空月光').first);
     final plain = tester.getRect(find.text('です').first);
     expect((annotated.top - plain.top).abs(), lessThan(2.5));
+  });
+
+  testWidgets('line-wide wipe sweeps one word at a time', (tester) async {
+    // Mid-way through the first word: only it has started filling, so exactly
+    // one word carries the progress wipe (ShaderMask).
+    await tester.pumpWidget(
+      _buildLineWideHarness(
+        adjustedPosition: const Duration(milliseconds: 150),
+      ),
+    );
+    await tester.pump();
+    expect(find.byType(ShaderMask), findsOneWidget);
+
+    // Past both words: the whole line is lit, so both words carry a wipe.
+    await tester.pumpWidget(
+      _buildLineWideHarness(
+        adjustedPosition: const Duration(milliseconds: 700),
+      ),
+    );
+    await tester.pump();
+    expect(find.byType(ShaderMask), findsNWidgets(2));
+  });
+
+  testWidgets('line-wide wipe does not light words before their start', (
+    tester,
+  ) async {
+    // Before the line begins: no word is filled yet.
+    await tester.pumpWidget(
+      _buildLineWideHarness(
+        adjustedPosition: const Duration(milliseconds: -50),
+      ),
+    );
+    await tester.pump();
+    expect(find.byType(ShaderMask), findsNothing);
+  });
+
+  testWidgets('line-wide wipe keeps a finished word lit across a long gap', (
+    tester,
+  ) async {
+    // Inside the gap: word 1 (ends 300ms) is done, word 2 (starts 2000ms) has
+    // not begun. The finished word keeps its lit overlay while the next stays
+    // dark, so exactly one word carries a wipe.
+    await tester.pumpWidget(
+      _buildGappedLineWideHarness(
+        adjustedPosition: const Duration(milliseconds: 1000),
+      ),
+    );
+    await tester.pump();
+    expect(find.byType(ShaderMask), findsOneWidget);
   });
 }

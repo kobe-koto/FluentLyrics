@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../constants/app_defaults.dart';
 import '../models/lyric_model.dart';
@@ -43,6 +45,7 @@ class LyricLine extends StatelessWidget {
   final bool translationHighlightOnly;
   final bool experimentalRichInlineFontSizeGlitching;
   final bool experimentalAnnotationFontSizeGlitching;
+  final bool experimentalLineWideRichWipe;
 
   /// Rich-sync word segments shorter than this are rendered as a whole instead
   /// of animating a per-word progress wipe. See `_RichPartState`.
@@ -60,6 +63,7 @@ class LyricLine extends StatelessWidget {
     required this.translationHighlightOnly,
     required this.experimentalRichInlineFontSizeGlitching,
     required this.experimentalAnnotationFontSizeGlitching,
+    required this.experimentalLineWideRichWipe,
     this.richSyncThreshold = const Duration(
       milliseconds: AppDefaults.richSyncThresholdMs,
     ),
@@ -424,6 +428,9 @@ class LyricLine extends StatelessWidget {
       // the base of the ruby, so annotating a line does not drop rich sync.
       final parts = lyric.inlineParts;
       if (shouldBeRichLine && parts != null && parts.length > 1) {
+        if (experimentalLineWideRichWipe) {
+          return _buildLineWide(context);
+        }
         return _buildRichAnnotatedText(context, annotations, parts);
       }
       return _buildAnnotatedText(context, annotations);
@@ -442,6 +449,10 @@ class LyricLine extends StatelessWidget {
         textAlign: TextAlign.left,
         style: DefaultTextStyle.of(context).style,
       );
+    }
+
+    if (experimentalLineWideRichWipe) {
+      return _buildLineWide(context);
     }
 
     final richTextStyle = DefaultTextStyle.of(context).style.copyWith(
@@ -478,6 +489,127 @@ class LyricLine extends StatelessWidget {
       ),
       textAlign: TextAlign.left,
     );
+  }
+
+  /// Line-wide rich wipe: one continuous highlight sweep travels across the
+  /// whole line instead of each word wiping independently. Each word still
+  /// lifts, and the sweep's speed inside a word is governed by that word's
+  /// duration (pixel width / duration), so short words light fast and long
+  /// ones slow. See [_LineWideRichText].
+  Widget _buildLineWide(BuildContext context) {
+    final baseStyle = DefaultTextStyle.of(context).style;
+    final richTextStyle = baseStyle.copyWith(
+      color: Colors.white,
+      fontSize: experimentalRichInlineFontSizeGlitching
+          ? (baseStyle.fontSize ?? 36) / 0.9
+          : baseStyle.fontSize,
+      height: 1.2,
+    );
+
+    final annotations = lyric.annotations;
+    final parts = lyric.inlineParts!;
+    List<_LinePartSpec> specs;
+    TextStyle? annotationStyle;
+    if (annotations != null && annotations.isNotEmpty) {
+      annotationStyle = baseStyle.copyWith(
+        fontSize: (baseStyle.fontSize ?? 36) * 0.42,
+        height: 1.0,
+        fontWeight: FontWeight.w600,
+        color: Colors.white60,
+      );
+      specs = _lineWideAnnotatedSpecs(annotations, parts);
+    } else {
+      specs = [
+        for (final part in _getMergedInlineParts(parts))
+          _LinePartSpec(
+            text: part.text,
+            startTime: part.startTime,
+            endTime: part.endTime,
+          ),
+      ];
+    }
+
+    return _LineWideRichText(
+      specs: specs,
+      style: richTextStyle,
+      annotationStyle: annotationStyle,
+      adjustedPosition: adjustedPosition,
+      isPlaying: isPlaying,
+      isHighlighted: isHighlighted,
+    );
+  }
+
+  /// Splits the line into [_LinePartSpec]s in reading order, keeping each
+  /// word's own timing and attaching a reading to annotated runs. Mirrors the
+  /// range anchoring in [_buildRichAnnotatedText].
+  List<_LinePartSpec> _lineWideAnnotatedSpecs(
+    List<FuriganaAnnotation> annotations,
+    List<LyricInlinePart> parts,
+  ) {
+    final text = lyric.text;
+    final ranges = <({int start, int end, LyricInlinePart part})>[];
+    var offset = 0;
+    for (final part in parts) {
+      var start = offset;
+      var end = start + part.text.length;
+      final matches =
+          start <= text.length &&
+          end <= text.length &&
+          text.substring(start, end) == part.text;
+      if (!matches && part.text.isNotEmpty) {
+        final found = text.indexOf(part.text);
+        if (found >= 0) {
+          start = found;
+          end = found + part.text.length;
+        }
+      }
+      ranges.add((start: start, end: end, part: part));
+      offset = end;
+    }
+
+    final specs = <_LinePartSpec>[];
+
+    void addRange(int from, int to) {
+      if (to <= from) return;
+      for (final range in ranges) {
+        final clipStart = from > range.start ? from : range.start;
+        final clipEnd = to < range.end ? to : range.end;
+        if (clipEnd <= clipStart) continue;
+        specs.add(
+          _LinePartSpec(
+            text: text.substring(clipStart, clipEnd),
+            startTime: range.part.startTime,
+            endTime: range.part.endTime,
+          ),
+        );
+      }
+    }
+
+    final sorted = [...annotations]..sort((a, b) => a.start.compareTo(b.start));
+    var cursor = 0;
+    for (final annotation in sorted) {
+      final start = annotation.start.clamp(0, text.length);
+      final end = annotation.end.clamp(0, text.length);
+      if (end <= start) continue;
+      addRange(cursor, start);
+      final covered = [
+        for (final range in ranges)
+          if (range.start < end && range.end > start) range,
+      ];
+      specs.add(
+        _LinePartSpec(
+          text: text.substring(start, end),
+          startTime: covered.isEmpty
+              ? Duration.zero
+              : covered.first.part.startTime,
+          endTime: covered.isEmpty ? Duration.zero : covered.last.part.endTime,
+          reading: annotation.reading,
+        ),
+      );
+      cursor = end;
+    }
+    addRange(cursor, text.length);
+    return specs;
   }
 
   List<LyricInlinePart> _getMergedInlineParts(List<LyricInlinePart> parts) {
@@ -802,6 +934,390 @@ class _RichPartState extends State<_RichPart>
         );
       },
       child: baseText,
+    );
+  }
+}
+
+/// One word of a line-wide rich wipe.
+class _LinePartSpec {
+  const _LinePartSpec({
+    required this.text,
+    required this.startTime,
+    required this.endTime,
+    this.reading,
+  });
+
+  final String text;
+  final Duration startTime;
+  final Duration endTime;
+
+  /// Furigana reading stacked above [text], when this run was annotated.
+  final String? reading;
+}
+
+/// Pixel box of one spec in the laid-out line, plus its timing. Gaps
+/// (whitespace specs) carry [isGap] so the front pauses across them.
+class _GeomEntry {
+  const _GeomEntry({
+    required this.leftX,
+    required this.width,
+    required this.startTime,
+    required this.endTime,
+    required this.isGap,
+  });
+
+  final double leftX;
+  final double width;
+  final Duration startTime;
+  final Duration endTime;
+  final bool isGap;
+}
+
+/// Line geometry shared by every [_LineWidePart]: the pixel box of each word in
+/// line coordinates and a mapping from playback position to a single sweep
+/// front x. Keeping the front and fade in one coordinate space is what makes
+/// the wipe continuous across word boundaries instead of restarting per part.
+class _LineGeometry {
+  const _LineGeometry(this.entries, this.totalWidth);
+
+  final List<_GeomEntry> entries;
+  final double totalWidth;
+
+  /// Sweep front, in line pixels, for a playback position. Words already past
+  /// contribute their full width; the word under the position contributes a
+  /// prorated slice; later words contribute nothing. When the sweep is resting
+  /// (next word not started, or line finished) the front sits at the last
+  /// completed word's right edge.
+  ///
+  /// This only drives the *active* word's soft edge and the lift. Whether a
+  /// word reads as finished is decided per word from its own timing (see
+  /// [_LineWidePart]), so a long gap before the next word cannot leave a
+  /// completed word with a parked fade.
+  double frontXFor(Duration pos) {
+    double front = 0;
+    for (final entry in entries) {
+      if (entry.isGap) continue;
+      if (pos >= entry.endTime) {
+        front = entry.leftX + entry.width;
+        continue;
+      }
+      if (pos < entry.startTime) return front;
+      final durationMs = (entry.endTime - entry.startTime).inMilliseconds;
+      final f = durationMs <= 0
+          ? 1.0
+          : ((pos - entry.startTime).inMilliseconds / durationMs).clamp(
+              0.0,
+              1.0,
+            );
+      return entry.leftX + entry.width * f;
+    }
+    return front;
+  }
+}
+
+/// Rich-sync line rendered as a single continuous highlight sweep.
+///
+/// Unlike [_RichPart], which wipes every word on its own controller, the whole
+/// line shares one playback clock and one geometry. The sweep front is a single
+/// x position in line pixels ([_LineGeometry.frontXFor]); every word fills left
+/// to right as the front passes over it, and the soft leading edge has a fixed
+/// pixel width, so the wipe is seamless across word boundaries. A word's fill
+/// still advances at its own pixel-width / duration rate (short words light
+/// fast, long ones slow) because the front is prorated by each word's timing.
+/// Each word also lifts on its own when the front reaches it.
+///
+/// A [Ticker] interpolates the playback position between the ~250ms media polls
+/// so the fill advances smoothly at frame rate. Only [_position] is pushed per
+/// frame; the [Text.rich] shape and geometry are built once per line/style, and
+/// each [_LineWidePart] subscribes to the position, so a frame repaints just
+/// the words whose slice of the front changed.
+class _LineWideRichText extends StatefulWidget {
+  const _LineWideRichText({
+    required this.specs,
+    required this.style,
+    required this.annotationStyle,
+    required this.adjustedPosition,
+    required this.isPlaying,
+    required this.isHighlighted,
+  });
+
+  final List<_LinePartSpec> specs;
+  final TextStyle style;
+  final TextStyle? annotationStyle;
+  final Duration adjustedPosition;
+  final bool isPlaying;
+  final bool isHighlighted;
+
+  @override
+  State<_LineWideRichText> createState() => _LineWideRichTextState();
+}
+
+class _LineWideRichTextState extends State<_LineWideRichText>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker;
+  final ValueNotifier<Duration> _position = ValueNotifier<Duration>(
+    Duration.zero,
+  );
+  Duration _anchor = Duration.zero;
+  final Stopwatch _watch = Stopwatch();
+
+  String? _geometrySig;
+  _LineGeometry _geometry = const _LineGeometry(<_GeomEntry>[], 0);
+
+  @override
+  void initState() {
+    super.initState();
+    _anchor = widget.adjustedPosition;
+    _position.value = _anchor;
+    _ticker = createTicker(_onTick);
+    if (widget.isPlaying) {
+      _watch.start();
+      _ticker.start();
+    }
+  }
+
+  void _onTick(Duration _) {
+    _position.value = _anchor + _watch.elapsed;
+  }
+
+  @override
+  void didUpdateWidget(_LineWideRichText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-anchor the clock on every real position update. Seeks and the normal
+    // poll cadence are handled the same way: snap to the new position, then let
+    // the ticker extrapolate forward from there while playing.
+    _anchor = widget.adjustedPosition;
+    _watch
+      ..reset()
+      ..stop();
+    if (widget.isPlaying) {
+      _watch.start();
+      if (!_ticker.isActive) _ticker.start();
+    } else if (_ticker.isActive) {
+      _ticker.stop();
+    }
+    _position.value = _anchor;
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _position.dispose();
+    super.dispose();
+  }
+
+  /// Measures each spec's pixel box once per line/style/scale change and caches
+  /// the resulting [_LineGeometry]. Widths are measured with the same style and
+  /// text scaler the parts render with, so the cumulative left offsets match
+  /// the paragraph layout.
+  void _ensureGeometry(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final fontSize = widget.style.fontSize ?? 36;
+    final sig =
+        '${scaler.scale(fontSize)}|'
+        '${widget.specs.map((s) => s.text).join('\u0001')}';
+    if (sig == _geometrySig) return;
+
+    final entries = <_GeomEntry>[];
+    var x = 0.0;
+    for (final spec in widget.specs) {
+      final painter = TextPainter(
+        text: TextSpan(text: spec.text, style: widget.style),
+        textDirection: TextDirection.ltr,
+        textScaler: scaler,
+      )..layout();
+      entries.add(
+        _GeomEntry(
+          leftX: x,
+          width: painter.width,
+          startTime: spec.startTime,
+          endTime: spec.endTime,
+          isGap: spec.text.trim().isEmpty,
+        ),
+      );
+      x += painter.width;
+      painter.dispose();
+    }
+    _geometry = _LineGeometry(entries, x);
+    _geometrySig = sig;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _ensureGeometry(context);
+    final geometry = _geometry;
+
+    final children = <InlineSpan>[];
+    for (var i = 0; i < widget.specs.length; i++) {
+      final spec = widget.specs[i];
+      if (spec.text.trim().isEmpty) {
+        children.add(TextSpan(text: spec.text, style: widget.style));
+        continue;
+      }
+      final entry = geometry.entries[i];
+      children.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: _LineWidePart(
+            spec: spec,
+            style: widget.style,
+            annotationStyle: widget.annotationStyle,
+            position: _position,
+            geometry: geometry,
+            leftX: entry.leftX,
+            width: entry.width,
+            isHighlighted: widget.isHighlighted,
+          ),
+        ),
+      );
+    }
+
+    return RepaintBoundary(
+      child: Text.rich(TextSpan(children: children), textAlign: TextAlign.left),
+    );
+  }
+}
+
+/// A single word in a [_LineWideRichText]. Subscribes to the shared playback
+/// [position], derives the line-wide sweep front from [geometry], and renders
+/// its own slice of that one gradient: a dimmed base with a left-to-right lit
+/// overlay whose edge and fade are expressed in line pixels, so they line up
+/// with the neighbouring words' slices.
+class _LineWidePart extends StatelessWidget {
+  const _LineWidePart({
+    required this.spec,
+    required this.style,
+    required this.annotationStyle,
+    required this.position,
+    required this.geometry,
+    required this.leftX,
+    required this.width,
+    required this.isHighlighted,
+  });
+
+  final _LinePartSpec spec;
+  final TextStyle style;
+  final TextStyle? annotationStyle;
+  final ValueListenable<Duration> position;
+  final _LineGeometry geometry;
+  final double leftX;
+  final double width;
+  final bool isHighlighted;
+
+  /// How long the trailing soft edge takes to slide off a word once that word
+  /// finishes with no onward sweep (a gap before the next word, or the line
+  /// end). Spreading the [fadePx] overrun over this time animates the gradient
+  /// out of view instead of snapping the word to solid.
+  static const Duration _finishDuration = Duration(milliseconds: 240);
+
+  @override
+  Widget build(BuildContext context) {
+    final baseText = Text(spec.text, textAlign: TextAlign.left, style: style);
+    // Constant soft-edge width in line pixels keeps the leading fade identical
+    // on every word instead of scaling with each word's width.
+    final fadePx = (style.fontSize ?? 36) * 0.6;
+    final durationMs = (spec.endTime - spec.startTime).inMilliseconds;
+
+    final body = ValueListenableBuilder<Duration>(
+      valueListenable: position,
+      builder: (context, pos, _) {
+        // While the word is active, follow the shared line front so the soft
+        // edge crosses word boundaries as one continuous sweep.
+        final shared = geometry.frontXFor(pos) - leftX;
+        final double frontLocal;
+        if (pos < spec.endTime) {
+          frontLocal = shared;
+        } else {
+          // The word is done. The band must clear its right side so it reads as
+          // finished. If the shared front has already moved past this word (the
+          // next word started and is sweeping on) keep following it, so the
+          // seam stays continuous. Otherwise there is nothing to hand off to (a
+          // long gap, or the line end): ramp the front from the right edge out
+          // to width + fadePx over [_finishDuration], sliding the gradient off
+          // instead of snapping. pos advances on the shared ticker, so the ramp
+          // animates at frame rate.
+          final finishMs = _finishDuration.inMilliseconds;
+          final elapsed = (pos - spec.endTime).inMilliseconds;
+          final frac = finishMs <= 0
+              ? 1.0
+              : (elapsed / finishMs).clamp(0.0, 1.0);
+          final ramp = width + fadePx * Curves.easeOut.transform(frac);
+          frontLocal = shared > ramp ? shared : ramp;
+        }
+        final bool lifting = isHighlighted && frontLocal > 0;
+
+        return AnimatedContainer(
+          duration: Duration(
+            milliseconds: durationMs > 0 ? (durationMs * 1.15).round() : 500,
+          ),
+          curve: Curves.easeInOut,
+          transform: Matrix4.translationValues(0, lifting ? -1.5 : 0, 0),
+          child: Stack(
+            children: [
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 75),
+                opacity: isHighlighted ? 0.4 : 1.0,
+                child: baseText,
+              ),
+              if (frontLocal > 0 && width > 0)
+                Positioned.fill(
+                  child: ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (Rect bounds) {
+                      final totalWidth = bounds.width;
+                      if (totalWidth <= 0) {
+                        return const LinearGradient(
+                          colors: [Colors.transparent, Colors.transparent],
+                        ).createShader(bounds);
+                      }
+                      // Soft edge TRAILS the front: solid white behind
+                      // (x < front - fade), a white -> transparent band over
+                      // [front - fade, front], transparent ahead. The front is
+                      // the transparent end, so a word eases in from its dim
+                      // base as the band sweeps across it, instead of showing a
+                      // full white -> transparent gradient the instant it starts.
+                      //
+                      // Continuity: the previous word keeps drawing the band's
+                      // left half until the front has moved a full [fadePx] into
+                      // this word, so the edge crosses the seam as one gradient.
+                      // Finished word with no onward sweep: frontLocal ramps
+                      // from the right edge to width + fadePx over
+                      // [_finishDuration], sliding the trailing band off the
+                      // right side so the word eases to solid instead of
+                      // snapping, and stays solid through any gap or line end.
+                      final pLeft = frontLocal - fadePx;
+                      final pRight = frontLocal;
+                      final alignLeft = (pLeft / totalWidth) * 2 - 1;
+                      final alignRight = (pRight / totalWidth) * 2 - 1;
+
+                      return LinearGradient(
+                        begin: Alignment(alignLeft, 0),
+                        end: Alignment(alignRight, 0),
+                        colors: const [Colors.white, Colors.transparent],
+                      ).createShader(bounds);
+                    },
+                    child: baseText,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
+    final reading = spec.reading;
+    if (reading == null || annotationStyle == null) {
+      return body;
+    }
+    return RubyText(
+      reading: Text(
+        reading,
+        style: annotationStyle,
+        maxLines: 1,
+        overflow: TextOverflow.clip,
+      ),
+      base: body,
     );
   }
 }
