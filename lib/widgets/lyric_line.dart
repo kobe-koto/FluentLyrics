@@ -1083,20 +1083,47 @@ class _LineWideRichTextState extends State<_LineWideRichText>
   @override
   void didUpdateWidget(_LineWideRichText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Re-anchor the clock on every real position update. Seeks and the normal
-    // poll cadence are handled the same way: snap to the new position, then let
-    // the ticker extrapolate forward from there while playing.
-    _anchor = widget.adjustedPosition;
-    _watch
-      ..reset()
-      ..stop();
-    if (widget.isPlaying) {
-      _watch.start();
-      if (!_ticker.isActive) _ticker.start();
-    } else if (_ticker.isActive) {
-      _ticker.stop();
+    final positionChanged =
+        widget.adjustedPosition != oldWidget.adjustedPosition;
+    final playbackChanged = widget.isPlaying != oldWidget.isPlaying;
+
+    if (positionChanged) {
+      // A real position update (poll / seek / resync): snap to it, then let the
+      // ticker extrapolate forward from there while playing.
+      _anchor = widget.adjustedPosition;
+      _watch
+        ..reset()
+        ..stop();
+      if (widget.isPlaying) {
+        _watch.start();
+        if (!_ticker.isActive) _ticker.start();
+      } else if (_ticker.isActive) {
+        _ticker.stop();
+      }
+      _position.value = _anchor;
+      return;
     }
-    _position.value = _anchor;
+
+    if (playbackChanged) {
+      if (widget.isPlaying) {
+        // Resume from the position already on screen, not from the stale anchor,
+        // so pausing and playing does not rewind the sweep.
+        _anchor = _position.value;
+        _watch
+          ..reset()
+          ..start();
+        if (!_ticker.isActive) _ticker.start();
+      } else {
+        _watch.stop();
+        if (_ticker.isActive) _ticker.stop();
+      }
+      return;
+    }
+
+    // Pure rebuild with an unchanged position (viewport flip, ancestor
+    // notifyListeners, the resync bridge re-emitting its frozen line-start
+    // snapshot): keep the running clock untouched. Re-anchoring here would
+    // reset _watch and jump the sweep back to [_anchor] mid-line.
   }
 
   @override
