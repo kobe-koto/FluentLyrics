@@ -60,3 +60,6 @@ fdroid-public/
 /assets/kanji_readings/
 /android/build/reports
 /.widget_preview
+
+# FVM Version Cache
+.fvm/
