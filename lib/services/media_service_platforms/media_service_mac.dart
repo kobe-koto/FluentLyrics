@@ -184,9 +184,28 @@ class MacOSMediaService extends MediaService implements MediaController {
     }
 
     if (_pendingSeekTarget != null) {
-      _positionAnchor = newStatus.position;
-      _positionAnchorTime = null;
-      _stopPositionTicker();
+      // Hold the seek target against stale polls, but keep the clock advancing
+      // forward from it while playing so the progress bar does not freeze for
+      // the whole seek-confirmation window.
+      if (newStatus.isPlaying && newMetadata != null) {
+        _positionAnchor = _pendingSeekTarget!;
+        _positionAnchorTime ??= DateTime.now();
+        var interpolated =
+            _positionAnchor + DateTime.now().difference(_positionAnchorTime!);
+        if (newMetadata.duration > Duration.zero &&
+            interpolated > newMetadata.duration) {
+          interpolated = newMetadata.duration;
+        }
+        newStatus = MediaPlaybackStatus(
+          isPlaying: true,
+          position: interpolated,
+        );
+        _startPositionTicker();
+      } else {
+        _positionAnchor = newStatus.position;
+        _positionAnchorTime = null;
+        _stopPositionTicker();
+      }
     } else {
       final now = DateTime.now();
       final interpolated = (_positionAnchorTime != null && _status.isPlaying)
@@ -224,7 +243,8 @@ class MacOSMediaService extends MediaService implements MediaController {
 
   void _startPositionTicker() {
     _positionTimer ??= Timer.periodic(_positionTickInterval, (_) {
-      if (_pendingSeekTarget != null) return;
+      // During a seek hold we still tick: the anchor is the seek target, so the
+      // clock advances from there instead of freezing on it.
       final anchorTime = _positionAnchorTime;
       final metadata = _metadata;
       if (!_status.isPlaying || anchorTime == null || metadata == null) {
@@ -267,12 +287,15 @@ class MacOSMediaService extends MediaService implements MediaController {
         : position;
     _pendingSeekTarget = clampedPosition;
     _positionAnchor = clampedPosition;
-    _positionAnchorTime = null;
-    _status = MediaPlaybackStatus(
-      isPlaying: _status.isPlaying,
-      position: clampedPosition,
-    );
-    _stopPositionTicker();
+    // Anchor the clock at the seek target and keep ticking forward from it so
+    // the progress bar advances during the confirmation window instead of
+    // freezing on the target for up to [_seekConfirmationTimeout].
+    _positionAnchorTime = _status.isPlaying ? DateTime.now() : null;
+    if (_status.isPlaying && metadata != null) {
+      _startPositionTicker();
+    } else {
+      _stopPositionTicker();
+    }
     _seekConfirmationTimer?.cancel();
     _seekConfirmationTimer = Timer(_seekConfirmationTimeout, () {
       _clearPendingSeek();
