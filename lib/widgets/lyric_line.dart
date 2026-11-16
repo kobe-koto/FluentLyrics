@@ -1070,7 +1070,10 @@ class _LineWideRichTextState extends State<_LineWideRichText>
     _anchor = widget.adjustedPosition;
     _position.value = _anchor;
     _ticker = createTicker(_onTick);
-    if (widget.isPlaying) {
+    // Only the highlighted (current) row animates. A prerendered next row would
+    // otherwise sweep ahead of being selected whenever playback has already
+    // advanced into its word-time range (e.g. the current line overruns).
+    if (widget.isPlaying && widget.isHighlighted) {
       _watch.start();
       _ticker.start();
     }
@@ -1241,6 +1244,27 @@ class _LineWidePart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseText = Text(spec.text, textAlign: TextAlign.left, style: style);
+
+    // Only the current (highlighted) row sweeps. A prerendered next row is
+    // built ahead of being selected; without this guard, once playback runs
+    // past this row's word-time range (e.g. the current line overruns its
+    // words) the shared front would be > 0 here and the next row would visibly
+    // animate before it is the active line. Render it as the plain dim base;
+    // the sweep starts fresh when the row actually becomes highlighted.
+    if (!isHighlighted) {
+      final reading = spec.reading;
+      if (reading == null || annotationStyle == null) return baseText;
+      return RubyText(
+        reading: Text(
+          reading,
+          style: annotationStyle,
+          maxLines: 1,
+          overflow: TextOverflow.clip,
+        ),
+        base: baseText,
+      );
+    }
+
     // Constant soft-edge width in line pixels keeps the leading fade identical
     // on every word instead of scaling with each word's width.
     final fadePx = (style.fontSize ?? 36) * 0.6;
