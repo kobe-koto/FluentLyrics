@@ -46,7 +46,21 @@ class LyricsProvider with ChangeNotifier {
   final ValueNotifier<Duration> positionResyncNotifier = ValueNotifier(
     Duration.zero,
   );
+  // Monotonic resync event id. positionResyncNotifier carries WHERE to resync,
+  // but a Duration ValueNotifier silently swallows a repeat value, so a second
+  // seek to the same spot (double-tapping the current line) would not fire.
+  // This counter changes on every resync, so listeners always see the event.
+  final ValueNotifier<int> resyncGenerationNotifier = ValueNotifier(0);
+  int _resyncGeneration = 0;
   static const Duration _positionResyncThreshold = Duration(milliseconds: 400);
+
+  /// Records a resync target and bumps the generation so every resync is a
+  /// distinct event, even when [position] equals the last one.
+  void _fireResync(Duration position) {
+    positionResyncNotifier.value = position;
+    _resyncGeneration++;
+    resyncGenerationNotifier.value = _resyncGeneration;
+  }
 
   LyricsProviderSettings _settings = LyricsProviderSettings.defaults();
 
@@ -1130,8 +1144,12 @@ class LyricsProvider with ChangeNotifier {
   }
 
   Future<void> seek(Duration position) async {
-    // Optimistic update
+    // Optimistic update. Fire the resync explicitly rather than relying on
+    // _setCurrentPosition, which bails out when the position is unchanged: a
+    // double-tap to replay the current line seeks to a spot that may equal the
+    // current position, and the animation must still restart.
     _setCurrentPosition(position, forceResync: true);
+    _fireResync(position);
     _updateCurrentIndex();
     notifyListeners();
 
@@ -1624,7 +1642,7 @@ class LyricsProvider with ChangeNotifier {
     _currentIndex = matchedIndex;
     final indexChanged = previousIndex != _currentIndex;
     if (indexChanged) {
-      positionResyncNotifier.value = _currentPosition;
+      _fireResync(_currentPosition);
     }
     return indexChanged;
   }
@@ -1639,7 +1657,7 @@ class LyricsProvider with ChangeNotifier {
     if (forceResync ||
         delta < Duration.zero ||
         delta > _positionResyncThreshold) {
-      positionResyncNotifier.value = position;
+      _fireResync(position);
     }
   }
 
@@ -1678,6 +1696,7 @@ class LyricsProvider with ChangeNotifier {
     mediaService.dispose();
     currentPositionNotifier.dispose();
     positionResyncNotifier.dispose();
+    resyncGenerationNotifier.dispose();
     artworkUrlsNotifier.dispose();
     super.dispose();
   }

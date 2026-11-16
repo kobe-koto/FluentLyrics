@@ -1175,6 +1175,42 @@ void main() {
       provider.dispose();
     },
   );
+
+  test('seek bumps the resync generation even to the same position', () async {
+    final mediaService = _FakeMediaService(
+      MediaMetadata(
+        title: 'Song',
+        artist: const ['Artist'],
+        album: 'Album',
+        duration: const Duration(seconds: 120),
+        artUrl: 'fallback',
+      ),
+    );
+    mediaService.position = const Duration(seconds: 5);
+    final provider = LyricsProvider(
+      mediaService: mediaService,
+      lyricsService: _FakeLyricsService(),
+      settingsService: _FakeSettingsService(translationEnabled: false),
+      cacheService: _FakeLyricsCacheService(),
+    );
+
+    await Future<void>.delayed(Duration.zero);
+    mediaService.emitChange();
+    await Future<void>.delayed(Duration.zero);
+
+    // The poll has adopted 5s; seeking to the same spot (double-tap replay)
+    // leaves currentPosition unchanged but must still signal a resync so the
+    // rich-sync animation restarts.
+    expect(provider.currentPosition, const Duration(seconds: 5));
+    final before = provider.resyncGenerationNotifier.value;
+
+    await provider.seek(const Duration(seconds: 5));
+
+    expect(provider.resyncGenerationNotifier.value, greaterThan(before));
+    expect(provider.positionResyncNotifier.value, const Duration(seconds: 5));
+
+    provider.dispose();
+  });
 }
 
 class _SkippingLyricsService extends LyricsService {

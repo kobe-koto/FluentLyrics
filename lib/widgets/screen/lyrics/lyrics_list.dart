@@ -301,10 +301,12 @@ class _LyricsListState extends State<LyricsList> {
                   builder: (context, inViewport) {
                     final line = hasRichInlineParts
                         ? _RichLineResyncBridge(
-                            listenable: provider.positionResyncNotifier,
+                            positionListenable: provider.positionResyncNotifier,
+                            generationListenable:
+                                provider.resyncGenerationNotifier,
                             subscribeToResync: isHighlighted,
                             fallbackPosition: provider.currentPosition,
-                            builder: (context, currentPosition) {
+                            builder: (context, currentPosition, generation) {
                               return _buildLyricLine(
                                 lyric: lyric,
                                 isHighlighted: isHighlighted,
@@ -312,6 +314,7 @@ class _LyricsListState extends State<LyricsList> {
                                 distance: distance,
                                 inViewport: inViewport,
                                 currentPosition: currentPosition,
+                                resyncGeneration: generation,
                               );
                             },
                           )
@@ -377,6 +380,7 @@ class _LyricsListState extends State<LyricsList> {
     required double distance,
     required bool inViewport,
     required Duration currentPosition,
+    int resyncGeneration = 0,
   }) {
     final provider = widget.provider;
     return LyricLine(
@@ -402,6 +406,7 @@ class _LyricsListState extends State<LyricsList> {
       adjustedPosition:
           currentPosition + provider.globalOffset + provider.trackOffset,
       isPlaying: provider.isPlaying,
+      resyncGeneration: resyncGeneration,
     );
   }
 }
@@ -962,7 +967,7 @@ class _LyricsInfoLine extends StatelessWidget {
 }
 
 /// Keeps a stable widget shape for rich-sync lyric rows while subscribing to
-/// [listenable] only when the row is currently highlighted.
+/// the resync signal only when the row is currently highlighted.
 ///
 /// This avoids two problems at once:
 /// 1. Non-highlighted rich rows no longer rebuild on every resync event.
@@ -970,14 +975,27 @@ class _LyricsInfoLine extends StatelessWidget {
 ///    runtimeTypes (plain LyricLine vs `ValueListenableBuilder<Duration>`), which
 ///    would discard the implicit animation state and make AnimatedPadding /
 ///    AnimatedScale jump instead of tween.
+///
+/// Subscribes to [generationListenable] rather than [positionListenable]: a
+/// second seek to the same spot (double-tapping the current line to replay it)
+/// re-emits the same position, which a Duration notifier swallows, but the
+/// generation always changes. [builder] receives both the resync position and
+/// the generation so the row can force its animation to restart.
 class _RichLineResyncBridge extends StatefulWidget {
-  final ValueListenable<Duration> listenable;
+  final ValueListenable<Duration> positionListenable;
+  final ValueListenable<int> generationListenable;
   final bool subscribeToResync;
   final Duration fallbackPosition;
-  final Widget Function(BuildContext context, Duration currentPosition) builder;
+  final Widget Function(
+    BuildContext context,
+    Duration currentPosition,
+    int generation,
+  )
+  builder;
 
   const _RichLineResyncBridge({
-    required this.listenable,
+    required this.positionListenable,
+    required this.generationListenable,
     required this.subscribeToResync,
     required this.fallbackPosition,
     required this.builder,
@@ -989,6 +1007,7 @@ class _RichLineResyncBridge extends StatefulWidget {
 
 class _RichLineResyncBridgeState extends State<_RichLineResyncBridge> {
   Duration? _resyncedPosition;
+  int _generation = 0;
 
   @override
   void initState() {
@@ -999,7 +1018,7 @@ class _RichLineResyncBridgeState extends State<_RichLineResyncBridge> {
   @override
   void didUpdateWidget(covariant _RichLineResyncBridge oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.listenable != widget.listenable ||
+    if (oldWidget.generationListenable != widget.generationListenable ||
         oldWidget.subscribeToResync != widget.subscribeToResync) {
       _syncSubscription(oldWidget);
     }
@@ -1008,29 +1027,31 @@ class _RichLineResyncBridgeState extends State<_RichLineResyncBridge> {
   @override
   void dispose() {
     if (widget.subscribeToResync) {
-      widget.listenable.removeListener(_handleResync);
+      widget.generationListenable.removeListener(_handleResync);
     }
     super.dispose();
   }
 
   void _syncSubscription(_RichLineResyncBridge? oldWidget) {
     if (oldWidget != null && oldWidget.subscribeToResync) {
-      oldWidget.listenable.removeListener(_handleResync);
+      oldWidget.generationListenable.removeListener(_handleResync);
     }
 
     if (widget.subscribeToResync) {
-      _resyncedPosition = widget.listenable.value;
-      widget.listenable.addListener(_handleResync);
+      _resyncedPosition = widget.positionListenable.value;
+      _generation = widget.generationListenable.value;
+      widget.generationListenable.addListener(_handleResync);
     } else {
       _resyncedPosition = null;
     }
   }
 
   void _handleResync() {
-    final next = widget.listenable.value;
-    if (_resyncedPosition == next) return;
+    final nextGeneration = widget.generationListenable.value;
+    if (_generation == nextGeneration) return;
     setState(() {
-      _resyncedPosition = next;
+      _generation = nextGeneration;
+      _resyncedPosition = widget.positionListenable.value;
     });
   }
 
@@ -1039,8 +1060,9 @@ class _RichLineResyncBridgeState extends State<_RichLineResyncBridge> {
     return widget.builder(
       context,
       widget.subscribeToResync
-          ? (_resyncedPosition ?? widget.listenable.value)
+          ? (_resyncedPosition ?? widget.positionListenable.value)
           : widget.fallbackPosition,
+      _generation,
     );
   }
 }

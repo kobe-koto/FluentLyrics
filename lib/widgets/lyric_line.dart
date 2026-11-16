@@ -53,6 +53,12 @@ class LyricLine extends StatelessWidget {
   final Duration adjustedPosition;
   final bool isPlaying;
 
+  /// Bumped by the provider on every resync (line change, seek, backward jump).
+  /// Lets the rich-sync animation restart even when a seek lands on a position
+  /// equal to the one already shown, e.g. double-tapping the current line to
+  /// replay it from its start.
+  final int resyncGeneration;
+
   const LyricLine({
     super.key,
     required this.lyric,
@@ -69,6 +75,7 @@ class LyricLine extends StatelessWidget {
     ),
     required this.adjustedPosition,
     required this.isPlaying,
+    this.resyncGeneration = 0,
     this.distance = 0,
     this.isManualScrolling = false,
     this.blurEnabled = true,
@@ -295,6 +302,7 @@ class LyricLine extends StatelessWidget {
               isPlaying: isPlaying,
               isHighlighted: isHighlighted,
               richSyncThreshold: richSyncThreshold,
+              resyncGeneration: resyncGeneration,
             ),
           ),
         );
@@ -326,6 +334,7 @@ class LyricLine extends StatelessWidget {
         isPlaying: isPlaying,
         isHighlighted: isHighlighted,
         richSyncThreshold: richSyncThreshold,
+        resyncGeneration: resyncGeneration,
       );
 
       spans.add(
@@ -483,6 +492,7 @@ class LyricLine extends StatelessWidget {
               isPlaying: isPlaying,
               isHighlighted: isHighlighted,
               richSyncThreshold: richSyncThreshold,
+              resyncGeneration: resyncGeneration,
             ),
           );
         }).toList(),
@@ -535,6 +545,7 @@ class LyricLine extends StatelessWidget {
       annotationStyle: annotationStyle,
       adjustedPosition: adjustedPosition,
       isPlaying: isPlaying,
+      resyncGeneration: resyncGeneration,
       isHighlighted: isHighlighted,
     );
   }
@@ -712,6 +723,7 @@ class _RichPart extends StatefulWidget {
   final bool isPlaying;
   final bool isHighlighted;
   final Duration richSyncThreshold;
+  final int resyncGeneration;
 
   const _RichPart({
     required this.text,
@@ -722,6 +734,7 @@ class _RichPart extends StatefulWidget {
     required this.isPlaying,
     required this.isHighlighted,
     required this.richSyncThreshold,
+    required this.resyncGeneration,
   });
 
   @override
@@ -766,11 +779,15 @@ class _RichPartState extends State<_RichPart>
     final positionJumped =
         positionDelta < Duration.zero ||
         positionDelta > _positionResyncThreshold;
+    // A resync landing on the same position (double-tap replay) leaves
+    // adjustedPosition unchanged, so re-sync on the generation bump too.
+    final resynced = widget.resyncGeneration != oldWidget.resyncGeneration;
 
     if (durationChanged ||
         timingChanged ||
         playbackChanged ||
         positionJumped ||
+        resynced ||
         !widget.isPlaying) {
       _syncControllerWithPlayback();
     }
@@ -1038,6 +1055,7 @@ class _LineWideRichText extends StatefulWidget {
     required this.annotationStyle,
     required this.adjustedPosition,
     required this.isPlaying,
+    required this.resyncGeneration,
     required this.isHighlighted,
   });
 
@@ -1046,6 +1064,7 @@ class _LineWideRichText extends StatefulWidget {
   final TextStyle? annotationStyle;
   final Duration adjustedPosition;
   final bool isPlaying;
+  final int resyncGeneration;
   final bool isHighlighted;
 
   @override
@@ -1089,8 +1108,12 @@ class _LineWideRichTextState extends State<_LineWideRichText>
     final positionChanged =
         widget.adjustedPosition != oldWidget.adjustedPosition;
     final playbackChanged = widget.isPlaying != oldWidget.isPlaying;
+    // A resync whose target equals the current position (double-tap replay of
+    // the current line) does not change [adjustedPosition], so detect it by the
+    // generation counter and force a re-anchor too.
+    final resynced = widget.resyncGeneration != oldWidget.resyncGeneration;
 
-    if (positionChanged) {
+    if (positionChanged || resynced) {
       // A real position update (poll / seek / resync): snap to it, then let the
       // ticker extrapolate forward from there while playing.
       _anchor = widget.adjustedPosition;
