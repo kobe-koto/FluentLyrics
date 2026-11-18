@@ -89,8 +89,45 @@ jobs:
             echo "prerelease=$prerelease"
           } >> "$GITHUB_OUTPUT"
 
+  prepare-kanji-readings:
+    uses: ./.github/workflows/prepare-kanji-readings.yml
+
+  # Inlined rather than reused from test.yml so it renders as a flat job in the
+  # release run graph (a `uses:` call nests as its own group). Keep these steps
+  # in sync with the `test` job in test.yml.
   test:
-    uses: ./.github/workflows/test.yml
+    needs: [prepare-version, prepare-kanji-readings]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libx11-dev libxi-dev libgtk-3-0 libblkid1 liblzma5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: master
+          flutter-version: stable
+          cache: true
+
+      - name: Get flutter dependencies
+        run: flutter pub get
+
+      - name: Sync OpenCC assets
+        run: ./tool/sync_opencc_assets.sh
+
+      # Produced once per run by the prepare-kanji-readings job above.
+      - name: Download kanji readings
+        uses: actions/download-artifact@v8
+        with:
+          name: kanji-readings
+          path: assets/kanji_readings
+
+      - name: Run tests
+        run: flutter test
 
   build-linux:
     needs: [prepare-version, test]
@@ -136,8 +173,7 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
-      # Produced once per run by prepare-kanji-readings.yml, through the
-      # `test` job's workflow.
+      # Produced once per run by the prepare-kanji-readings job.
       - name: Download kanji readings
         uses: actions/download-artifact@v8
         with:
@@ -229,8 +265,7 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
-      # Produced once per run by prepare-kanji-readings.yml, through the
-      # `test` job's workflow.
+      # Produced once per run by the prepare-kanji-readings job.
       - name: Download kanji readings
         uses: actions/download-artifact@v8
         with:
@@ -304,8 +339,7 @@ jobs:
       - name: Sync OpenCC assets
         run: ./tool/sync_opencc_assets.sh
 
-      # Produced once per run by prepare-kanji-readings.yml, through the
-      # `test` job's workflow.
+      # Produced once per run by the prepare-kanji-readings job.
       - name: Download kanji readings
         uses: actions/download-artifact@v8
         with:

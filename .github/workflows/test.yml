@@ -5,11 +5,8 @@ on:
     tags-ignore:
       - '*'
   pull_request:
-  workflow_call:
 
 jobs:
-  # Also the source of the `kanji-readings` artifact the platform builds in
-  # release.yml download, since release.yml calls this workflow first.
   kanji-readings:
     uses: ./.github/workflows/prepare-kanji-readings.yml
 
